@@ -2,6 +2,6 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields\Constraints {
-    #[Attribute]
+    #[\Attribute]
     final readonly class AlphaDash implements Field {}
 }

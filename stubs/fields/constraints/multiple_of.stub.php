@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields\Constraints {
-    #[Attribute]
+    #[\Attribute]
     final readonly class MultipleOf implements Field {
         public int|float $value;
 

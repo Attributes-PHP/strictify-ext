@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields\Constraints {
-    #[Attribute]
+    #[\Attribute]
     final readonly class Regex implements Field {
         public string $regex;
 

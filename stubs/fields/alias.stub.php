@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields {
-   #[Attribute]
+   #[\Attribute]
    readonly class Alias implements Field {
       public string $name;
 

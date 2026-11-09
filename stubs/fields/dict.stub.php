@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields {
-    #[Attribute]
+    #[\Attribute]
     readonly class Dict implements Field {
         public int|\Attributes\Validation\Type|Union $key;
         public int|string|\Attributes\Validation\Type|Union|Intersection|Sequence|Dict $of;

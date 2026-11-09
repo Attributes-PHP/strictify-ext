@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation {
    // Attribute::TARGET_CLASS
-   #[Attribute]
+   #[\Attribute]
    abstract class ModelConfigs {
       private ?string $aliasGenerator = null;
       private bool $strToLower = false;

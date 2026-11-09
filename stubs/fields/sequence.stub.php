@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields {
-    #[Attribute]
+    #[\Attribute]
     readonly class Sequence implements Field {
         public int|string|\Attributes\Validation\Type|Sequence|Union|Intersection|Dict $of;
         public bool $uniqueValues;

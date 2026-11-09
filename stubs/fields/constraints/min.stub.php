@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields\Constraints {
-    #[Attribute]
+    #[\Attribute]
     final readonly class Min implements Field {
         public int|float $value;
 

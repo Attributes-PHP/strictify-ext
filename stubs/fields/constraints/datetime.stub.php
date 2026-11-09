@@ -2,7 +2,7 @@
 /** @generate-class-entries */
 
 namespace Attributes\Validation\Fields\Constraints {
-   #[Attribute]
+   #[\Attribute]
    final class DateTime implements Field {
       public readonly string $format;
       public readonly \DateTimeZone|string|null $timezone;
