@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
-    final class Size implements Field {
+    final readonly class Size implements Field {
         public ?int $min;
         public ?int $max;
 

@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields {
    #[Attribute]
-   class Alias implements Field {
+   readonly class Alias implements Field {
       public string $name;
 
       public function __construct(string $name) {}

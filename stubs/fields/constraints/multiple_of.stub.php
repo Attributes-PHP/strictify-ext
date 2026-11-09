@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
-    final class MultipleOf implements Field {
+    final readonly class MultipleOf implements Field {
         public int|float $value;
 
         public function __construct(int|float $value) {}

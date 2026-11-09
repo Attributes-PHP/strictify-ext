@@ -4,8 +4,8 @@
 namespace Attributes\Validation\Fields\Constraints {
    #[Attribute]
    final class DateTime implements Field {
-      public string $format;
-      public \DateTimeZone|string|null $timezone;
+      public readonly string $format;
+      public readonly \DateTimeZone|string|null $timezone;
 
       /**
        * @internal

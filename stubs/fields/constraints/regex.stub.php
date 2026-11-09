@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
-    final class Regex implements Field {
+    final readonly class Regex implements Field {
         public string $regex;
 
         public function __construct(string $regex) {}

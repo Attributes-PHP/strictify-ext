@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields {
     #[Attribute]
-    class Dict implements Field {
+    readonly class Dict implements Field {
         public int|\Attributes\Validation\Type|Union $key;
         public int|string|\Attributes\Validation\Type|Union|Intersection|Sequence|Dict $of;
         public bool $uniqueValues;

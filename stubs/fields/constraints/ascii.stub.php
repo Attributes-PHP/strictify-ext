@@ -3,5 +3,5 @@
 
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
-    final class Ascii implements Field {}
+    final readonly class Ascii implements Field {}
 }

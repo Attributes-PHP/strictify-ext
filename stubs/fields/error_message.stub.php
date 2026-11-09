@@ -3,7 +3,7 @@
 
 namespace Attributes\Validation\Fields {
    #[Attribute]
-   class ErrorMessage implements Field {
+   readonly class ErrorMessage implements Field {
       public string $required;
       public string $type;
 

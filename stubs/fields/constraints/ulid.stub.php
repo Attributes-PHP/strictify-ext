@@ -3,5 +3,5 @@
 
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
-    final class Ulid implements Field {}
+    final readonly class Ulid implements Field {}
 }
