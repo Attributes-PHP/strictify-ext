@@ -1,4 +1,4 @@
-# Attributes Validation Extension
+# Strictify Extension
 
 <p align="center">
     <img src="https://raw.githubusercontent.com/Attributes-PHP/validation-ext/main/docs/assets/images/validation-ext-wallpaper.png" alt="validation-ext logo" width="300">
@@ -13,7 +13,7 @@
 
 ------
 
-**Attributes Validation Extension** is a Pydantic-inspired PHP library for validating data via type hints at lightning speed ⚡️
+**Strictify Extension** is a Pydantic-inspired PHP library for validating data via type hints at lightning speed ⚡️
 
 ## Prerequisites
 
