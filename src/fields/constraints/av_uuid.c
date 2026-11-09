@@ -61,7 +61,7 @@ void av_register_Uuid_class(void)
     INIT_NS_CLASS_ENTRY(ce, "Attributes\\Validation\\Fields\\Constraints", "Uuid", class_AV_Fields_Constraints_Uuid_methods);
     AV_Fields_Constraints_Uuid_ce = zend_register_internal_class_ex(&ce, NULL);
     ZEND_ASSERT(AV_Fields_Constraints_Uuid_ce != NULL);
-    AV_Fields_Constraints_Uuid_ce->ce_flags |= ZEND_ACC_FINAL;
+    AV_Fields_Constraints_Uuid_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
 
     ZEND_ASSERT(AV_Fields_Field_ce != NULL);
     zend_class_implements(AV_Fields_Constraints_Uuid_ce, 1, AV_Fields_Field_ce);

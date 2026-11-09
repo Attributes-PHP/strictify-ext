@@ -67,12 +67,12 @@ void av_register_Intersection_class(void)
     INIT_NS_CLASS_ENTRY(ce, "Attributes\\Validation\\Fields", "Intersection", class_AV_Fields_Intersection_methods);
     AV_Fields_Intersection_ce = zend_register_internal_class_ex(&ce, NULL);
     ZEND_ASSERT(AV_Fields_Intersection_ce != NULL);
+    AV_Fields_Intersection_ce->ce_flags |= ZEND_ACC_READONLY_CLASS;
 
-    ZEND_ASSERT(AV_Fields_Field_ce != NULL);
     zend_class_implements(AV_Fields_Intersection_ce, 1, AV_Fields_Field_ce);
 
     /* Register $of property */
-    zend_declare_property_null(AV_Fields_Intersection_ce, "of", sizeof("of") - 1, ZEND_ACC_PUBLIC);
+    zend_declare_property_null(AV_Fields_Intersection_ce, "of", sizeof("of") - 1, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY);
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AV_Fields_Intersection_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);

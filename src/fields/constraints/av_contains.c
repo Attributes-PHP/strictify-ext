@@ -121,12 +121,12 @@ void av_register_Contains_class(void)
     INIT_NS_CLASS_ENTRY(ce, "Attributes\\Validation\\Fields\\Constraints", "Contains", class_AV_Fields_Constraints_Contains_methods);
     AV_Fields_Constraints_Contains_ce = zend_register_internal_class_ex(&ce, NULL);
     ZEND_ASSERT(AV_Fields_Constraints_Contains_ce != NULL);
-    AV_Fields_Constraints_Contains_ce->ce_flags |= ZEND_ACC_FINAL;
+    AV_Fields_Constraints_Contains_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
 
     ZEND_ASSERT(AV_Fields_Field_ce != NULL);
     zend_class_implements(AV_Fields_Constraints_Contains_ce, 1, AV_Fields_Field_ce);
 
-    zend_declare_property_null(AV_Fields_Constraints_Contains_ce, "values", sizeof("values") - 1, ZEND_ACC_PUBLIC);
+    av_declare_typed_property(AV_Fields_Constraints_Contains_ce, "values", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_ARRAY));
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AV_Fields_Constraints_Contains_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);

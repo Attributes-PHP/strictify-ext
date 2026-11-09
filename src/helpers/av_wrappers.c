@@ -175,3 +175,12 @@ void av_zval_stringl(zval *z, const char *str, size_t len)
 {
     ZVAL_NEW_STR(z, av_string_init(str, len, 0));
 }
+
+void av_declare_typed_property(zend_class_entry *ce, const char *name, int flags, zend_type type)
+{
+    zval default_value;
+    ZVAL_UNDEF(&default_value);
+    zend_string *name_str = zend_string_init(name, strlen(name), 1);
+    zend_declare_typed_property(ce, name_str, &default_value, flags, NULL, type);
+    zend_string_release(name_str);
+}

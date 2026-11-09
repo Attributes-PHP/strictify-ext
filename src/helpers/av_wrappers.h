@@ -121,5 +121,6 @@ bool av_has_exception(void);
 
 zend_result av_call_tostring(zend_object *object, zval *retval);
 void av_zval_stringl(zval *z, const char *str, size_t len);
+void av_declare_typed_property(zend_class_entry *ce, const char *name, int flags, zend_type type);
 
 #endif /* AV_HELPERS_AV_WRAPPERS_H */

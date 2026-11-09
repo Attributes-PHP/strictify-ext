@@ -159,9 +159,26 @@ void av_register_DateTime_class(void)
     zend_class_implements(AV_Fields_Constraints_DateTime_ce, 1, AV_Fields_Field_ce);
 
     /* Register promoted $format and $timezone properties */
-    zend_declare_property_null(AV_Fields_Constraints_DateTime_ce, "format", sizeof("format") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(AV_Fields_Constraints_DateTime_ce, "timezone", sizeof("timezone") - 1, ZEND_ACC_PUBLIC);
-    zend_declare_property_null(AV_Fields_Constraints_DateTime_ce, "timezone_obj", sizeof("timezone_obj") - 1, ZEND_ACC_PRIVATE);
+    av_declare_typed_property(AV_Fields_Constraints_DateTime_ce, "format", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING));
+
+    /* Class-name strings in ZEND_TYPE_INIT_CLASS are kept by the type, so they are intentionally not released */
+    zval property_timezone_default_value;
+    ZVAL_UNDEF(&property_timezone_default_value);
+    zend_string *property_timezone_name = zend_string_init("timezone", sizeof("timezone") - 1, 1);
+    zend_declare_typed_property(
+        AV_Fields_Constraints_DateTime_ce, property_timezone_name, &property_timezone_default_value, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, NULL,
+        (zend_type)ZEND_TYPE_INIT_CLASS(zend_string_init("DateTimeZone", sizeof("DateTimeZone") - 1, 1), 0, MAY_BE_STRING | MAY_BE_NULL)
+    );
+    zend_string_release(property_timezone_name);
+
+    zval property_timezone_obj_default_value;
+    ZVAL_NULL(&property_timezone_obj_default_value);
+    zend_string *property_timezone_obj_name = zend_string_init("timezone_obj", sizeof("timezone_obj") - 1, 1);
+    zend_declare_typed_property(
+        AV_Fields_Constraints_DateTime_ce, property_timezone_obj_name, &property_timezone_obj_default_value, ZEND_ACC_PRIVATE, NULL,
+        (zend_type)ZEND_TYPE_INIT_CLASS(zend_string_init("DateTimeZone", sizeof("DateTimeZone") - 1, 1), 0, MAY_BE_STRING | MAY_BE_NULL)
+    );
+    zend_string_release(property_timezone_obj_name);
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AV_Fields_Constraints_DateTime_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
