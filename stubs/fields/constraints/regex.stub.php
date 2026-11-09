@@ -4,6 +4,8 @@
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
     final class Regex implements Field {
-        public function __construct(public string $regex) {}
+        public string $regex;
+
+        public function __construct(string $regex) {}
     }
 }

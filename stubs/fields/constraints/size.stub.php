@@ -4,6 +4,9 @@
 namespace Attributes\Validation\Fields\Constraints {
     #[Attribute]
     final class Size implements Field {
-        public function __construct(public ?int $min = null, public ?int $max = null) {}
+        public ?int $min;
+        public ?int $max;
+
+        public function __construct(?int $min = null, ?int $max = null) {}
     }
 }

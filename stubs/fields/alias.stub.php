@@ -4,6 +4,8 @@
 namespace Attributes\Validation\Fields {
    #[Attribute]
    class Alias implements Field {
-      public function __construct(public string $name) {}
+      public string $name;
+
+      public function __construct(string $name) {}
    }
 }

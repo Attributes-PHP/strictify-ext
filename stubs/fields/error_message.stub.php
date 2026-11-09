@@ -4,6 +4,9 @@
 namespace Attributes\Validation\Fields {
    #[Attribute]
    class ErrorMessage implements Field {
-      public function __construct(public string $required, public string $type) {}
+      public string $required;
+      public string $type;
+
+      public function __construct(string $required, string $type) {}
    }
 }
