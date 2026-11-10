@@ -2,30 +2,30 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Fields;
+namespace Attributes\Strictify\Tests\Integration\Fields;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Dict;
-use Attributes\Validation\Fields\Intersection;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\ModelConfigs;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues;
-use Attributes\Validation\Tests\Models\Interfaces\CountableInterface;
-use Attributes\Validation\Tests\Models\Interfaces\IterableInterface;
-use Attributes\Validation\Tests\Models\IterableCountableClass;
-use Attributes\Validation\Type;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Dict;
+use Attributes\Strictify\Fields\Intersection;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\Tests\Models\Interfaces\CountableInterface;
+use Attributes\Strictify\Tests\Models\Interfaces\IterableInterface;
+use Attributes\Strictify\Tests\Models\IterableCountableClass;
+use Attributes\Strictify\Type;
 use DateTimeInterface;
 use stdClass;
 use TypeError;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
-use const Attributes\Validation\bool;
-use const Attributes\Validation\int;
-use const Attributes\Validation\string;
+use const Attributes\Strictify\bool;
+use const Attributes\Strictify\int;
+use const Attributes\Strictify\string;
 
 class UnionAddress extends BaseModel
 {
@@ -52,7 +52,7 @@ describe('Union constructor argument validation', function () {
         new Union(Type::int, 3.14);
     })->throws(
         TypeError::class,
-        'Union::__construct(): Argument #2 must be of type int|string|\Attributes\Validation\Type|Sequence|Union|Intersection|Dict, float given',
+        'Union::__construct(): Argument #2 must be of type int|string|\Attributes\Strictify\Type|Sequence|Union|Intersection|Dict, float given',
     );
 
     it('throws a ValueError when a string arm is not a valid class', function () {
@@ -124,7 +124,7 @@ describe('Union attribute array data validation', function () {
             expect(false)->toBeTrue();
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
-                'items.0' => ['Must be Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues or integer'],
+                'items.0' => ['Must be Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues or integer'],
             ]);
         }
     });
@@ -147,8 +147,8 @@ describe('Union attribute array data validation', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.0.0' => [
-                    'Must be Attributes\Validation\Tests\Models\Interfaces\CountableInterface and'
-                        .' Attributes\Validation\Tests\Models\Interfaces\IterableInterface',
+                    'Must be Attributes\Strictify\Tests\Models\Interfaces\CountableInterface and'
+                        .' Attributes\Strictify\Tests\Models\Interfaces\IterableInterface',
                 ],
             ]);
         }

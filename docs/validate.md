@@ -1,6 +1,6 @@
 ---
 title: "validate()"
-description: 'Reference for the Attributes\Validation\validate() function: parameters, return value, validation rules and exceptions.'
+description: 'Reference for the Attributes\Strictify\validate() function: parameters, return value, validation rules and exceptions.'
 
 ---
 
@@ -9,13 +9,13 @@ description: 'Reference for the Attributes\Validation\validate() function: param
 Validates a raw data array against the type hints and attributes of a `BaseModel` instance, and returns the hydrated model.
 
 ```php
-namespace Attributes\Validation;
+namespace Attributes\Strictify;
 
 function validate(array $rawData, BaseModel $model): BaseModel
 ```
 
 ```php
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 $user = validate($rawData, new User());
 ```
@@ -40,13 +40,13 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 
 | Exception | Thrown when |
 | --------- | ----------- |
-| `Attributes\Validation\Exceptions\ValidationException` | Any field fails validation. Call `getErrors()` on the exception for the error list. |
+| `Attributes\Strictify\Exceptions\ValidationException` | Any field fails validation. Call `getErrors()` on the exception for the error list. |
 | `ValueError` | An attribute spec is malformed, for example an unresolvable class-name arm, an unsupported `Type` value in an array attribute, or a `Dict` key type outside integer and string. |
 
 `ValidationException::getErrors()` returns an array keyed by field path, each value holding one or more messages:
 
 ```php
-use Attributes\Validation\Exceptions\ValidationException;
+use Attributes\Strictify\Exceptions\ValidationException;
 
 try {
     validate($rawData, new User());
@@ -76,7 +76,7 @@ Every typed, non-nullable property is required. A missing key produces a `Field 
 Validation is **strict by default**: a value must already have the declared type. Declare loose mode on the model to enable scalar coercion:
 
 ```php
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\ModelConfigs;
 
 #[ModelConfigs(strict: false)]
 class User extends BaseModel
@@ -101,7 +101,7 @@ In loose mode:
 Map an input key to a property with the `Alias` attribute:
 
 ```php
-use Attributes\Validation\Fields\Alias;
+use Attributes\Strictify\Fields\Alias;
 
 class User extends BaseModel
 {
@@ -117,7 +117,7 @@ class User extends BaseModel
 Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Override them per property with the `ErrorMessage` attribute:
 
 ```php
-use Attributes\Validation\Fields\ErrorMessage;
+use Attributes\Strictify\Fields\ErrorMessage;
 
 class User extends BaseModel
 {
@@ -130,11 +130,11 @@ The `{expected}` placeholder renders the expected type list.
 
 ### Constraints
 
-Value-level rules are declared with constraint attributes from `Attributes\Validation\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:
+Value-level rules are declared with constraint attributes from `Attributes\Strictify\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:
 
 ```php
-use Attributes\Validation\Fields\Constraints\Between;
-use Attributes\Validation\Fields\Constraints\Regex;
+use Attributes\Strictify\Fields\Constraints\Between;
+use Attributes\Strictify\Fields\Constraints\Regex;
 
 class User extends BaseModel
 {
@@ -146,16 +146,16 @@ class User extends BaseModel
 }
 ```
 
-Constraints apply to the property value itself, not to `Sequence`/`Dict` elements. Custom constraints can be written in PHP userland by implementing `Attributes\Validation\Fields\Constraint`. The [constraints reference](/constraints/) lists every built-in with its semantics and default message, and the userland contract.
+Constraints apply to the property value itself, not to `Sequence`/`Dict` elements. Custom constraints can be written in PHP userland by implementing `Attributes\Strictify\Fields\Constraint`. The [constraints reference](/constraints/) lists every built-in with its semantics and default message, and the userland contract.
 
 ## Array type validation
 
 Typed `array` properties declare their element shape with the `Sequence`, `Union`, `Intersection` and `Dict` attributes:
 
 ```php
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\Type;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\Type;
 
 class Blog extends BaseModel
 {
@@ -170,7 +170,7 @@ class Blog extends BaseModel
 }
 ```
 
-Element types come from the `Attributes\Validation\Type` enum (`Type::int`, `Type::string`, `Type::bool`, `Type::float`, `Type::sequence`, `Type::object`, `Type::dict`) or the matching namespace constants (`int`, `string`, `bool`, `float`, `sequence`, `object`), and may combine with the bitwise OR operator (`bool | int`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
+Element types come from the `Attributes\Strictify\Type` enum (`Type::int`, `Type::string`, `Type::bool`, `Type::float`, `Type::sequence`, `Type::object`, `Type::dict`) or the matching namespace constants (`int`, `string`, `bool`, `float`, `sequence`, `object`), and may combine with the bitwise OR operator (`bool | int`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
 
 - `Sequence` validates every element against one element type.
 - `Union` accepts an element matching any declared arm.

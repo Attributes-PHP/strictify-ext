@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation {
+namespace Attributes\Strictify {
    abstract class BaseModel {
       protected array $errors;
 

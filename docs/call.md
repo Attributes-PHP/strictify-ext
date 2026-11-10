@@ -1,6 +1,6 @@
 ---
 title: "call()"
-description: 'Reference for the Attributes\Validation\call() function: model hydration, dependencies and lazy ArrayAccess containers.'
+description: 'Reference for the Attributes\Strictify\call() function: model hydration, dependencies and lazy ArrayAccess containers.'
 
 ---
 
@@ -9,13 +9,13 @@ description: 'Reference for the Attributes\Validation\call() function: model hyd
 Calls a function or callable with validated models: `BaseModel` parameters hydrate from the raw data array through the same engine [validate()](/validate/) uses, and every other parameter is injected from a dependencies array or `ArrayAccess` container.
 
 ```php
-namespace Attributes\Validation;
+namespace Attributes\Strictify;
 
 function call(string|callable $function, array $params, array|ArrayAccess $dependencies = []): mixed
 ```
 
 ```php
-use function Attributes\Validation\call;
+use function Attributes\Strictify\call;
 
 $result = call(myFunction(...), $rawData, $dependencies);
 ```
@@ -33,8 +33,8 @@ $result = call(myFunction(...), $rawData, $dependencies);
 Every `BaseModel`-typed parameter of the callable is hydrated from `$params` through the full validate() flow: strict/loose mode, [aliases](/validate/#aliases), array type-hint attributes, hooks and `ValidationException` with dot-notation field paths all behave identically.
 
 ```php
-use Attributes\Validation\BaseModel;
-use function Attributes\Validation\call;
+use Attributes\Strictify\BaseModel;
+use function Attributes\Strictify\call;
 
 class User extends BaseModel
 {

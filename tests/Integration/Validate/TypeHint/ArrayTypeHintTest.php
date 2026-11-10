@@ -2,29 +2,29 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate\TypeHint;
+namespace Attributes\Strictify\Tests\Integration\Validate\TypeHint;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Dict;
-use Attributes\Validation\Fields\ErrorMessage;
-use Attributes\Validation\Fields\Intersection;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\ModelConfigs;
-use Attributes\Validation\Type;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Dict;
+use Attributes\Strictify\Fields\ErrorMessage;
+use Attributes\Strictify\Fields\Intersection;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\Type;
 use DateTime;
 use DateTimeInterface;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
-use const Attributes\Validation\bool;
-use const Attributes\Validation\float;
-use const Attributes\Validation\int;
-use const Attributes\Validation\object;
-use const Attributes\Validation\sequence;
-use const Attributes\Validation\string;
+use const Attributes\Strictify\bool;
+use const Attributes\Strictify\float;
+use const Attributes\Strictify\int;
+use const Attributes\Strictify\object;
+use const Attributes\Strictify\sequence;
+use const Attributes\Strictify\string;
 
 class ArrayTypeHintAddress extends BaseModel
 {
@@ -592,8 +592,8 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.0' => [
-                    'Must be Attributes\Validation\Tests\Integration\Validate\TypeHint\ArrayTypeHintCountable and'
-                        .' Attributes\Validation\Tests\Integration\Validate\TypeHint\ArrayTypeHintIterable',
+                    'Must be Attributes\Strictify\Tests\Integration\Validate\TypeHint\ArrayTypeHintCountable and'
+                        .' Attributes\Strictify\Tests\Integration\Validate\TypeHint\ArrayTypeHintIterable',
                 ],
             ]);
         }
@@ -603,7 +603,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
 describe('type-hint array validation via attributes (strict mode)', function () {
     it('rejects scalar coercion of array elements', function () {
         $model = new
-            #[\Attributes\Validation\ModelConfigs(strict: true)]
+            #[\Attributes\Strictify\ModelConfigs(strict: true)]
             class extends BaseModel {
                 #[Sequence(Type::int)]
                 public array $scores;
@@ -621,7 +621,7 @@ describe('type-hint array validation via attributes (strict mode)', function () 
 
     it('accepts elements already of the declared type', function () {
         $model = new
-            #[\Attributes\Validation\ModelConfigs(strict: true)]
+            #[\Attributes\Strictify\ModelConfigs(strict: true)]
             class extends BaseModel {
                 #[Sequence(Type::int)]
                 public array $scores;
@@ -633,7 +633,7 @@ describe('type-hint array validation via attributes (strict mode)', function () 
 
     it('still hydrates nested models from raw arrays', function () {
         $model = new
-            #[\Attributes\Validation\ModelConfigs(strict: true)]
+            #[\Attributes\Strictify\ModelConfigs(strict: true)]
             class extends BaseModel {
                 #[Sequence(ArrayTypeHintAddress::class)]
                 public array $addresses;
@@ -645,7 +645,7 @@ describe('type-hint array validation via attributes (strict mode)', function () 
 
     it('still coerces datetime strings for DateTime element types', function () {
         $model = new
-            #[\Attributes\Validation\ModelConfigs(strict: true)]
+            #[\Attributes\Strictify\ModelConfigs(strict: true)]
             class extends BaseModel {
                 #[Sequence(DateTime::class)]
                 public array $birthdays;

@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use ArgumentCountError;
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\Contains;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\Contains;
 use TypeError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('Contains constructor argument validation', function () {
     it('collects the variadic values on the $values property', function () {

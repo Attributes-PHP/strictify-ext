@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\Between;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\Between;
 use TypeError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('Between constructor argument validation', function () {
     it('promotes min and max to public properties', function () {

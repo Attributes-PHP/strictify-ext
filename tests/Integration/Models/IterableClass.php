@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Models;
+namespace Attributes\Strictify\Tests\Models;
 
-use Attributes\Validation\Tests\Models\Interfaces\IterableInterface;
+use Attributes\Strictify\Tests\Models\Interfaces\IterableInterface;
 
 class IterableClass implements IterableInterface
 {

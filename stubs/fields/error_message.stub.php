@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields {
+namespace Attributes\Strictify\Fields {
    #[\Attribute]
    readonly class ErrorMessage implements Field {
       public string $required;

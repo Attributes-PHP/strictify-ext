@@ -1,8 +1,8 @@
 [project]
-site_name = "Attributes Validation"
-site_url = "https://validation.attributes-php.com"
+site_name = "Strictify"
+site_url = "https://strictify.attributes-php.com"
 site_description = "Pydantic-inspired PHP extension that validates data via type hints at native speed."
-copyright = "© 2026 Attributes Validation."
+copyright = "© 2026 Strictify."
 docs_dir = "docs"
 site_dir = "site"
 

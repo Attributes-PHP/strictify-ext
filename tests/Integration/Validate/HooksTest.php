@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate;
+namespace Attributes\Strictify\Tests\Integration\Validate;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\ModelConfigs;
 use ReflectionProperty;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('validate function hook handling', function () {
     it('no hooks called', function () {

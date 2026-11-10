@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate;
+namespace Attributes\Strictify\Tests\Integration\Validate;
 
-use Attributes\Validation\BaseModel;
+use Attributes\Strictify\BaseModel;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('validate function edge cases', function () {
     it('handles empty raw data array', function () {

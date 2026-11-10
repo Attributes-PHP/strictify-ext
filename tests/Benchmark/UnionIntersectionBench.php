@@ -2,17 +2,17 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark;
+namespace Attributes\Strictify\Tests\Benchmark;
 
-use Attributes\Validation\Tests\Benchmark\Models\BenchIntersectionPayload;
-use Attributes\Validation\Tests\Benchmark\Models\BenchNestedUnionIntersection;
-use Attributes\Validation\Tests\Benchmark\Models\BenchRegistryService;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionModelArm;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionPayload;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionTree;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchIntersectionPayload;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchNestedUnionIntersection;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchRegistryService;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionModelArm;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionPayload;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionTree;
 use PhpBench\Attributes as Bench;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 /**
  * Union and Intersection attribute scenarios: each subject isolates one

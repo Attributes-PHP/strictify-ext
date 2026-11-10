@@ -23,7 +23,7 @@ tasks:
       # Using standard "make" handles incremental C compilation efficiently.
       - |
         if [ ! -f Makefile ]; then
-          phpize && ./configure --enable-attributes-validation
+          phpize && ./configure --enable-attributes-strictify
         fi
       - make
 
@@ -98,7 +98,7 @@ tasks:
       - build
       - _ensure-vendor
     cmds:
-      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_validation.so ./vendor/bin/pest --coverage tests/Integration
+      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_strictify.so ./vendor/bin/pest --coverage tests/Integration
 
   test:unit:
     desc: Run C unit tests via Ceedling
@@ -111,7 +111,7 @@ tasks:
       - build
       - _ensure-vendor
     cmds:
-      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_validation.so ./vendor/bin/pest --colors=always tests/Integration
+      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_strictify.so ./vendor/bin/pest --colors=always tests/Integration
 
   test:
     desc: Run all tests (lint, unit, integration)

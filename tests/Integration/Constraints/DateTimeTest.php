@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\DateTime;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\DateTime;
 use DateTimeZone;
 use ReflectionClass;
 use stdClass;
 use TypeError;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('DateTime constraint constructor argument validation', function () {
     it('applies the stub defaults when no arguments are given', function () {

@@ -13,24 +13,24 @@ declare(strict_types=1);
 
 require __DIR__.'/../../vendor/autoload.php';
 
-use Attributes\Validation\Tests\Benchmark\Models\BenchBrokenDict;
-use Attributes\Validation\Tests\Benchmark\Models\BenchDateTimeEvent;
-use Attributes\Validation\Tests\Benchmark\Models\BenchErrorForm;
-use Attributes\Validation\Tests\Benchmark\Models\BenchIntersectionPayload;
-use Attributes\Validation\Tests\Benchmark\Models\BenchLooseUser;
-use Attributes\Validation\Tests\Benchmark\Models\BenchNestedShape;
-use Attributes\Validation\Tests\Benchmark\Models\BenchNestedUnionIntersection;
-use Attributes\Validation\Tests\Benchmark\Models\BenchOrder;
-use Attributes\Validation\Tests\Benchmark\Models\BenchRegistryService;
-use Attributes\Validation\Tests\Benchmark\Models\BenchShallowModel;
-use Attributes\Validation\Tests\Benchmark\Models\BenchSignup;
-use Attributes\Validation\Tests\Benchmark\Models\BenchTagList;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionModelArm;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionPayload;
-use Attributes\Validation\Tests\Benchmark\Models\BenchUnionTree;
-use Attributes\Validation\Tests\Benchmark\Models\BenchWideModel;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchBrokenDict;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchDateTimeEvent;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchErrorForm;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchIntersectionPayload;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchLooseUser;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchNestedShape;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchNestedUnionIntersection;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchOrder;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchRegistryService;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchShallowModel;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchSignup;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchTagList;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionModelArm;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionPayload;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchUnionTree;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchWideModel;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 // Memory drift tolerated per case: real leaks show up as megabytes at
 // these iteration counts, while engine-internal caches (last exception,

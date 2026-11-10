@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\MultipleOf;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\MultipleOf;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('MultipleOf constructor argument validation', function () {
     it('promotes value to a public property', function () {

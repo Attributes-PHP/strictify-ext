@@ -1,13 +1,13 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields {
+namespace Attributes\Strictify\Fields {
     #[\Attribute]
     readonly class Dict implements Field {
-        public int|\Attributes\Validation\Type|Union $key;
-        public int|string|\Attributes\Validation\Type|Union|Intersection|Sequence|Dict $of;
+        public int|\Attributes\Strictify\Type|Union $key;
+        public int|string|\Attributes\Strictify\Type|Union|Intersection|Sequence|Dict $of;
         public bool $uniqueValues;
 
-        public function __construct(int|\Attributes\Validation\Type|Union $key, int|string|\Attributes\Validation\Type|Union|Intersection|Sequence|Dict $of, bool $uniqueValues = false) {}
+        public function __construct(int|\Attributes\Strictify\Type|Union $key, int|string|\Attributes\Strictify\Type|Union|Intersection|Sequence|Dict $of, bool $uniqueValues = false) {}
     }
 }

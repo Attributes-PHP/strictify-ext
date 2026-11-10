@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate;
+namespace Attributes\Strictify\Tests\Integration\Validate;
 
-use Attributes\Validation\BaseModel;
+use Attributes\Strictify\BaseModel;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('validate function basic functionality', function () {
-    it('has validate function in Attributes\Validation namespace', function () {
-        expect(function_exists('Attributes\Validation\validate'))->toBeTrue();
+    it('has validate function in Strictify namespace', function () {
+        expect(function_exists('Attributes\Strictify\validate'))->toBeTrue();
     });
 
     it('accepts valid array and model parameters', function () {

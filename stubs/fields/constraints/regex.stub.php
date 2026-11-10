@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields\Constraints {
+namespace Attributes\Strictify\Fields\Constraints {
     #[\Attribute]
     final readonly class Regex implements Field {
         public string $regex;

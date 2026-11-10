@@ -1,0 +1,78 @@
+#include "as_between.h"
+#include "../as_field.h"
+#include "../../helpers/as_error_messages.h"
+#include "../../helpers/as_wrappers.h"
+#include "Zend/zend_API.h"
+#include "Zend/zend_attributes.h"
+
+zend_class_entry *AS_Fields_Constraints_Between_ce;
+
+static zend_always_inline double zval_to_double(zval *value);
+
+static zend_always_inline double zval_to_double(zval *value)
+{
+    return Z_TYPE_P(value) == IS_LONG ? (double)Z_LVAL_P(value) : Z_DVAL_P(value);
+}
+
+/*
+ * #[Between(min, max)]: the value must be a number between min and max
+ * (inclusive). Non-numeric values fail the constraint with a dedicated
+ * type error.
+ */
+bool as_validate_Between_constraint(zval *constraint, as_field *field, as_property_info *property, zval *errors)
+{
+    zval *min = zend_read_property(Z_OBJCE_P(constraint), Z_OBJ_P(constraint), "min", sizeof("min") - 1, false, NULL);
+    zval *max = zend_read_property(Z_OBJCE_P(constraint), Z_OBJ_P(constraint), "max", sizeof("max") - 1, false, NULL);
+
+    zval *value = field->value;
+    const bool is_number = Z_TYPE_P(value) == IS_LONG || Z_TYPE_P(value) == IS_DOUBLE;
+    if (is_number) {
+        double number = zval_to_double(value);
+        if (number >= zval_to_double(min) && number <= zval_to_double(max)) {
+            return true;
+        }
+    }
+
+    zend_string *min_str = as_value_to_string(min);
+    zend_string *max_str = as_value_to_string(max);
+    zend_string *expected = as_string_concat3(ZSTR_VAL(min_str), ZSTR_LEN(min_str), " and ", sizeof(" and ") - 1, ZSTR_VAL(max_str), ZSTR_LEN(max_str));
+    as_string_release(min_str);
+    as_string_release(max_str);
+
+    as_add_field_error_with_expected(is_number ? AS_ERROR_BETWEEN : AS_ERROR_BETWEEN_TYPE, field, property, errors, expected);
+    as_string_release(expected);
+    return false;
+}
+
+ZEND_METHOD(AS_Fields_Constraints_Between, __construct)
+{
+    zval *min;
+    zval *max;
+
+    ZEND_PARSE_PARAMETERS_START(2, 2)
+    Z_PARAM_NUMBER(min)
+    Z_PARAM_NUMBER(max)
+    ZEND_PARSE_PARAMETERS_END();
+
+    zend_update_property(AS_Fields_Constraints_Between_ce, Z_OBJ_P(getThis()), "min", sizeof("min") - 1, min);
+    zend_update_property(AS_Fields_Constraints_Between_ce, Z_OBJ_P(getThis()), "max", sizeof("max") - 1, max);
+}
+
+void as_register_Between_class(void)
+{
+    zend_class_entry ce;
+
+    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Between", class_AS_Fields_Constraints_Between_methods);
+    AS_Fields_Constraints_Between_ce = zend_register_internal_class_ex(&ce, NULL);
+    ZEND_ASSERT(AS_Fields_Constraints_Between_ce != NULL);
+    AS_Fields_Constraints_Between_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
+
+    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
+    zend_class_implements(AS_Fields_Constraints_Between_ce, 1, AS_Fields_Field_ce);
+
+    as_declare_typed_property(AS_Fields_Constraints_Between_ce, "min", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_LONG | MAY_BE_DOUBLE));
+    as_declare_typed_property(AS_Fields_Constraints_Between_ce, "max", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_LONG | MAY_BE_DOUBLE));
+
+    /* Register as an internal attribute that can be used on properties and parameters */
+    zend_internal_attribute_register(AS_Fields_Constraints_Between_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
+}

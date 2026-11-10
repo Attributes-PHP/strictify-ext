@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark;
+namespace Attributes\Strictify\Tests\Benchmark;
 
-use Attributes\Validation\Tests\Benchmark\Models\BenchAttributeUser;
-use Attributes\Validation\Tests\Benchmark\Models\BenchEmptyUser;
-use Attributes\Validation\Tests\Benchmark\Models\BenchLooseUser;
-use Attributes\Validation\Tests\Benchmark\Models\BenchOrder;
-use Attributes\Validation\Tests\Benchmark\Models\BenchSimpleUser;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchAttributeUser;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchEmptyUser;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchLooseUser;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchOrder;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchSimpleUser;
 use PhpBench\Attributes as Bench;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 #[Bench\OutputTimeUnit('microseconds')]
 class SingleModelValidationBench

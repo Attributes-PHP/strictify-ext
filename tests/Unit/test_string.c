@@ -1,16 +1,16 @@
 #include "unity.h"
 #include "test_helpers.h"
-#include "helpers/mock_av_wrappers.h"
-#include "helpers/av_string.h"
+#include "helpers/mock_as_wrappers.h"
+#include "helpers/as_string.h"
 
 void setUp(void)
 {
     // This is run before EACH test
-    av_string_init_Stub(string_init_stub);
-    av_string_release_Stub(string_release_stub);
-    av_emalloc_Stub(emalloc_stub);
-    av_efree_Stub(efree_stub);
-    av_string_concat3_Stub(concat3_stub);
+    as_string_init_Stub(string_init_stub);
+    as_string_release_Stub(string_release_stub);
+    as_emalloc_Stub(emalloc_stub);
+    as_efree_Stub(efree_stub);
+    as_string_concat3_Stub(concat3_stub);
 }
 
 void tearDown(void)
@@ -31,11 +31,11 @@ TEST_CASE("", "")
 TEST_CASE("user2_name", "User2Name")
 void test_to_pascal_case(const char *input, const char *expected)
 {
-    zend_string *input_str = av_string_init(input, strlen(input), 0);
-    zend_string *result = av_to_pascal_case(input_str);
+    zend_string *input_str = as_string_init(input, strlen(input), 0);
+    zend_string *result = as_to_pascal_case(input_str);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(input_str);
-    av_string_release(result);
+    as_string_release(input_str);
+    as_string_release(result);
 }
 
 // ============= camelCase Tests =============
@@ -49,11 +49,11 @@ TEST_CASE("first_name_last-name", "firstNameLastName")
 TEST_CASE("user2_name", "user2Name")
 void test_to_camel_case(const char *input, const char *expected)
 {
-    zend_string *input_str = av_string_init(input, strlen(input), 0);
-    zend_string *result = av_to_camel_case(input_str);
+    zend_string *input_str = as_string_init(input, strlen(input), 0);
+    zend_string *result = as_to_camel_case(input_str);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(input_str);
-    av_string_release(result);
+    as_string_release(input_str);
+    as_string_release(result);
 }
 
 // ============= snake_case Tests =============
@@ -68,11 +68,11 @@ TEST_CASE("HTTPResponse", "h_t_t_p_response")
 TEST_CASE("user2Name", "user2_name")
 void test_to_snake_case(const char *input, const char *expected)
 {
-    zend_string *input_str = av_string_init(input, strlen(input), 0);
-    zend_string *result = av_to_snake_case(input_str);
+    zend_string *input_str = as_string_init(input, strlen(input), 0);
+    zend_string *result = as_to_snake_case(input_str);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(input_str);
-    av_string_release(result);
+    as_string_release(input_str);
+    as_string_release(result);
 }
 
 // ============= kebab-case Tests =============
@@ -86,39 +86,39 @@ TEST_CASE("Name", "name")
 TEST_CASE("user2Name", "user2-name")
 void test_to_kebab_case(const char *input, const char *expected)
 {
-    zend_string *input_str = av_string_init(input, strlen(input), 0);
-    zend_string *result = av_to_kebab_case(input_str);
+    zend_string *input_str = as_string_init(input, strlen(input), 0);
+    zend_string *result = as_to_kebab_case(input_str);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(input_str);
-    av_string_release(result);
+    as_string_release(input_str);
+    as_string_release(result);
 }
 
 // ============= Edge Cases =============
 
 void test_no_input_modification(void)
 {
-    zend_string *input = av_string_init("first_name", sizeof("first_name") - 1, 0);
+    zend_string *input = as_string_init("first_name", sizeof("first_name") - 1, 0);
     const char *original_val = strdup(input->val);
     size_t original_len = input->len;
 
-    av_to_pascal_case(input);
+    as_to_pascal_case(input);
     TEST_ASSERT_EQUAL_STRING(original_val, input->val);
     TEST_ASSERT_EQUAL(original_len, input->len);
 
-    av_to_camel_case(input);
+    as_to_camel_case(input);
     TEST_ASSERT_EQUAL_STRING(original_val, input->val);
     TEST_ASSERT_EQUAL(original_len, input->len);
 
-    av_to_snake_case(input);
+    as_to_snake_case(input);
     TEST_ASSERT_EQUAL_STRING(original_val, input->val);
     TEST_ASSERT_EQUAL(original_len, input->len);
 
-    av_to_kebab_case(input);
+    as_to_kebab_case(input);
     TEST_ASSERT_EQUAL_STRING(original_val, input->val);
     TEST_ASSERT_EQUAL(original_len, input->len);
 
     free((void *)original_val);
-    av_string_release(input);
+    as_string_release(input);
 }
 
 // ============= Static Helper Function Tests =============
@@ -171,7 +171,7 @@ void test_is_alphanumeric_non_alphanumeric(char letter)
     TEST_ASSERT_FALSE(is_alphanumeric(letter));
 }
 
-// ============= av_string_dot_concat Tests =============
+// ============= as_string_dot_concat Tests =============
 
 TEST_CASE("first", "second", "first.second")
 TEST_CASE("", "second", ".second")
@@ -181,39 +181,39 @@ TEST_CASE("123", "456", "123.456")
 TEST_CASE("hello-world", "test_case", "hello-world.test_case")
 TEST_CASE("a", "b", "a.b")
 TEST_CASE("prefix", "suffix", "prefix.suffix")
-void test_av_string_dot_concat(const char *first, const char *second, const char *expected)
+void test_as_string_dot_concat(const char *first, const char *second, const char *expected)
 {
-    zend_string *first_str = av_string_init(first, strlen(first), 0);
-    zend_string *second_str = av_string_init(second, strlen(second), 0);
+    zend_string *first_str = as_string_init(first, strlen(first), 0);
+    zend_string *second_str = as_string_init(second, strlen(second), 0);
 
-    zend_string *result = av_string_dot_concat(first_str, second_str);
+    zend_string *result = as_string_dot_concat(first_str, second_str);
 
     TEST_ASSERT_NOT_NULL(result);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
     TEST_ASSERT_EQUAL(strlen(expected), result->len);
 
-    av_string_release(first_str);
-    av_string_release(second_str);
-    av_string_release(result);
+    as_string_release(first_str);
+    as_string_release(second_str);
+    as_string_release(result);
 }
 
 TEST_CASE(NULL, "second")
 TEST_CASE("first", NULL)
 TEST_CASE(NULL, NULL)
-void test_av_string_dot_concat_null_inputs(const char *first_str, const char *second_str)
+void test_as_string_dot_concat_null_inputs(const char *first_str, const char *second_str)
 {
     zend_string *first = NULL, *second = NULL, *result;
 
     if (first_str != NULL) {
-        first = av_string_init(first_str, strlen(first_str), 0);
+        first = as_string_init(first_str, strlen(first_str), 0);
     }
     if (second_str != NULL) {
-        second = av_string_init(second_str, strlen(second_str), 0);
+        second = as_string_init(second_str, strlen(second_str), 0);
     }
 
-    result = av_string_dot_concat(first, second);
+    result = as_string_dot_concat(first, second);
     TEST_ASSERT_NULL(result);
 
-    av_string_release(first);
-    av_string_release(second);
+    as_string_release(first);
+    as_string_release(second);
 }

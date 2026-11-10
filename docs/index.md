@@ -3,17 +3,17 @@ title: "Overview"
 description: "Pydantic-inspired PHP extension that validates data via type hints at native speed."
 ---
 
-# Attributes Validation
+# Strictify
 
-![Attributes Validation](assets/images/validation-ext-wallpaper.png)
+![Strictify](assets/images/strictify-wallpaper.png)
 
-**Attributes Validation** is a Pydantic-inspired PHP extension for validating data via type hints at lightning speed. The validation logic is implemented in C and compiled into the PHP engine, so your model types are the schema: no configuration files, no YAML.
+**Strictify** is a Pydantic-inspired PHP extension for validating data via type hints at lightning speed. The validation logic is implemented in C and compiled into the PHP engine, so your model types are the schema: no configuration files, no YAML.
 
 ```php
 <?php
 
-use function Attributes\Validation\validate;
-use Attributes\Validation\BaseModel;
+use function Attributes\Strictify\validate;
+use Attributes\Strictify\BaseModel;
 
 class User extends BaseModel
 {
@@ -39,7 +39,7 @@ var_dump($user->birthday); // object(DateTime) "1994-01-01 09:00:00.000000" (+00
 ## Installation
 
 ```bash
-pie install attributes-php/validation
+pie install attributes-php/strictify
 ```
 
 ## What's next

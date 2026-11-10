@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Alias;
-use Attributes\Validation\Fields\Constraints\Min;
-use Attributes\Validation\Fields\Constraints\MultipleOf;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\Fields\Constraints\Min;
+use Attributes\Strictify\Fields\Constraints\MultipleOf;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('Min constructor argument validation', function () {
     it('promotes value to a public property', function () {

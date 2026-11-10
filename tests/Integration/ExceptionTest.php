@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration;
+namespace Attributes\Strictify\Tests\Integration;
 
-use Attributes\Validation\Exceptions\BaseException;
-use Attributes\Validation\Exceptions\ValidationException;
+use Attributes\Strictify\Exceptions\BaseException;
+use Attributes\Strictify\Exceptions\ValidationException;
 
 it('BaseException exists and can be thrown', function () {
     $exception = null;

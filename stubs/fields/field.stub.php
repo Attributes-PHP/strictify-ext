@@ -1,6 +1,6 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields {
+namespace Attributes\Strictify\Fields {
    interface Field {}
 }

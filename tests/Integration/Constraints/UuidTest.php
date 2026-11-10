@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\Uuid;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\Uuid;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('Uuid constraint', function () {
     it('accepts valid UUID strings', function (string $value) {

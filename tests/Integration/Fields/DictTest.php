@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Fields;
+namespace Attributes\Strictify\Tests\Integration\Fields;
 
-use Attributes\Validation\Fields\Dict;
-use Attributes\Validation\Fields\Intersection;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues;
-use Attributes\Validation\Type;
+use Attributes\Strictify\Fields\Dict;
+use Attributes\Strictify\Fields\Intersection;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\Type;
 use DateTimeInterface;
 use stdClass;
 use TypeError;
@@ -43,21 +43,21 @@ describe('Dict constructor argument validation', function () {
         new Dict(key: 3.14, of: Type::string);
     })->throws(
         TypeError::class,
-        'Dict::__construct(): Argument #1 ($key) must be of type int|\Attributes\Validation\Type|Union, float given',
+        'Dict::__construct(): Argument #1 ($key) must be of type int|\Attributes\Strictify\Type|Union, float given',
     );
 
     it('throws a TypeError when the $key is a string', function () {
         new Dict(key: stdClass::class, of: Type::string);
     })->throws(
         TypeError::class,
-        'Dict::__construct(): Argument #1 ($key) must be of type int|\Attributes\Validation\Type|Union, string given',
+        'Dict::__construct(): Argument #1 ($key) must be of type int|\Attributes\Strictify\Type|Union, string given',
     );
 
     it('throws a TypeError when the $of type is unsupported', function () {
         new Dict(key: Type::string, of: 3.14);
     })->throws(
         TypeError::class,
-        'Dict::__construct(): Argument #2 ($of) must be of type int|string|\Attributes\Validation\Type|Union|Intersection|Sequence|Dict, float given',
+        'Dict::__construct(): Argument #2 ($of) must be of type int|string|\Attributes\Strictify\Type|Union|Intersection|Sequence|Dict, float given',
     );
 
     it('throws a ValueError when the $of string is not a valid class', function () {

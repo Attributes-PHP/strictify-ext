@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Fields;
+namespace Attributes\Strictify\Tests\Integration\Fields;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Intersection;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\ModelConfigs;
-use Attributes\Validation\Tests\Models\CountableClass;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues;
-use Attributes\Validation\Tests\Models\Interfaces\CountableInterface;
-use Attributes\Validation\Tests\Models\Interfaces\IterableInterface;
-use Attributes\Validation\Tests\Models\IterableCountableClass;
-use Attributes\Validation\Type;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Intersection;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\Tests\Models\CountableClass;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\Tests\Models\Interfaces\CountableInterface;
+use Attributes\Strictify\Tests\Models\Interfaces\IterableInterface;
+use Attributes\Strictify\Tests\Models\IterableCountableClass;
+use Attributes\Strictify\Type;
 use DateTimeInterface;
 use stdClass;
 use TypeError;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 class IntersectionBothConcrete implements CountableInterface, IterableInterface
 {
@@ -47,7 +47,7 @@ describe('Intersection constructor argument validation', function () {
         new Intersection(DateTimeInterface::class, Type::int);
     })->throws(
         TypeError::class,
-        'Intersection::__construct(): Argument #2 must be of type string, Attributes\Validation\Type given',
+        'Intersection::__construct(): Argument #2 must be of type string, Attributes\Strictify\Type given',
     );
 
     it('throws a ValueError when a string argument is not a valid class', function () {
@@ -61,14 +61,14 @@ describe('Intersection constructor argument validation', function () {
         new Intersection(EnumStrTwoValues::class);
     })->throws(
         ValueError::class,
-        'Intersection::__construct(): Argument #1 must be a class or interface, "Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues" given',
+        'Intersection::__construct(): Argument #1 must be a class or interface, "Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues" given',
     );
 
     it('throws a ValueError when a string argument is the Type enum', function () {
         new Intersection(Type::class);
     })->throws(
         ValueError::class,
-        'Intersection::__construct(): Argument #1 must be a class or interface, "Attributes\Validation\Type" given',
+        'Intersection::__construct(): Argument #1 must be a class or interface, "Attributes\Strictify\Type" given',
     );
 });
 
@@ -100,8 +100,8 @@ describe('Intersection attribute array data validation', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.0' => [
-                    'Must be Attributes\Validation\Tests\Models\Interfaces\CountableInterface and'
-                        .' Attributes\Validation\Tests\Models\Interfaces\IterableInterface',
+                    'Must be Attributes\Strictify\Tests\Models\Interfaces\CountableInterface and'
+                        .' Attributes\Strictify\Tests\Models\Interfaces\IterableInterface',
                 ],
             ]);
         }
@@ -121,8 +121,8 @@ describe('Intersection attribute array data validation', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.0' => [
-                    'Must be Attributes\Validation\Tests\Models\Interfaces\CountableInterface and'
-                        .' Attributes\Validation\Tests\Models\Interfaces\IterableInterface',
+                    'Must be Attributes\Strictify\Tests\Models\Interfaces\CountableInterface and'
+                        .' Attributes\Strictify\Tests\Models\Interfaces\IterableInterface',
                 ],
             ]);
         }
@@ -145,9 +145,9 @@ describe('Intersection attribute array data validation', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.0' => [
-                    'Must be Attributes\Validation\Tests\Models\Interfaces\CountableInterface,'
-                        .' Attributes\Validation\Tests\Models\Interfaces\IterableInterface and'
-                        .' Attributes\Validation\Tests\Integration\Fields\IntersectionBothConcrete',
+                    'Must be Attributes\Strictify\Tests\Models\Interfaces\CountableInterface,'
+                        .' Attributes\Strictify\Tests\Models\Interfaces\IterableInterface and'
+                        .' Attributes\Strictify\Tests\Integration\Fields\IntersectionBothConcrete',
                 ],
             ]);
         }
@@ -169,7 +169,7 @@ describe('Intersection attribute array data validation', function () {
             expect(false)->toBeTrue();
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
-                'items.0' => ['Must be Attributes\Validation\Tests\Integration\Fields\IntersectionBothConcrete'],
+                'items.0' => ['Must be Attributes\Strictify\Tests\Integration\Fields\IntersectionBothConcrete'],
             ]);
         }
     });
@@ -203,8 +203,8 @@ describe('Intersection attribute array data validation', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
                 'items.1' => [
-                    'Must be Attributes\Validation\Tests\Models\Interfaces\CountableInterface and'
-                        .' Attributes\Validation\Tests\Models\Interfaces\IterableInterface',
+                    'Must be Attributes\Strictify\Tests\Models\Interfaces\CountableInterface and'
+                        .' Attributes\Strictify\Tests\Models\Interfaces\IterableInterface',
                 ],
             ]);
         }

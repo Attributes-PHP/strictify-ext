@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Models\Interfaces;
+namespace Attributes\Strictify\Tests\Models\Interfaces;
 
 interface CountableInterface
 {

@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation {
+namespace Attributes\Strictify {
    // Attribute::TARGET_CLASS
    #[\Attribute]
    abstract class ModelConfigs {

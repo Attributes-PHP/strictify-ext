@@ -36,7 +36,7 @@ jobs:
       - name: Build the extension and generate compile_commands.json
         run: |
           phpize
-          ./configure --enable-attributes-validation
+          ./configure --enable-attributes-strictify
           bear -- make
 
       - name: Run C static analysis (clang-tidy)
@@ -80,7 +80,7 @@ jobs:
       - name: Build the extension
         run: |
           phpize
-          ./configure --enable-attributes-validation
+          ./configure --enable-attributes-strictify
           make
 
       - name: Run linter

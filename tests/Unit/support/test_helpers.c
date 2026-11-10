@@ -1,18 +1,18 @@
 #include "unity.h"
-#include "helpers/mock_av_wrappers.h"
-#include "av_globals.h"
+#include "helpers/mock_as_wrappers.h"
+#include "as_globals.h"
 #include <Zend/zend_types.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Stub implementations for av_wrappers to be used in tests
+// Stub implementations for as_wrappers to be used in tests
 // These provide real implementations that the tests can use
 
-// av_error_messages.c stores its per-request caches in the module globals
-// (AV_G). The unit-test executables link that translation unit but have no
+// as_error_messages.c stores its per-request caches in the module globals
+// (AS_G). The unit-test executables link that translation unit but have no
 // engine, so define the globals struct as a plain zero-initialized instance.
-ZEND_DECLARE_MODULE_GLOBALS(attributes_validation)
+ZEND_DECLARE_MODULE_GLOBALS(strictify)
 
 zend_string *string_init_stub(const char *str, size_t len, bool persistent, int num_calls)
 {

@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark\Models;
+namespace Attributes\Strictify\Tests\Benchmark\Models;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\ModelConfigs;
 
-use const Attributes\Validation\bool;
-use const Attributes\Validation\float;
-use const Attributes\Validation\int;
-use const Attributes\Validation\string;
+use const Attributes\Strictify\bool;
+use const Attributes\Strictify\float;
+use const Attributes\Strictify\int;
+use const Attributes\Strictify\string;
 
 #[ModelConfigs(strict: false)]
 class BenchUnionPayload extends BaseModel

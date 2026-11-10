@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Exceptions {
+namespace Attributes\Strictify\Exceptions {
     class BaseException extends \Exception {}
 
     class ValidationException extends BaseException {

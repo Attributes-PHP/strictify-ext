@@ -1,7 +1,7 @@
 #include "unity.h"
 #include "test_helpers.h"
-#include "helpers/mock_av_wrappers.h"
-#include "helpers/av_error_messages.h"
+#include "helpers/mock_as_wrappers.h"
+#include "helpers/as_error_messages.h"
 #include <Zend/zend.h>
 #include <Zend/zend_types.h>
 #include <Zend/zend_string.h>
@@ -82,18 +82,18 @@ static zend_resource make_resource(int type)
 
 void setUp(void)
 {
-    av_string_init_Stub(string_init_stub);
-    av_string_release_Stub(string_release_stub);
-    av_emalloc_Stub(emalloc_stub);
-    av_efree_Stub(efree_stub);
-    av_string_concat3_Stub(concat3_stub);
-    av_string_copy_Stub(string_copy_stub);
-    av_long_to_str_Stub(long_to_str_stub);
-    av_double_to_str_Stub(double_to_str_stub);
-    av_is_stringable_Stub(is_stringable_stub);
-    av_rsrc_list_get_rsrc_type_Stub(rsrc_type_stub);
-    av_call_tostring_Stub(tostring_stub);
-    av_zval_ptr_dtor_Stub(zval_ptr_dtor_stub);
+    as_string_init_Stub(string_init_stub);
+    as_string_release_Stub(string_release_stub);
+    as_emalloc_Stub(emalloc_stub);
+    as_efree_Stub(efree_stub);
+    as_string_concat3_Stub(concat3_stub);
+    as_string_copy_Stub(string_copy_stub);
+    as_long_to_str_Stub(long_to_str_stub);
+    as_double_to_str_Stub(double_to_str_stub);
+    as_is_stringable_Stub(is_stringable_stub);
+    as_rsrc_list_get_rsrc_type_Stub(rsrc_type_stub);
+    as_call_tostring_Stub(tostring_stub);
+    as_zval_ptr_dtor_Stub(zval_ptr_dtor_stub);
 
     g_instanceof_result = false;
     g_resource_type_name = "stream";
@@ -110,16 +110,16 @@ void tearDown(void)
 
 void test_null_value_to_string(void)
 {
-    TEST_ASSERT_EQUAL_STRING("null", av_value_to_string(NULL)->val);
+    TEST_ASSERT_EQUAL_STRING("null", as_value_to_string(NULL)->val);
 }
 
 void test_explicit_null_zval(void)
 {
     zval zv;
     ZVAL_NULL(&zv);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("null", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -130,18 +130,18 @@ void test_true_to_string(void)
 {
     zval zv;
     ZVAL_TRUE(&zv);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("true", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 void test_false_to_string(void)
 {
     zval zv;
     ZVAL_FALSE(&zv);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("false", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -159,11 +159,11 @@ void test_long_to_string(zend_long value)
 {
     zval zv;
     ZVAL_LONG(&zv, value);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     char expected[32];
     snprintf(expected, sizeof(expected), ZEND_LONG_FMT, value);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -178,11 +178,11 @@ void test_double_to_string(double value)
 {
     zval zv;
     ZVAL_DOUBLE(&zv, value);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     char expected[64];
     snprintf(expected, sizeof(expected), "%.14g", value);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -197,12 +197,12 @@ void test_string_to_string(const char *value)
 {
     zval zv;
     ZVAL_STR(&zv, string_init_stub(value, strlen(value), 0, 0));
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     char expected[256];
     snprintf(expected, sizeof(expected), "'%s'", value);
     TEST_ASSERT_EQUAL_STRING(expected, result->val);
-    av_string_release(zv.value.str);
-    av_string_release(result);
+    as_string_release(zv.value.str);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -213,9 +213,9 @@ void test_array_to_string(void)
 {
     zval zv;
     ZVAL_ARR(&zv, NULL);
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("array", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 // ---------------------------------------------------------------------------
@@ -233,10 +233,10 @@ void test_object_with_tostring_uses_result(void)
     g_tostring_result = SUCCESS;
     g_tostring_value = "stringified";
 
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("'stringified'", result->val);
-    av_string_release(result);
-    av_string_release(ce.name);
+    as_string_release(result);
+    as_string_release(ce.name);
 }
 
 void test_object_stringable_but_tostring_fails_falls_back_to_class_name(void)
@@ -249,10 +249,10 @@ void test_object_stringable_but_tostring_fails_falls_back_to_class_name(void)
     g_instanceof_result = true;
     g_tostring_result = FAILURE;
 
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("FailingStringable", result->val);
-    av_string_release(result);
-    av_string_release(ce.name);
+    as_string_release(result);
+    as_string_release(ce.name);
 }
 
 void test_object_not_stringable_uses_class_name(void)
@@ -264,10 +264,10 @@ void test_object_not_stringable_uses_class_name(void)
 
     g_instanceof_result = false;
 
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("PlainObject", result->val);
-    av_string_release(result);
-    av_string_release(ce.name);
+    as_string_release(result);
+    as_string_release(ce.name);
 }
 
 // ---------------------------------------------------------------------------
@@ -281,9 +281,9 @@ void test_resource_to_string(void)
     ZVAL_RES(&zv, &res);
     g_resource_type_name = "stream";
 
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("stream", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }
 
 void test_resource_with_unknown_type_falls_back(void)
@@ -293,7 +293,7 @@ void test_resource_with_unknown_type_falls_back(void)
     ZVAL_RES(&zv, &res);
     g_resource_type_name = NULL;
 
-    zend_string *result = av_value_to_string(&zv);
+    zend_string *result = as_value_to_string(&zv);
     TEST_ASSERT_EQUAL_STRING("resource", result->val);
-    av_string_release(result);
+    as_string_release(result);
 }

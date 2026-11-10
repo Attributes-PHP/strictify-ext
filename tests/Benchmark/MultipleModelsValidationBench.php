@@ -2,20 +2,20 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark;
+namespace Attributes\Strictify\Tests\Benchmark;
 
-use Attributes\Validation\Tests\Benchmark\Models\BenchCartItem;
-use Attributes\Validation\Tests\Benchmark\Models\BenchCategory;
-use Attributes\Validation\Tests\Benchmark\Models\BenchInvoice;
-use Attributes\Validation\Tests\Benchmark\Models\BenchProduct;
-use Attributes\Validation\Tests\Benchmark\Models\BenchProfile;
-use Attributes\Validation\Tests\Benchmark\Models\BenchReview;
-use Attributes\Validation\Tests\Benchmark\Models\BenchSession;
-use Attributes\Validation\Tests\Benchmark\Models\BenchSignup;
-use Attributes\Validation\Tests\Benchmark\Models\BenchTagList;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchCartItem;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchCategory;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchInvoice;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchProduct;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchProfile;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchReview;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchSession;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchSignup;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchTagList;
 use PhpBench\Attributes as Bench;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 #[Bench\OutputTimeUnit('microseconds')]
 class MultipleModelsValidationBench

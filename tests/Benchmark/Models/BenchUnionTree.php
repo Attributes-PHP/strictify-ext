@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark\Models;
+namespace Attributes\Strictify\Tests\Benchmark\Models;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Union;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Union;
 
-use const Attributes\Validation\int;
-use const Attributes\Validation\string;
+use const Attributes\Strictify\int;
+use const Attributes\Strictify\string;
 
 class BenchUnionTree extends BaseModel
 {

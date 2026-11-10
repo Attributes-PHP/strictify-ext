@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Fields;
+namespace Attributes\Strictify\Tests\Integration\Fields;
 
-use Attributes\Validation\Fields\ConfigAwareConstraint;
-use Attributes\Validation\Fields\Constraint;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\Fields\ConfigAwareConstraint;
+use Attributes\Strictify\Fields\Constraint;
+use Attributes\Strictify\ModelConfigs;
 use ReflectionClass;
 use ReflectionMethod;
 use TypeError;

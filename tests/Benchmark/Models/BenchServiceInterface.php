@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark\Models;
+namespace Attributes\Strictify\Tests\Benchmark\Models;
 
 interface BenchServiceInterface
 {

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Fields;
+namespace Attributes\Strictify\Tests\Integration\Fields;
 
-use Attributes\Validation\Fields\Dict;
-use Attributes\Validation\Fields\Intersection;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Fields\Union;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues;
-use Attributes\Validation\Type;
+use Attributes\Strictify\Fields\Dict;
+use Attributes\Strictify\Fields\Intersection;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\Type;
 use DateTimeInterface;
 use stdClass;
 use TypeError;
@@ -35,7 +35,7 @@ describe('Sequence constructor argument validation', function () {
         new Sequence(3.14);
     })->throws(
         TypeError::class,
-        'Sequence::__construct(): Argument #1 ($of) must be of type int|string|\Attributes\Validation\Type|Sequence|Union|Intersection|Dict, float given',
+        'Sequence::__construct(): Argument #1 ($of) must be of type int|string|\Attributes\Strictify\Type|Sequence|Union|Intersection|Dict, float given',
     );
 
     it('throws a ValueError when the $of string is not a valid class', function () {

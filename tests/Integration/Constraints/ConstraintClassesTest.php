@@ -2,24 +2,24 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\Fields\Constraints\AlphaDash;
-use Attributes\Validation\Fields\Constraints\Ascii;
-use Attributes\Validation\Fields\Constraints\Between;
-use Attributes\Validation\Fields\Constraints\Contains;
-use Attributes\Validation\Fields\Constraints\DateTime;
-use Attributes\Validation\Fields\Constraints\EndsWith;
-use Attributes\Validation\Fields\Constraints\In;
-use Attributes\Validation\Fields\Constraints\Max;
-use Attributes\Validation\Fields\Constraints\Min;
-use Attributes\Validation\Fields\Constraints\MultipleOf;
-use Attributes\Validation\Fields\Constraints\Regex;
-use Attributes\Validation\Fields\Constraints\Size;
-use Attributes\Validation\Fields\Constraints\StartsWith;
-use Attributes\Validation\Fields\Constraints\Ulid;
-use Attributes\Validation\Fields\Constraints\Uuid;
-use Attributes\Validation\Fields\Field;
+use Attributes\Strictify\Fields\Constraints\AlphaDash;
+use Attributes\Strictify\Fields\Constraints\Ascii;
+use Attributes\Strictify\Fields\Constraints\Between;
+use Attributes\Strictify\Fields\Constraints\Contains;
+use Attributes\Strictify\Fields\Constraints\DateTime;
+use Attributes\Strictify\Fields\Constraints\EndsWith;
+use Attributes\Strictify\Fields\Constraints\In;
+use Attributes\Strictify\Fields\Constraints\Max;
+use Attributes\Strictify\Fields\Constraints\Min;
+use Attributes\Strictify\Fields\Constraints\MultipleOf;
+use Attributes\Strictify\Fields\Constraints\Regex;
+use Attributes\Strictify\Fields\Constraints\Size;
+use Attributes\Strictify\Fields\Constraints\StartsWith;
+use Attributes\Strictify\Fields\Constraints\Ulid;
+use Attributes\Strictify\Fields\Constraints\Uuid;
+use Attributes\Strictify\Fields\Field;
 
 $allConstraintClasses = [
     AlphaDash::class,

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate;
+namespace Attributes\Strictify\Tests\Integration\Validate;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\ModelConfigs;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('validate function model configs handling', function () {
     it('uses default configs when no ModelConfigs attribute is present', function () {
@@ -164,6 +164,6 @@ describe('validate function model configs handling', function () {
         validate(['name' => 'test'], $model);
     })->throws(
         ValueError::class,
-        'Attributes\Validation\ModelConfigs::__construct(): Argument #1 must be of one of the following options: pascal, camel, snake, kebab',
+        'Attributes\Strictify\ModelConfigs::__construct(): Argument #1 must be of one of the following options: pascal, camel, snake, kebab',
     );
 });

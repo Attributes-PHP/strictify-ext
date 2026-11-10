@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark\Models;
+namespace Attributes\Strictify\Tests\Benchmark\Models;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Dict;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\Type;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Dict;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Type;
 
 class BenchNestedShape extends BaseModel
 {

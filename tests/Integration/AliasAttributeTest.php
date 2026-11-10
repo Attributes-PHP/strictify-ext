@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration;
+namespace Attributes\Strictify\Tests\Integration;
 
-use Attributes\Validation\Fields\Alias;
-use Attributes\Validation\Fields\Field;
+use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\Fields\Field;
 use ReflectionClass;
 use ReflectionFunction;
 

@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration;
+namespace Attributes\Strictify\Tests\Integration;
 
-use Attributes\Validation\BaseModel;
+use Attributes\Strictify\BaseModel;
 
 it('BaseModel has all required methods', function () {
     $model = new class extends BaseModel {};

@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation {
+namespace Attributes\Strictify {
     /*
      * The backing values are the Zend engine MAY_BE_* type masks, so C code
      * can compare them against engine masks directly. dict has no engine

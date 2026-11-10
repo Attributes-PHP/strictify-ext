@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Constraints\Ascii;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\Ascii;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 describe('Ascii constraint', function () {
     it('accepts values containing only 7-bit ASCII characters', function (string $value) {

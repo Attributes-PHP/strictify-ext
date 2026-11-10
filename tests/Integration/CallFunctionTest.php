@@ -2,22 +2,22 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration;
+namespace Attributes\Strictify\Tests\Integration;
 
 use ArrayAccess;
 use ArrayObject;
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Alias;
-use Attributes\Validation\Fields\Sequence;
-use Attributes\Validation\ModelConfigs;
-use Attributes\Validation\Type;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\Type;
 use Error;
 use stdClass;
 use TypeError;
 
-use function Attributes\Validation\call;
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\call;
+use function Attributes\Strictify\validate;
 
 class CallFunctionUser extends BaseModel
 {
@@ -157,7 +157,7 @@ function call_function_takes_service(stdClass $logger): string
 
 describe('call function model hydration', function () {
     it('hydrates a model parameter from the params array', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_model', [
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_model', [
             'name' => 'Andre',
             'age' => 30,
         ]);
@@ -173,24 +173,24 @@ describe('call function model hydration', function () {
 
     it('returns the callable return value', function () {
         $rawData = ['name' => 'Andre', 'age' => 30];
-        expect(call('Attributes\Validation\Tests\Integration\call_function_returns_model', $rawData))->toEqual(validate(
+        expect(call('Attributes\Strictify\Tests\Integration\call_function_returns_model', $rawData))->toEqual(validate(
             $rawData,
             new CallFunctionUser,
         ));
     });
 
     it('coerces scalars in loose mode like validate', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_loose_user', ['age' => '30']);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_loose_user', ['age' => '30']);
         expect($result)->toBe(30);
     });
 
     it('is strict by default like validate', function () {
-        call('Attributes\Validation\Tests\Integration\call_function_takes_strict_user', ['age' => '30']);
+        call('Attributes\Strictify\Tests\Integration\call_function_takes_strict_user', ['age' => '30']);
     })->throws(ValidationException::class);
 
     it('reports field errors through ValidationException like validate', function () {
         try {
-            call('Attributes\Validation\Tests\Integration\call_function_takes_strict_user', ['age' => '30']);
+            call('Attributes\Strictify\Tests\Integration\call_function_takes_strict_user', ['age' => '30']);
             expect(false)->toBeTrue();
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
@@ -200,18 +200,18 @@ describe('call function model hydration', function () {
     });
 
     it('resolves the Alias attribute like validate', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_alias_user', [
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_alias_user', [
             'user_name' => 'Andre',
         ]);
         expect($result)->toBe('Andre');
     });
 
     it('validates array type hints like validate', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_tags_user', ['tags' => ['a', 'b']]);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_tags_user', ['tags' => ['a', 'b']]);
         expect($result)->toBe(['a', 'b']);
 
         try {
-            call('Attributes\Validation\Tests\Integration\call_function_takes_tags_user', ['tags' => ['a', 1]]);
+            call('Attributes\Strictify\Tests\Integration\call_function_takes_tags_user', ['tags' => ['a', 1]]);
             expect(false)->toBeTrue();
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe([
@@ -221,7 +221,7 @@ describe('call function model hydration', function () {
     });
 
     it('runs the model hooks like validate', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_hooks_user', ['name' => 'ignored']);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_hooks_user', ['name' => 'ignored']);
         expect($result)->toBe('hooked-validated');
     });
 });
@@ -234,7 +234,7 @@ describe('call function dependencies', function () {
         $second->name = 'two';
 
         $result = call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_two_dependencies',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies',
             [],
             [
                 'second' => $second,
@@ -245,7 +245,7 @@ describe('call function dependencies', function () {
     });
 
     it('falls back to positional dependencies in order', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_positional', [], ['x', 7]);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_positional', [], ['x', 7]);
         expect($result)->toBe('x7');
     });
 
@@ -258,7 +258,7 @@ describe('call function dependencies', function () {
         $service->name = 'svc';
 
         $result = call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_model_and_dependency',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_model_and_dependency',
             ['name' => 'Andre', 'age' => 30],
             [
                 'service' => $service,
@@ -268,23 +268,23 @@ describe('call function dependencies', function () {
     });
 
     it('applies the declared default when a dependency is missing', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_optional', [], ['first' => 'x']);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_optional', [], ['first' => 'x']);
         expect($result)->toBe('xdefault');
     });
 
     it('throws an Error when a required dependency is missing', function () {
         call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_two_dependencies',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies',
             [],
             ['first' => new stdClass],
         );
     })->throws(
         Error::class,
-        'No value provided for parameter $second of Attributes\Validation\Tests\Integration\call_function_takes_two_dependencies().',
+        'No value provided for parameter $second of Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies().',
     );
 
     it('passes the leftover positional dependencies to a variadic target', function () {
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_variadic', [], ['a', 'b', 'c']);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_variadic', [], ['a', 'b', 'c']);
         expect($result)->toBe(['a', 'b', 'c']);
     });
 });
@@ -292,7 +292,7 @@ describe('call function dependencies', function () {
 describe('call function ArrayAccess dependencies', function () {
     it('matches dependencies by parameter name on an ArrayObject', function () {
         $result = call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_two_dependencies',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies',
             [],
             new ArrayObject([
                 'second' => service('two'),
@@ -304,7 +304,7 @@ describe('call function ArrayAccess dependencies', function () {
 
     it('falls back to positional entries of an ArrayObject', function () {
         $result = call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_positional',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_positional',
             [],
             new ArrayObject(['x', 7]),
         );
@@ -313,7 +313,7 @@ describe('call function ArrayAccess dependencies', function () {
 
     it('passes the leftover positional entries of an ArrayObject to a variadic target', function () {
         $result = call(
-            'Attributes\Validation\Tests\Integration\call_function_takes_variadic',
+            'Attributes\Strictify\Tests\Integration\call_function_takes_variadic',
             [],
             new ArrayObject(['a', 'b', 'c']),
         );
@@ -323,7 +323,7 @@ describe('call function ArrayAccess dependencies', function () {
     it('constructs only the dependencies the call consumes', function () {
         $container = new CallFunctionLazyContainer;
 
-        $result = call('Attributes\Validation\Tests\Integration\call_function_takes_service', [], $container);
+        $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_service', [], $container);
         expect($result)->toBe('service-logger');
         expect($container->constructed)->toBe(['logger']);
     });
@@ -345,11 +345,11 @@ describe('call function ArrayAccess dependencies', function () {
             public function offsetUnset(mixed $offset): void {}
         };
 
-        call('Attributes\Validation\Tests\Integration\call_function_takes_service', [], $container);
+        call('Attributes\Strictify\Tests\Integration\call_function_takes_service', [], $container);
     })->throws(Error::class, 'container failure');
 
     it('throws a TypeError when the dependencies are not an array or ArrayAccess', function ($dependencies) {
-        call('Attributes\Validation\Tests\Integration\call_function_takes_positional', [], $dependencies);
+        call('Attributes\Strictify\Tests\Integration\call_function_takes_positional', [], $dependencies);
     })->with([
         42,
         new stdClass,

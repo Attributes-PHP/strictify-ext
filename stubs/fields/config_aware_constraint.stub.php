@@ -1,8 +1,8 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields {
+namespace Attributes\Strictify\Fields {
    interface ConfigAwareConstraint extends Constraint {
-      public function setModelConfigs(\Attributes\Validation\ModelConfigs $configs): void;
+      public function setModelConfigs(\Attributes\Strictify\ModelConfigs $configs): void;
    }
 }

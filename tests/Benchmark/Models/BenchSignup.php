@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark\Models;
+namespace Attributes\Strictify\Tests\Benchmark\Models;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Alias;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\ModelConfigs;
 
 #[ModelConfigs(strict: false)]
 class BenchSignup extends BaseModel

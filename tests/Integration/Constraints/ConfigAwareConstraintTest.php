@@ -2,15 +2,15 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\ConfigAwareConstraint;
-use Attributes\Validation\ModelConfigs;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\ConfigAwareConstraint;
+use Attributes\Strictify\ModelConfigs;
 use RuntimeException;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 #[Attribute(Attribute::TARGET_PROPERTY)]
 final class TracksCalls implements ConfigAwareConstraint

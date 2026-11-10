@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Benchmark;
+namespace Attributes\Strictify\Tests\Benchmark;
 
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Tests\Benchmark\Models\BenchDateTimeEvent;
-use Attributes\Validation\Tests\Benchmark\Models\BenchErrorForm;
-use Attributes\Validation\Tests\Benchmark\Models\BenchNestedShape;
-use Attributes\Validation\Tests\Benchmark\Models\BenchOrder;
-use Attributes\Validation\Tests\Benchmark\Models\BenchShallowModel;
-use Attributes\Validation\Tests\Benchmark\Models\BenchWideModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchDateTimeEvent;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchErrorForm;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchNestedShape;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchOrder;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchShallowModel;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchWideModel;
 use PhpBench\Attributes as Bench;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 /**
  * Data-layout scenarios for the review findings: each subject isolates

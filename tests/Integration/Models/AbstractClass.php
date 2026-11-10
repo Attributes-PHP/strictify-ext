@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Models;
+namespace Attributes\Strictify\Tests\Models;
 
 abstract class AbstractClass
 {

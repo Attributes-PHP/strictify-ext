@@ -2,26 +2,26 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Validate;
+namespace Attributes\Strictify\Tests\Integration\Validate;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\ErrorMessage;
-use Attributes\Validation\Tests\Models\Enums\EnumBasicOneValue;
-use Attributes\Validation\Tests\Models\Enums\EnumBasicThreeValues;
-use Attributes\Validation\Tests\Models\Enums\EnumBasicTwentyValues;
-use Attributes\Validation\Tests\Models\Enums\EnumBasicTwoValues;
-use Attributes\Validation\Tests\Models\Enums\EnumIntOneValue;
-use Attributes\Validation\Tests\Models\Enums\EnumIntThreeValues;
-use Attributes\Validation\Tests\Models\Enums\EnumIntTwentyValues;
-use Attributes\Validation\Tests\Models\Enums\EnumIntTwoValues;
-use Attributes\Validation\Tests\Models\Enums\EnumStrOneValue;
-use Attributes\Validation\Tests\Models\Enums\EnumStrThreeValues;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwentyValues;
-use Attributes\Validation\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\ErrorMessage;
+use Attributes\Strictify\Tests\Models\Enums\EnumBasicOneValue;
+use Attributes\Strictify\Tests\Models\Enums\EnumBasicThreeValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumBasicTwentyValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumBasicTwoValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumIntOneValue;
+use Attributes\Strictify\Tests\Models\Enums\EnumIntThreeValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumIntTwentyValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumIntTwoValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrOneValue;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwentyValues;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
 use ValueError;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 // Define test classes for nested model validation
 
@@ -336,7 +336,7 @@ describe('validate function error handling', function () {
                 'field.field' => ['Field is required'],
                 'field.secondField' => ['Field is required'],
                 'field' => [
-                    'Must be Attributes\Validation\Tests\Integration\Validate\BasicModel or Attributes\Validation\Tests\Integration\Validate\SecondBasicModel',
+                    'Must be Attributes\Strictify\Tests\Integration\Validate\BasicModel or Attributes\Strictify\Tests\Integration\Validate\SecondBasicModel',
                 ],
             ],
         ],
@@ -349,7 +349,7 @@ describe('validate function error handling', function () {
                 'field.secondField' => ['Field is required'],
                 'field.thirdField' => ['Field is required'],
                 'field' => [
-                    'Must be Attributes\Validation\Tests\Integration\Validate\BasicModel or Attributes\Validation\Tests\Integration\Validate\SecondBasicModel or Attributes\Validation\Tests\Integration\Validate\ThirdBasicModel',
+                    'Must be Attributes\Strictify\Tests\Integration\Validate\BasicModel or Attributes\Strictify\Tests\Integration\Validate\SecondBasicModel or Attributes\Strictify\Tests\Integration\Validate\ThirdBasicModel',
                 ],
             ],
         ],
@@ -399,7 +399,7 @@ describe('validate function error handling', function () {
             },
             'expectedErrors' => [
                 'field.field' => ['Field is required'],
-                'field' => ['Must be boolean or Attributes\Validation\Tests\Integration\Validate\BasicModel'],
+                'field' => ['Must be boolean or Attributes\Strictify\Tests\Integration\Validate\BasicModel'],
             ],
         ],
         'five-type-hints' => [
@@ -410,7 +410,7 @@ describe('validate function error handling', function () {
                 'field.field' => ['Field is required'],
                 'field.secondField' => ['Field is required'],
                 'field' => [
-                    'Must be boolean, integer, float, Attributes\Validation\Tests\Integration\Validate\BasicModel or Attributes\Validation\Tests\Integration\Validate\SecondBasicModel',
+                    'Must be boolean, integer, float, Attributes\Strictify\Tests\Integration\Validate\BasicModel or Attributes\Strictify\Tests\Integration\Validate\SecondBasicModel',
                 ],
             ],
         ],
@@ -442,7 +442,7 @@ describe('validate function error handling', function () {
                 'field.field' => ['Field is required'],
                 'field.secondField' => ['Field is required'],
                 'field' => [
-                    "Must be integer, float, Attributes\Validation\Tests\Integration\Validate\BasicModel, Attributes\Validation\Tests\Integration\Validate\SecondBasicModel, 'one', 'One' or 'Two'",
+                    "Must be integer, float, Attributes\Strictify\Tests\Integration\Validate\BasicModel, Attributes\Strictify\Tests\Integration\Validate\SecondBasicModel, 'one', 'One' or 'Two'",
                 ],
             ],
         ],

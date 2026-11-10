@@ -1,6 +1,6 @@
 ---
 title: "Constraints"
-description: 'Reference for the Attributes\Validation constraint attributes: the built-in constraints and how to write custom constraints in PHP userland.'
+description: 'Reference for the Strictify constraint attributes: the built-in constraints and how to write custom constraints in PHP userland.'
 
 ---
 
@@ -9,9 +9,9 @@ description: 'Reference for the Attributes\Validation constraint attributes: the
 Constraints are attributes that add value-level rules on top of the native type hints. They run after the property's type check succeeds (so they always see a value of the declared type, or the coerced value in loose mode) and before the value is written to the model — a failing constraint keeps the value out of the model.
 
 ```php
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Constraints\Between;
-use Attributes\Validation\Fields\Constraints\Regex;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Constraints\Between;
+use Attributes\Strictify\Fields\Constraints\Regex;
 
 class User extends BaseModel
 {
@@ -29,7 +29,7 @@ Attribute constructor arguments are validated at construction — an argument re
 
 ## Built-in constraints
 
-All built-ins live in `Attributes\Validation\Fields\Constraints` and may be declared on properties and parameters.
+All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be declared on properties and parameters.
 
 | Attribute | Constructor | Fails when |
 | --------- | ----------- | ---------- |
@@ -73,11 +73,11 @@ The `ErrorMessage` attribute only declares `required` and `type` templates, so c
 
 ## Custom constraints
 
-Write a constraint in PHP userland by implementing `Attributes\Validation\Fields\Constraint`. Any attribute class implementing it is applied during `validate()` exactly like the built-ins — the same run order, error collection and `stopFirstError` handling. PHP enforces the interface methods and their signatures at class declaration time.
+Write a constraint in PHP userland by implementing `Attributes\Strictify\Fields\Constraint`. Any attribute class implementing it is applied during `validate()` exactly like the built-ins — the same run order, error collection and `stopFirstError` handling. PHP enforces the interface methods and their signatures at class declaration time.
 
 ```php
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Fields\Constraint;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Constraint;
 
 #[Attribute(Attribute::TARGET_PROPERTY | Attribute::TARGET_PARAMETER)]
 final class Even implements Constraint

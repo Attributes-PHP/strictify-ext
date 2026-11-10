@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Validation\Tests\Integration\Constraints;
+namespace Attributes\Strictify\Tests\Integration\Constraints;
 
-use Attributes\Validation\BaseModel;
-use Attributes\Validation\Exceptions\ValidationException;
-use Attributes\Validation\Fields\Alias;
-use Attributes\Validation\Fields\Constraint;
-use Attributes\Validation\Fields\Constraints\Min;
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\Fields\Constraint;
+use Attributes\Strictify\Fields\Constraints\Min;
 use RuntimeException;
 
-use function Attributes\Validation\validate;
+use function Attributes\Strictify\validate;
 
 #[Attribute(Attribute::TARGET_PROPERTY | Attribute::TARGET_PARAMETER)]
 final class Even implements Constraint
@@ -246,7 +246,7 @@ describe('userland constraints', function () {
             ->toBe('bool')
             ->and($reflection->getMethod('message')->getReturnType()->__toString())
             ->toBe('string')
-            ->and($reflection->implementsInterface(\Attributes\Validation\Fields\Field::class))
+            ->and($reflection->implementsInterface(\Attributes\Strictify\Fields\Field::class))
             ->toBeTrue();
     });
 });

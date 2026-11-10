@@ -1,7 +1,7 @@
 <?php
 /** @generate-class-entries */
 
-namespace Attributes\Validation\Fields\Constraints {
+namespace Attributes\Strictify\Fields\Constraints {
    #[\Attribute]
    final class DateTime implements Field {
       public readonly string $format;
