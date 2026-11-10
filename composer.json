@@ -1,5 +1,5 @@
 {
-    "name": "attributes-php/strictify",
+    "name": "attributes-php/strictify-ext",
     "type": "library",
     "description": "Pydantic-inspired PHP library for validating data via type hints at lightning speed \u26a1\ufe0f",
     "keywords": [
