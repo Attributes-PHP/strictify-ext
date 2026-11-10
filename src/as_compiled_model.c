@@ -23,10 +23,14 @@
 #include "helpers/as_string.h"
 #include "validators/as_array_typehint_validator.h"
 #include "validators/as_typehint_validator.h"
+
+/* Defined in as_typehint_validator.c, resolved at RINIT */
+extern zend_class_entry *datetime_interface_ce;
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_hash.h"
+#include "Zend/zend_interfaces.h"
 #include <stddef.h>
 #include <string.h>
 
@@ -785,4 +789,52 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
     }
 
     return zend_hash_num_elements(Z_ARRVAL_P(errors)) == 0;
+}
+
+/*
+ * Serializes the model's public properties into an array keyed by the
+ * resolved field names (Alias / aliasGenerator), matching what
+ * validate() expects as input. Uninitialized typed properties are
+ * skipped. DateTimeInterface values are formatted as ISO 8601 strings.
+ */
+bool as_compiled_model_to_dict(zval *model, zval *return_value)
+{
+    as_compiled_model *plan = as_get_root_compiled_model(model);
+    if (UNEXPECTED(plan == NULL)) {
+        return false;
+    }
+
+    array_init(return_value);
+
+    for (uint32_t i = 0; i < plan->count; i++) {
+        as_compiled_field *cf = &plan->fields[i];
+
+        if (cf->name == NULL) {
+            if (!compile_field(cf, plan)) {
+                return false;
+            }
+        }
+
+        zval *slot = OBJ_PROP(Z_OBJ_P(model), cf->prop->offset);
+        if (Z_TYPE_P(slot) == IS_UNDEF) {
+            continue;
+        }
+
+        if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), datetime_interface_ce)) {
+            zval format_arg, formatted;
+            ZVAL_STRING(&format_arg, "Y-m-d\\TH:i:sP");
+            zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "format", &formatted, &format_arg);
+            zval_ptr_dtor(&format_arg);
+            if (UNEXPECTED(EG(exception) != NULL)) {
+                return false;
+            }
+            zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &formatted);
+            continue;
+        }
+
+        Z_TRY_ADDREF_P(slot);
+        zend_hash_update(Z_ARRVAL_P(return_value), cf->name, slot);
+    }
+
+    return true;
 }

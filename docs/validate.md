@@ -197,3 +197,24 @@ abstract class BaseModel
     protected function afterValidation(array $rawData, ModelConfigs $configs): void {}
 }
 ```
+
+## Serializing back to an array: toDict()
+
+`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects (aliases and `aliasGenerator` applied). `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`), so the output round-trips through `validate()`:
+
+```php
+class User extends BaseModel
+{
+    public string $name;
+    public ?DateTime $birthday;
+}
+
+$user = validate(['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00'], new User());
+
+$user->toDict();
+// ['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00']
+
+validate($user->toDict(), new User()); // works
+```
+
+Uninitialized typed properties are omitted from the output.

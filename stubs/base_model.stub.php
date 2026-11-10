@@ -7,5 +7,6 @@ namespace Attributes\Strictify {
 
       protected function beforeValidation(array $rawData, ModelConfigs $configs): array {}
       protected function afterValidation(array $rawData, ModelConfigs $configs): void {}
+      public function toDict(): array {}
    }
 }

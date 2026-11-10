@@ -17,11 +17,16 @@ ZEND_ARG_TYPE_INFO(0, rawData, IS_ARRAY, 0)
 ZEND_ARG_OBJ_INFO(0, configs, Attributes\\Strictify\\ModelConfigs, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_AS_BaseModel_toDict, 0, 0, IS_ARRAY, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_METHOD(AS_BaseModel, beforeValidation);
 ZEND_METHOD(AS_BaseModel, afterValidation);
+ZEND_METHOD(AS_BaseModel, toDict);
 
 static const zend_function_entry class_AS_BaseModel_methods[] = {ZEND_ME(AS_BaseModel, beforeValidation, arginfo_class_AS_BaseModel_beforeValidation, ZEND_ACC_PROTECTED)
-                                                                     ZEND_ME(AS_BaseModel, afterValidation, arginfo_class_AS_BaseModel_afterValidation, ZEND_ACC_PROTECTED) ZEND_FE_END};
+                                                                     ZEND_ME(AS_BaseModel, afterValidation, arginfo_class_AS_BaseModel_afterValidation, ZEND_ACC_PROTECTED)
+                                                                     ZEND_ME(AS_BaseModel, toDict, arginfo_class_AS_BaseModel_toDict, ZEND_ACC_PUBLIC) ZEND_FE_END};
 
 /* Registration function */
 void as_register_BaseModel_class(void);

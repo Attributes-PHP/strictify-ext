@@ -1,4 +1,5 @@
 #include "as_base_model.h"
+#include "as_compiled_model.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_interfaces.h"
 
@@ -13,6 +14,15 @@ ZEND_METHOD(AS_BaseModel, beforeValidation)
 ZEND_METHOD(AS_BaseModel, afterValidation)
 {
     RETURN_NULL();
+}
+
+ZEND_METHOD(AS_BaseModel, toDict)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+
+    if (!as_compiled_model_to_dict(getThis(), return_value)) {
+        RETURN_THROWS();
+    }
 }
 
 /* Registration function */
