@@ -31,6 +31,7 @@ extern zend_class_entry *datetime_interface_ce;
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_hash.h"
 #include "Zend/zend_interfaces.h"
+#include <ext/date/php_date.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -828,13 +829,75 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
         }
 
         if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), datetime_interface_ce)) {
+            zend_string *fmt_str = NULL;
+            zval tz_copy;
+            ZVAL_UNDEF(&tz_copy);
+            for (uint32_t c = 0; c < cf->constraints_count; c++) {
+                zval *inst = &cf->constraints[c].instance;
+                if (Z_TYPE_P(inst) == IS_OBJECT && instanceof_function(Z_OBJCE_P(inst), AS_Fields_Constraints_DateTime_ce)) {
+                    zval rv;
+                    zval *fmt = zend_read_property(Z_OBJCE_P(inst), Z_OBJ_P(inst), "format", sizeof("format") - 1, false, &rv);
+                    if (Z_TYPE_P(fmt) == IS_STRING) {
+                        fmt_str = Z_STR_P(fmt);
+                    }
+                    zend_property_info *tz_prop = zend_hash_str_find_ptr(&AS_Fields_Constraints_DateTime_ce->properties_info, "timezone_obj", sizeof("timezone_obj") - 1);
+                    if (tz_prop != NULL) {
+                        zval *tz = OBJ_PROP(Z_OBJ_P(inst), tz_prop->offset);
+                        if (Z_TYPE_P(tz) == IS_OBJECT) {
+                            ZVAL_COPY(&tz_copy, tz);
+                        }
+                    }
+                    break;
+                }
+            }
+
+            // The constraint's default format is a parse format; use ISO 8601 for output then
+            zend_string *out_format;
+            if (fmt_str != NULL && !(ZSTR_LEN(fmt_str) == 13 && memcmp(ZSTR_VAL(fmt_str), "X-m-d\\TH:i:sP", 13) == 0)) {
+                out_format = zend_string_copy(fmt_str);
+            } else {
+                out_format = zend_string_init("Y-m-d\\TH:i:sP", sizeof("Y-m-d\\TH:i:sP") - 1, 0);
+            }
+
+            // When a timezone is set, apply it to the object, format, then
+            // restore the original timezone so the model is not mutated
+            zval orig_tz;
+            ZVAL_UNDEF(&orig_tz);
+            if (Z_TYPE(tz_copy) == IS_OBJECT) {
+                zval get_ret;
+                zend_call_method_with_0_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "gettimezone", &get_ret);
+                if (!EG(exception) && Z_TYPE(get_ret) == IS_OBJECT) {
+                    ZVAL_COPY(&orig_tz, &get_ret);
+                }
+                zval_ptr_dtor(&get_ret);
+
+                zval set_ret;
+                zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "settimezone", &set_ret, &tz_copy);
+                zval_ptr_dtor(&set_ret);
+                if (UNEXPECTED(EG(exception) != NULL)) {
+                    zend_string_release(out_format);
+                    zval_ptr_dtor(&tz_copy);
+                    return false;
+                }
+            }
+
             zval format_arg, formatted;
-            ZVAL_STRING(&format_arg, "Y-m-d\\TH:i:sP");
+            ZVAL_STR(&format_arg, out_format);
             zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "format", &formatted, &format_arg);
             zval_ptr_dtor(&format_arg);
+            zval_ptr_dtor(&tz_copy);
             if (UNEXPECTED(EG(exception) != NULL)) {
+                zend_string_release(out_format);
                 return false;
             }
+
+            if (Z_TYPE(orig_tz) == IS_OBJECT) {
+                zval restore_ret;
+                zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "settimezone", &restore_ret, &orig_tz);
+                zval_ptr_dtor(&restore_ret);
+                zval_ptr_dtor(&orig_tz);
+            }
+
             zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &formatted);
             continue;
         }

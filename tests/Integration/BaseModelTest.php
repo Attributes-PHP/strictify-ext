@@ -135,7 +135,8 @@ describe('toDict converts DateTime to ISO 8601 string', function () {
         };
 
         validate(['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00'], $model);
-        expect($model->toDict())->toBe(['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00']);
+        // Europe/Madrid is UTC+1 in January
+        expect($model->toDict())->toBe(['name' => 'John', 'birthday' => '1994-01-01T10:00:00+01:00']);
     });
 });
 
@@ -208,4 +209,38 @@ it('nested models use their own aliasGenerator', function () {
     validate($input, $model);
     expect($model->address->postCode)->toBe('M00');
     expect($model->toDict())->toBe(['address' => ['postCode' => 'M00']]);
+});
+
+it('toDict uses DateTime constraint format and timezone', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(format: 'Y-m-d', timezone: 'Europe/Madrid')]
+        public ?\DateTime $birthday;
+    };
+
+    validate(['birthday' => '1994-01-01T09:00:00+00:00'], $model);
+    // Europe/Madrid is UTC+1 in January, format Y-m-d
+    expect($model->toDict())->toBe(['birthday' => '1994-01-01']);
+});
+
+it('toDict uses DateTime constraint timezone with default format', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(timezone: 'Europe/Madrid')]
+        public ?\DateTime $ts;
+    };
+
+    // 1994-01-01 09:00 UTC = 1994-01-01 10:00 Europe/Madrid (UTC+1)
+    validate(['ts' => '1994-01-01T09:00:00+00:00'], $model);
+    expect($model->toDict())->toBe(['ts' => '1994-01-01T10:00:00+01:00']);
+});
+
+it('toDict does not mutate the original DateTime when applying constraint timezone', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(timezone: 'Europe/Madrid')]
+        public ?\DateTime $ts;
+    };
+
+    validate(['ts' => '1994-01-01T09:00:00+00:00'], $model);
+    $model->toDict();
+    // Original object timezone must still be +00:00
+    expect($model->ts->getTimezone()->getName())->toBe('+00:00');
 });

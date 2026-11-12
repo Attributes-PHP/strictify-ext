@@ -200,7 +200,7 @@ abstract class BaseModel
 
 ## Serializing back to an array: toDict()
 
-`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects (aliases and `aliasGenerator` applied). `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`), so the output round-trips through `validate()`:
+`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects (aliases and `aliasGenerator` applied — nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use it). `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`), so the output round-trips through `validate()`:
 
 ```php
 class User extends BaseModel
@@ -217,4 +217,18 @@ $user->toDict();
 validate($user->toDict(), new User()); // works
 ```
 
-Uninitialized typed properties are omitted from the output.
+When a property has a `#[DateTime(format: ..., timezone: ...)]` constraint, `toDict()` uses that format and timezone instead of the ISO 8601 default:
+
+```php
+class Event extends BaseModel
+{
+    #[DateTime(format: 'Y-m-d', timezone: 'Europe/Madrid')]
+    public ?DateTime $startsAt;
+}
+
+$event = validate(['startsAt' => '1994-01-01T09:00:00+00:00'], new Event());
+$event->toDict();
+// ['startsAt' => '1994-01-01'] (Madrid is UTC+1 in January, formatted as Y-m-d)
+```
+
+Nested `BaseModel` properties are serialized recursively. Uninitialized typed properties are omitted from the output.
