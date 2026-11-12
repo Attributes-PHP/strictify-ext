@@ -793,12 +793,135 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
 }
 
 /*
+ * Serializes a single value for toDict: DateTimeInterface -> string,
+ * BaseModel -> recursive dict, array -> recurse into elements, else copy.
+ */
+static bool as_model_to_dict_with_generator(zval *model, char generator, zval *return_value);
+static bool as_serialize_value(zval *value, char generator, as_compiled_field *cf, zval *out);
+
+static bool as_serialize_value(zval *value, char generator, as_compiled_field *cf, zval *out)
+{
+    if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), datetime_interface_ce)) {
+        zend_string *fmt_str = NULL;
+        zval tz_copy;
+        ZVAL_UNDEF(&tz_copy);
+        if (cf != NULL) {
+            for (uint32_t c = 0; c < cf->constraints_count; c++) {
+                zval *inst = &cf->constraints[c].instance;
+                if (Z_TYPE_P(inst) == IS_OBJECT && instanceof_function(Z_OBJCE_P(inst), AS_Fields_Constraints_DateTime_ce)) {
+                    zval rv;
+                    zval *fmt = zend_read_property(Z_OBJCE_P(inst), Z_OBJ_P(inst), "format", sizeof("format") - 1, false, &rv);
+                    if (Z_TYPE_P(fmt) == IS_STRING) {
+                        fmt_str = Z_STR_P(fmt);
+                    }
+                    zend_property_info *tz_prop = zend_hash_str_find_ptr(&AS_Fields_Constraints_DateTime_ce->properties_info, "timezone_obj", sizeof("timezone_obj") - 1);
+                    if (tz_prop != NULL) {
+                        zval *tz = OBJ_PROP(Z_OBJ_P(inst), tz_prop->offset);
+                        if (Z_TYPE_P(tz) == IS_OBJECT) {
+                            ZVAL_COPY(&tz_copy, tz);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        // The constraint's default format is a parse format; use ISO 8601 for output then
+        zend_string *out_format;
+        if (fmt_str != NULL && !(ZSTR_LEN(fmt_str) == 13 && memcmp(ZSTR_VAL(fmt_str), "X-m-d\\TH:i:sP", 13) == 0)) {
+            out_format = zend_string_copy(fmt_str);
+        } else {
+            out_format = zend_string_init("Y-m-d\\TH:i:sP", sizeof("Y-m-d\\TH:i:sP") - 1, 0);
+        }
+
+        // Apply timezone, format, then restore so the model's object is not mutated
+        zval orig_tz;
+        ZVAL_UNDEF(&orig_tz);
+        if (Z_TYPE(tz_copy) == IS_OBJECT) {
+            zval get_ret;
+            zend_call_method_with_0_params(Z_OBJ_P(value), Z_OBJCE_P(value), NULL, "gettimezone", &get_ret);
+            if (!EG(exception) && Z_TYPE(get_ret) == IS_OBJECT) {
+                ZVAL_COPY(&orig_tz, &get_ret);
+            }
+            zval_ptr_dtor(&get_ret);
+
+            zval set_ret;
+            zend_call_method_with_1_params(Z_OBJ_P(value), Z_OBJCE_P(value), NULL, "settimezone", &set_ret, &tz_copy);
+            zval_ptr_dtor(&set_ret);
+            if (UNEXPECTED(EG(exception) != NULL)) {
+                zend_string_release(out_format);
+                zval_ptr_dtor(&tz_copy);
+                return false;
+            }
+        }
+
+        zval format_arg, formatted;
+        ZVAL_STR(&format_arg, out_format);
+        zend_call_method_with_1_params(Z_OBJ_P(value), Z_OBJCE_P(value), NULL, "format", &formatted, &format_arg);
+        zval_ptr_dtor(&format_arg);
+        zval_ptr_dtor(&tz_copy);
+        if (UNEXPECTED(EG(exception) != NULL)) {
+            zend_string_release(out_format);
+            return false;
+        }
+
+        if (Z_TYPE(orig_tz) == IS_OBJECT) {
+            zval restore_ret;
+            zend_call_method_with_1_params(Z_OBJ_P(value), Z_OBJCE_P(value), NULL, "settimezone", &restore_ret, &orig_tz);
+            zval_ptr_dtor(&restore_ret);
+            zval_ptr_dtor(&orig_tz);
+        }
+
+        ZVAL_COPY_VALUE(out, &formatted);
+        return true;
+    }
+
+    if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), AS_BaseModel_ce)) {
+        // Match validate(): a nested model with its own aliasGenerator uses it
+        char nested_generator = generator;
+        as_model_configs_properties nested_props;
+        zval nested_configs_obj;
+        as_get_model_configs(&nested_configs_obj, value, &nested_props, false);
+        if (UNEXPECTED(EG(exception) != NULL)) {
+            return false;
+        }
+        if (nested_props.alias_generator != false) {
+            nested_generator = nested_props.alias_generator;
+        }
+        return as_model_to_dict_with_generator(value, nested_generator, out);
+    }
+
+    if (Z_TYPE_P(value) == IS_ARRAY) {
+        array_init(out);
+        zend_string *key;
+        zend_ulong idx;
+        zval *el;
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(value), idx, key, el) {
+            zval serialized;
+            if (!as_serialize_value(el, generator, NULL, &serialized)) {
+                zval_ptr_dtor(out);
+                return false;
+            }
+            if (key != NULL) {
+                zend_hash_update(Z_ARRVAL_P(out), key, &serialized);
+            } else {
+                zend_hash_index_update(Z_ARRVAL_P(out), idx, &serialized);
+            }
+        }
+        ZEND_HASH_FOREACH_END();
+        return true;
+    }
+
+    ZVAL_COPY(out, value);
+    return true;
+}
+
+/*
  * Serializes the model's public properties into an array keyed by the
  * resolved field names (Alias / aliasGenerator), matching what
  * validate() expects as input. Uninitialized typed properties are
- * skipped. DateTimeInterface values are formatted as ISO 8601 strings.
- * Nested BaseModel values recurse under the same generator, matching
- * how validate() propagates the root's configs to nested models.
+ * skipped. DateTimeInterface values are formatted as strings.
+ * Nested BaseModel values recurse under the appropriate generator.
  */
 static bool as_model_to_dict_with_generator(zval *model, char generator, zval *return_value)
 {
@@ -828,104 +951,11 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
             continue;
         }
 
-        if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), datetime_interface_ce)) {
-            zend_string *fmt_str = NULL;
-            zval tz_copy;
-            ZVAL_UNDEF(&tz_copy);
-            for (uint32_t c = 0; c < cf->constraints_count; c++) {
-                zval *inst = &cf->constraints[c].instance;
-                if (Z_TYPE_P(inst) == IS_OBJECT && instanceof_function(Z_OBJCE_P(inst), AS_Fields_Constraints_DateTime_ce)) {
-                    zval rv;
-                    zval *fmt = zend_read_property(Z_OBJCE_P(inst), Z_OBJ_P(inst), "format", sizeof("format") - 1, false, &rv);
-                    if (Z_TYPE_P(fmt) == IS_STRING) {
-                        fmt_str = Z_STR_P(fmt);
-                    }
-                    zend_property_info *tz_prop = zend_hash_str_find_ptr(&AS_Fields_Constraints_DateTime_ce->properties_info, "timezone_obj", sizeof("timezone_obj") - 1);
-                    if (tz_prop != NULL) {
-                        zval *tz = OBJ_PROP(Z_OBJ_P(inst), tz_prop->offset);
-                        if (Z_TYPE_P(tz) == IS_OBJECT) {
-                            ZVAL_COPY(&tz_copy, tz);
-                        }
-                    }
-                    break;
-                }
-            }
-
-            // The constraint's default format is a parse format; use ISO 8601 for output then
-            zend_string *out_format;
-            if (fmt_str != NULL && !(ZSTR_LEN(fmt_str) == 13 && memcmp(ZSTR_VAL(fmt_str), "X-m-d\\TH:i:sP", 13) == 0)) {
-                out_format = zend_string_copy(fmt_str);
-            } else {
-                out_format = zend_string_init("Y-m-d\\TH:i:sP", sizeof("Y-m-d\\TH:i:sP") - 1, 0);
-            }
-
-            // When a timezone is set, apply it to the object, format, then
-            // restore the original timezone so the model is not mutated
-            zval orig_tz;
-            ZVAL_UNDEF(&orig_tz);
-            if (Z_TYPE(tz_copy) == IS_OBJECT) {
-                zval get_ret;
-                zend_call_method_with_0_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "gettimezone", &get_ret);
-                if (!EG(exception) && Z_TYPE(get_ret) == IS_OBJECT) {
-                    ZVAL_COPY(&orig_tz, &get_ret);
-                }
-                zval_ptr_dtor(&get_ret);
-
-                zval set_ret;
-                zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "settimezone", &set_ret, &tz_copy);
-                zval_ptr_dtor(&set_ret);
-                if (UNEXPECTED(EG(exception) != NULL)) {
-                    zend_string_release(out_format);
-                    zval_ptr_dtor(&tz_copy);
-                    return false;
-                }
-            }
-
-            zval format_arg, formatted;
-            ZVAL_STR(&format_arg, out_format);
-            zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "format", &formatted, &format_arg);
-            zval_ptr_dtor(&format_arg);
-            zval_ptr_dtor(&tz_copy);
-            if (UNEXPECTED(EG(exception) != NULL)) {
-                zend_string_release(out_format);
-                return false;
-            }
-
-            if (Z_TYPE(orig_tz) == IS_OBJECT) {
-                zval restore_ret;
-                zend_call_method_with_1_params(Z_OBJ_P(slot), Z_OBJCE_P(slot), NULL, "settimezone", &restore_ret, &orig_tz);
-                zval_ptr_dtor(&restore_ret);
-                zval_ptr_dtor(&orig_tz);
-            }
-
-            zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &formatted);
-            continue;
+        zval serialized;
+        if (!as_serialize_value(slot, generator, cf, &serialized)) {
+            return false;
         }
-
-        if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), AS_BaseModel_ce)) {
-            // Match validate(): a nested model with its own aliasGenerator
-            // uses it, otherwise the parent's generator propagates
-            char nested_generator = generator;
-            as_model_configs_properties nested_props;
-            zval nested_configs_obj;
-            as_get_model_configs(&nested_configs_obj, slot, &nested_props, false);
-            if (UNEXPECTED(EG(exception) != NULL)) {
-                return false;
-            }
-            if (nested_props.alias_generator != false) {
-                nested_generator = nested_props.alias_generator;
-            }
-
-            zval nested;
-            if (!as_model_to_dict_with_generator(slot, nested_generator, &nested)) {
-                return false;
-            }
-            zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &nested);
-            continue;
-        }
-
-        Z_TRY_ADDREF_P(slot);
-        zend_hash_update(Z_ARRVAL_P(return_value), cf->name, slot);
+        zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &serialized);
     }
 
     return true;
