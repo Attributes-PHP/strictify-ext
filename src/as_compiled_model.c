@@ -840,8 +840,21 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
         }
 
         if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), AS_BaseModel_ce)) {
+            // Match validate(): a nested model with its own aliasGenerator
+            // uses it, otherwise the parent's generator propagates
+            char nested_generator = generator;
+            as_model_configs_properties nested_props;
+            zval nested_configs_obj;
+            as_get_model_configs(&nested_configs_obj, slot, &nested_props, false);
+            if (UNEXPECTED(EG(exception) != NULL)) {
+                return false;
+            }
+            if (nested_props.alias_generator != false) {
+                nested_generator = nested_props.alias_generator;
+            }
+
             zval nested;
-            if (!as_model_to_dict_with_generator(slot, generator, &nested)) {
+            if (!as_model_to_dict_with_generator(slot, nested_generator, &nested)) {
                 return false;
             }
             zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &nested);

@@ -189,3 +189,23 @@ it('toDict supports nested models', function () {
         'timestamp' => '1994-01-01T09:00:00+00:00',
     ]);
 });
+
+it('nested models use their own aliasGenerator', function () {
+    #[ModelConfigs(aliasGenerator: 'camel')]
+    class CamelAddress extends BaseModel
+    {
+        public string $postCode;
+    }
+
+    $model = new
+        #[ModelConfigs(aliasGenerator: 'snake')]
+        class extends BaseModel {
+            public CamelAddress $address;
+        };
+
+    // Root uses snake, nested CamelAddress uses camel (postCode stays postCode)
+    $input = ['address' => ['postCode' => 'M00']];
+    validate($input, $model);
+    expect($model->address->postCode)->toBe('M00');
+    expect($model->toDict())->toBe(['address' => ['postCode' => 'M00']]);
+});
