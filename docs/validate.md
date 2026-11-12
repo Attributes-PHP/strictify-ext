@@ -217,7 +217,7 @@ $user->toDict();
 validate($user->toDict(), new User()); // works
 ```
 
-When a property has a `#[DateTime(format: ..., timezone: ...)]` constraint, `toDict()` uses that format and timezone instead of the ISO 8601 default:
+When a property has a `#[DateTime(format: ..., timezone: ...)]` constraint, `toDict()` uses that format and timezone instead of the ISO 8601 default. The same format is also enforced during validation: on a `DateTime`-typed property, only strings matching the constraint's format exactly are accepted for coercion:
 
 ```php
 class Event extends BaseModel
@@ -226,7 +226,10 @@ class Event extends BaseModel
     public ?DateTime $startsAt;
 }
 
-$event = validate(['startsAt' => '1994-01-01T09:00:00+00:00'], new Event());
+validate(['startsAt' => '1994-01-01'], new Event());        // ok
+validate(['startsAt' => '1994-01-01T09:00:00+00:00'], new Event()); // ValidationException
+
+$event = validate(['startsAt' => '1994-01-01'], new Event());
 $event->toDict();
 // ['startsAt' => '1994-01-01'] (Madrid is UTC+1 in January, formatted as Y-m-d)
 ```

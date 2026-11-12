@@ -27,7 +27,7 @@
  */
 zend_class_entry *as_get_ce_from_type(zend_property_info *info, const zend_type *type);
 
-bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_class_entry *ce, as_model_configs_properties *properties, zval *errors);
+bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_class_entry *ce, as_model_configs_properties *properties, zval *errors, as_compiled_field *cf);
 bool as_coerce_bool(as_field *field);
 
 void as_init_typehint_validator(void);

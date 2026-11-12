@@ -7,6 +7,7 @@
 #include "../as_model_configs.h"
 #include "../as_base_model.h"
 #include "../as_exception.h"
+#include "../fields/constraints/as_datetime.h"
 #include "../helpers/as_error_messages.h"
 #include <stdint.h>
 #include "as_typehint_validator.h"
@@ -63,8 +64,8 @@ void as_shutdown_typehint_validator(void)
 
 static zend_class_entry *resolve_single_class_type(zend_string *name, zend_class_entry *self_ce);
 static bool handle_intersection(as_field *field, as_property_info *prop_info, const zend_type *value_type);
+static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_configs_properties *properties, as_compiled_field *cf);
 static bool is_datetime_class(zend_class_entry *ce);
-static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_configs_properties *properties);
 static bool is_basemodel_class_type_hint(as_property_info *prop_info, const zend_type *property_type);
 static bool validate_intersection_group(as_field *field, as_compiled_field *cf, as_property_info *prop_info, zval *errors);
 
@@ -127,21 +128,35 @@ static bool is_datetime_class(zend_class_entry *ce)
     return (ce == datetime_ce || ce == datetime_interface_ce || instanceof_function(ce, datetime_interface_ce));
 }
 
-static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_configs_properties *properties)
+static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_configs_properties *properties, as_compiled_field *cf)
 {
     ZEND_ASSERT(Z_TYPE_P(value) == IS_STRING);
     ZEND_ASSERT(as_datetime_format != NULL && as_date_create_from_format_fn != NULL);
 
     const zend_string *str = Z_STR_P(value);
-    if (ZSTR_LEN(str) <= 12) {
-        return false;
+
+    // A #[DateTime(format: ...)] constraint on the field overrides the
+    // default parse format for string -> DateTime coercion
+    zend_string *fmt = as_datetime_format;
+    if (cf != NULL) {
+        for (uint32_t c = 0; c < cf->constraints_count; c++) {
+            zval *inst = &cf->constraints[c].instance;
+            if (Z_TYPE_P(inst) == IS_OBJECT && instanceof_function(Z_OBJCE_P(inst), AS_Fields_Constraints_DateTime_ce)) {
+                zval rv;
+                zval *f = zend_read_property(Z_OBJCE_P(inst), Z_OBJ_P(inst), "format", sizeof("format") - 1, false, &rv);
+                if (Z_TYPE_P(f) == IS_STRING) {
+                    fmt = Z_STR_P(f);
+                }
+                break;
+            }
+        }
     }
 
     // The call frame copies and releases its own parameter references:
     // args[0] borrows the request-lifetime format string, args[1] owns
     // the single reference released after the call
     zval args[2];
-    ZVAL_STR(&args[0], as_datetime_format);
+    ZVAL_STR(&args[0], fmt);
     ZVAL_COPY(&args[1], value);
 
     zval datetime_obj;
@@ -172,12 +187,12 @@ static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_c
  * arrays into nested BaseModel instances. Shared with the array type-hint
  * validator, whose arms reuse the exact class semantics.
  */
-bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_class_entry *ce, as_model_configs_properties *properties, zval *errors)
+bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_class_entry *ce, as_model_configs_properties *properties, zval *errors, as_compiled_field *cf)
 {
     ZEND_ASSERT(ce != NULL);
 
     if (Z_TYPE_P(field->value) == IS_STRING && is_datetime_class(ce)) {
-        return coerce_datetime(field->value, ce, properties);
+        return coerce_datetime(field->value, ce, properties, cf);
     }
 
     if (Z_TYPE_P(field->value) == IS_OBJECT) {
@@ -423,7 +438,7 @@ bool as_validate_compiled_type_hint(as_field *field, as_compiled_field *cf, as_p
                 // Memoize the late resolution: identical to what the
                 // ce cache would return on every retry
                 arm->ce = ce;
-                if (as_handle_class_by_ce(field, prop_info, ce, properties, errors))
+                if (as_handle_class_by_ce(field, prop_info, ce, properties, errors, cf))
                     return true;
             }
             continue;

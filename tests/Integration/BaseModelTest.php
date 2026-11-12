@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Alias;
 use Attributes\Strictify\Fields\Constraints\DateTime;
 use Attributes\Strictify\ModelConfigs;
@@ -217,7 +218,7 @@ it('toDict uses DateTime constraint format and timezone', function () {
         public ?\DateTime $birthday;
     };
 
-    validate(['birthday' => '1994-01-01T09:00:00+00:00'], $model);
+    validate(['birthday' => '1994-01-01'], $model);
     // Europe/Madrid is UTC+1 in January, format Y-m-d
     expect($model->toDict())->toBe(['birthday' => '1994-01-01']);
 });
@@ -244,3 +245,33 @@ it('toDict does not mutate the original DateTime when applying constraint timezo
     // Original object timezone must still be +00:00
     expect($model->ts->getTimezone()->getName())->toBe('+00:00');
 });
+
+it('DateTime format constraint enforces exact format on DateTime-typed property', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(format: 'Y-m-d')]
+        public ?\DateTime $d;
+    };
+
+    // Exact format match passes
+    validate(['d' => '1994-01-01'], $model);
+    expect($model->d)->toBeInstanceOf(\DateTime::class);
+    expect($model->toDict())->toBe(['d' => '1994-01-01']);
+});
+
+it('DateTime format constraint rejects non-matching strings on DateTime-typed property', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(format: 'Y-m-d')]
+        public ?\DateTime $d;
+    };
+
+    validate(['d' => '1994-01-01T09:00:00+00:00'], $model);
+})->throws(ValidationException::class);
+
+it('DateTime format constraint rejects wrong date format on DateTime-typed property', function () {
+    $model = new class extends BaseModel {
+        #[DateTime(format: 'Y-m-d')]
+        public ?\DateTime $d;
+    };
+
+    validate(['d' => '01/01/1994'], $model);
+})->throws(ValidationException::class);

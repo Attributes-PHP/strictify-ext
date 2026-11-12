@@ -1056,7 +1056,7 @@ static as_element_result validate_value_against_arms(as_field *element_field, as
                 .value = element_field->value,
             };
 
-            bool handled = as_handle_class_by_ce(&hydration_field, prop_info, arm->ce, properties, errors);
+            bool handled = as_handle_class_by_ce(&hydration_field, prop_info, arm->ce, properties, errors, NULL);
 
             if (handled) {
                 return AS_ELEMENT_VALID;
