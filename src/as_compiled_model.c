@@ -796,12 +796,19 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
  * resolved field names (Alias / aliasGenerator), matching what
  * validate() expects as input. Uninitialized typed properties are
  * skipped. DateTimeInterface values are formatted as ISO 8601 strings.
+ * Nested BaseModel values recurse under the same generator, matching
+ * how validate() propagates the root's configs to nested models.
  */
-bool as_compiled_model_to_dict(zval *model, zval *return_value)
+static bool as_model_to_dict_with_generator(zval *model, char generator, zval *return_value)
 {
-    as_compiled_model *plan = as_get_root_compiled_model(model);
-    if (UNEXPECTED(plan == NULL)) {
-        return false;
+    zend_class_entry *ce = Z_OBJCE_P(model);
+    as_class_plans *plans = get_class_plans(ce);
+
+    const uint32_t index = generator_index(generator);
+    as_compiled_model *plan = plans->by_generator[index];
+    if (plan == NULL) {
+        plan = compile_plan_skeleton(ce, generator);
+        plans->by_generator[index] = plan;
     }
 
     array_init(return_value);
@@ -832,9 +839,28 @@ bool as_compiled_model_to_dict(zval *model, zval *return_value)
             continue;
         }
 
+        if (Z_TYPE_P(slot) == IS_OBJECT && instanceof_function(Z_OBJCE_P(slot), AS_BaseModel_ce)) {
+            zval nested;
+            if (!as_model_to_dict_with_generator(slot, generator, &nested)) {
+                return false;
+            }
+            zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &nested);
+            continue;
+        }
+
         Z_TRY_ADDREF_P(slot);
         zend_hash_update(Z_ARRVAL_P(return_value), cf->name, slot);
     }
 
     return true;
+}
+
+bool as_compiled_model_to_dict(zval *model, zval *return_value)
+{
+    as_compiled_model *plan = as_get_root_compiled_model(model);
+    if (UNEXPECTED(plan == NULL)) {
+        return false;
+    }
+
+    return as_model_to_dict_with_generator(model, plan->generator, return_value);
 }

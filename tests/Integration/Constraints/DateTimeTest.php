@@ -168,10 +168,6 @@ describe('DateTime validation', function () {
             public string $value;
         };
 
-        expect(fn () => validate(['value' => '2026-10-16'], $model))
-            ->toThrow(
-                ValueError::class,
-                'Argument #2 ($timezone) must be a valid timezone identifier',
-            );
-    });
+        validate(['value' => '2026-10-16'], $model);
+    })->throws(ValueError::class, 'Argument #2 ($timezone) must be a valid timezone identifier');
 });

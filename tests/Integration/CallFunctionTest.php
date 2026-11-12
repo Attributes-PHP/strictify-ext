@@ -173,10 +173,11 @@ describe('call function model hydration', function () {
 
     it('returns the callable return value', function () {
         $rawData = ['name' => 'Andre', 'age' => 30];
-        expect(call('Attributes\Strictify\Tests\Integration\call_function_returns_model', $rawData))->toEqual(validate(
-            $rawData,
-            new CallFunctionUser,
-        ));
+        expect(call('Attributes\Strictify\Tests\Integration\call_function_returns_model', $rawData))
+            ->toEqual(validate(
+                $rawData,
+                new CallFunctionUser,
+            ));
     });
 
     it('coerces scalars in loose mode like validate', function () {

@@ -149,8 +149,8 @@ zend_module_entry strictify_module_entry = {
     EXTENSION_VERSION,
     PHP_MODULE_GLOBALS(strictify), /* globals descriptor */
     PHP_GINIT(strictify),          /* globals ctor */
-    NULL,                                      /* globals dtor */
-    NULL,                                      /* post deactivate */
+    NULL,                          /* globals dtor */
+    NULL,                          /* post deactivate */
     STANDARD_MODULE_PROPERTIES_EX
 };
 

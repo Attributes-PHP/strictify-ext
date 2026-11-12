@@ -72,4 +72,37 @@ describe('validate function alias attribute handling', function () {
         expect($result->firstName)->toBe('John');
         expect($result->lastName)->toBe('Doe');
     });
+
+    it('nested models support', function () {
+        class Address extends BaseModel
+        {
+            public string $address;
+            public string $postCode;
+        }
+
+        class User extends BaseModel
+        {
+            #[Alias('fullName')]
+            public string $firstAndLastName;
+            public Address $userAddress;
+        }
+
+        $model = new
+            #[ModelConfigs(aliasGenerator: 'snake')]
+            class extends BaseModel {
+                public User $user;
+            };
+
+        validate([
+            'user' => [
+                'fullName' => 'John Brown',
+                'user_address' => ['address' => '78 Street Road', 'post_code' => 'M00'],
+            ],
+        ], $model);
+        expect($model->user->firstAndLastName)->toBe('John Brown')
+            ->and($model->user->userAddress->address)
+            ->toBe('78 Street Road')
+            ->and($model->user->userAddress->postCode)
+            ->toBe('M00');
+    });
 });
