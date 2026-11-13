@@ -155,6 +155,34 @@ function call_function_takes_service(stdClass $logger): string
     return $logger->name;
 }
 
+class CallFunctionGreeter
+{
+    public static function hello(CallFunctionUser $user): string
+    {
+        return 'static:'.$user->name;
+    }
+
+    public function hi(CallFunctionUser $user): string
+    {
+        return 'method:'.$user->name;
+    }
+}
+
+function call_function_takes_two_models(CallFunctionUser $user, CallFunctionAliasUser $aliasUser): string
+{
+    return $user->name.'/'.$aliasUser->name;
+}
+
+function call_function_dependency_then_model(stdClass $service, CallFunctionUser $user): string
+{
+    return $service->name.'>'.$user->name;
+}
+
+function call_function_throws(): string
+{
+    throw new Error('callable failure');
+}
+
 describe('call function model hydration', function () {
     it('hydrates a model parameter from the params array', function () {
         $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_model', [
@@ -356,6 +384,59 @@ describe('call function ArrayAccess dependencies', function () {
         new stdClass,
         'deps',
     ])->throws(TypeError::class);
+});
+
+describe('call function callable variants', function () {
+    it('accepts a static method string', function () {
+        $result = call(
+            'Attributes\\Strictify\\Tests\\Integration\\CallFunctionGreeter::hello',
+            ['name' => 'Andre', 'age' => 30],
+        );
+        expect($result)->toBe('static:Andre');
+    });
+
+    it('accepts an array callable', function () {
+        $result = call([new CallFunctionGreeter, 'hi'], ['name' => 'Andre', 'age' => 30]);
+        expect($result)->toBe('method:Andre');
+    });
+
+    it('accepts a first-class callable', function () {
+        expect(call(str_repeat(...), [], ['x', 3]))->toBe('xxx');
+    });
+
+    it('throws a TypeError for an unknown function name', function () {
+        call('Attributes\\Strictify\\Tests\\Integration\\does_not_exist', []);
+    })->throws(TypeError::class);
+});
+
+describe('call function argument building', function () {
+    it('hydrates multiple model parameters from the same params array', function () {
+        $result = call(
+            'Attributes\\Strictify\\Tests\\Integration\\call_function_takes_two_models',
+            ['name' => 'Andre', 'age' => 30, 'user_name' => 'Gil'],
+        );
+        expect($result)->toBe('Andre/Gil');
+    });
+
+    it('hydrates a model parameter that is not the first one', function () {
+        $service = new stdClass;
+        $service->name = 'svc';
+
+        $result = call(
+            'Attributes\\Strictify\\Tests\\Integration\\call_function_dependency_then_model',
+            ['name' => 'Andre', 'age' => 30],
+            ['service' => $service],
+        );
+        expect($result)->toBe('svc>Andre');
+    });
+
+    it('propagates an exception thrown by the callable', function () {
+        call('Attributes\\Strictify\\Tests\\Integration\\call_function_throws', []);
+    })->throws(Error::class, 'callable failure');
+
+    it('reports the positional index when an internal function misses a required argument', function () {
+        call('str_repeat', [], ['x']);
+    })->throws(Error::class, 'No value provided for parameter 2 of str_repeat().');
 });
 
 function service(string $name): stdClass
