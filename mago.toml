@@ -8,7 +8,8 @@ php-version = "8.2.0"
 workspace = "."
 paths = ["tests/Integration/"]
 includes = ["vendor"]
-excludes = []
+# Uses PHP 8.4 property-hook syntax while the project targets 8.2+
+excludes = ["tests/Integration/PropertyHooksTest.php"]
 
 [source.glob]
 literal-separator = true

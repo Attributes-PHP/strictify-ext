@@ -910,6 +910,21 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
             }
         }
 
+#if PHP_VERSION_ID >= 80400
+        /* PHP 8.4 property hooks must not be bypassed: hooked properties go
+         * through the standard write path so the set hook runs. Virtual
+         * (get-only) hooks have no backing store and cannot be written. */
+        if (cf->prop->hooks != NULL) {
+            if (cf->prop->offset != ZEND_VIRTUAL_PROPERTY_OFFSET) {
+                zend_update_property(ce, Z_OBJ_P(model), ZSTR_VAL(cf->prop->name), ZSTR_LEN(cf->prop->name), field.value);
+                if (UNEXPECTED(EG(exception) != NULL)) {
+                    return false;
+                }
+            }
+            continue;
+        }
+#endif
+
         // Direct offset write: the value is already of the declared
         // type, so the property name lookup and the type
         // re-verification of zend_update_property() are redundant
@@ -1027,7 +1042,8 @@ static bool as_serialize_value(zval *value, char generator, as_compiled_field *c
         zend_string *key;
         zend_ulong idx;
         zval *el;
-        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(value), idx, key, el) {
+        ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(value), idx, key, el)
+        {
             zval serialized;
             if (!as_serialize_value(el, generator, NULL, &serialized)) {
                 zval_ptr_dtor(out);
@@ -1077,7 +1093,20 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
             }
         }
 
+#if PHP_VERSION_ID >= 80400
+        zval *slot;
+        if (cf->prop->hooks != NULL) {
+            // Hooked (incl. virtual) properties must be read through the
+            // engine so the get hook runs; virtual slots have no backing
+            // store, so the raw offset must not be dereferenced
+            zval rv;
+            slot = zend_read_property(ce, Z_OBJ_P(model), ZSTR_VAL(cf->prop->name), ZSTR_LEN(cf->prop->name), 1, &rv);
+        } else {
+            slot = OBJ_PROP(Z_OBJ_P(model), cf->prop->offset);
+        }
+#else
         zval *slot = OBJ_PROP(Z_OBJ_P(model), cf->prop->offset);
+#endif
         if (Z_TYPE_P(slot) == IS_UNDEF) {
             continue;
         }
