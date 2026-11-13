@@ -1,7 +1,7 @@
 [project]
 site_name = "Strictify"
 site_url = "https://strictify.attributes-php.com"
-site_description = "Pydantic-inspired PHP extension that validates data via type hints at native speed."
+site_description = "A type-hint validation library for PHP"
 copyright = "© 2026 Attributes-PHP"
 docs_dir = "docs"
 site_dir = "site"

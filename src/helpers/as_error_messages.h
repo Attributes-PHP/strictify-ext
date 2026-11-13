@@ -37,6 +37,9 @@ typedef enum {
     AS_ERROR_STARTS_WITH,
     AS_ERROR_ULID,
     AS_ERROR_UUID,
+    /* Unknown input key under ModelConfigs(extra: 'forbid'); reported
+     * without a property context, so it bypasses the per-property cache */
+    AS_ERROR_EXTRA,
     AS_ERROR_TYPE_COUNT
 } as_error_type;
 
@@ -81,5 +84,10 @@ void as_add_field_error_with_expected(as_error_type type, as_field *field, as_pr
 
 // Appends an already-rendered message under the field's dot path
 void as_add_field_message(zend_string *message, as_field *field, zval *errors);
+
+// Reports an unknown input key under ModelConfigs(extra: 'forbid'). The
+// template comes from the translator ("extra" key) or the default; there is
+// no owning property, so {expected} is substituted with an empty string.
+void as_add_extra_field_error(zend_string *name, zval *value, zend_string *parent_path, zval *errors);
 
 #endif /* AS_ERROR_MESSAGES_H */

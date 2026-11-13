@@ -35,6 +35,7 @@ const char *as_default_error_type_messages[] = {
     [AS_ERROR_STARTS_WITH] = "Must start with one of: {expected}",
     [AS_ERROR_ULID] = "Must be a valid ULID",
     [AS_ERROR_UUID] = "Must be a valid UUID",
+    [AS_ERROR_EXTRA] = "Extra inputs are not permitted",
 };
 
 /*
@@ -64,6 +65,7 @@ const char *as_error_type_names[] = {
     [AS_ERROR_STARTS_WITH] = "starts_with",
     [AS_ERROR_ULID] = "ulid",
     [AS_ERROR_UUID] = "uuid",
+    [AS_ERROR_EXTRA] = "extra",
 };
 
 /*
@@ -664,6 +666,45 @@ void as_add_field_message(zend_string *message, as_field *field, zval *errors)
     zend_string *full_path = get_property_full_path(field);
     add_field_error(errors, full_path, ZSTR_VAL(message), ZSTR_LEN(message));
     as_string_release(full_path);
+}
+
+/*
+ * Reports an unknown input key (ModelConfigs extra: 'forbid'). Unlike
+ * property errors there is no owning property, so the template is not read
+ * from the per-property cache: the translator is asked for the "extra" key
+ * and the built-in default is the fallback. {expected} is substituted with
+ * an empty string because a raw input key has no native type hint.
+ */
+void as_add_extra_field_error(zend_string *name, zval *value, zend_string *parent_path, zval *errors)
+{
+    ZEND_ASSERT(Z_TYPE_P(errors) == IS_ARRAY);
+
+    as_field field = {.parent = parent_path, .name = name, .value = value};
+
+    zend_string *template = as_translate_error_key(as_error_type_names[AS_ERROR_EXTRA], strlen(as_error_type_names[AS_ERROR_EXTRA]));
+    if (UNEXPECTED(as_has_exception())) {
+        if (template != NULL) {
+            zend_string_release(template);
+        }
+        return;
+    }
+
+    if (template == NULL) {
+        const char *default_template = as_default_error_type_messages[AS_ERROR_EXTRA];
+        template = as_string_init(default_template, strlen(default_template), 0);
+    }
+
+    zend_string *empty = as_string_init("", 0, 0);
+    zend_string *message = replace_placeholders(ZSTR_VAL(template), ZSTR_LEN(template), &field, NULL, empty);
+    as_string_release(empty);
+    as_string_release(template);
+
+    if (message == NULL) {
+        return;
+    }
+
+    as_add_field_message(message, &field, errors);
+    as_string_release(message);
 }
 
 /*

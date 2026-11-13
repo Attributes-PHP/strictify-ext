@@ -686,6 +686,130 @@ as_compiled_model *as_get_root_compiled_model(zval *model)
  * Runtime
  * ========================================================================= */
 
+static zend_always_inline bool as_is_trim_char(char c)
+{
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\0' || c == '\x0B';
+}
+
+/*
+ * Applies the ModelConfigs string normalizations (stripWhitespace,
+ * strToLower, strToUpper) to a string value, in that order, so strToUpper
+ * wins when both case flags are set. Returns a freshly allocated
+ * zend_string the caller owns.
+ */
+static zend_string *as_apply_string_transforms(zend_string *str, const as_model_configs_properties *properties)
+{
+    zend_string *out = zend_string_copy(str);
+
+    if (properties->strip_whitespace) {
+        const char *val = ZSTR_VAL(out);
+        const size_t len = ZSTR_LEN(out);
+        size_t start = 0;
+        size_t end = len;
+
+        while (start < end && as_is_trim_char(val[start])) {
+            start++;
+        }
+        while (end > start && as_is_trim_char(val[end - 1])) {
+            end--;
+        }
+
+        if (start > 0 || end < len) {
+            zend_string *trimmed = zend_string_init(val + start, end - start, 0);
+            zend_string_release(out);
+            out = trimmed;
+        }
+    }
+
+    if (properties->str_to_lower) {
+        zend_string *lowered = zend_string_tolower(out);
+        zend_string_release(out);
+        out = lowered;
+    }
+
+    if (properties->str_to_upper) {
+        zend_string *uppered = zend_string_toupper(out);
+        zend_string_release(out);
+        out = uppered;
+    }
+
+    return out;
+}
+
+/*
+ * Normalizes a raw string value in place (the same ownership the loose-mode
+ * coercions use) when the property's native hint accepts strings. Values of
+ * any other type, and strings bound for non-string hints (e.g. DateTime
+ * coercion), are left untouched.
+ */
+static void as_transform_field_value(as_compiled_field *cf, as_field *field, const as_model_configs_properties *properties)
+{
+    if (!(properties->strip_whitespace || properties->str_to_lower || properties->str_to_upper)) {
+        return;
+    }
+
+    if (Z_TYPE_P(field->value) != IS_STRING) {
+        return;
+    }
+
+    if (!cf->untyped && !(cf->contains_code & (1u << IS_STRING))) {
+        return;
+    }
+
+    zend_string *transformed = as_apply_string_transforms(Z_STR_P(field->value), properties);
+    zval_ptr_dtor(field->value);
+    ZVAL_STR(field->value, transformed);
+}
+
+/*
+ * ModelConfigs extra: 'forbid' reports every input key that resolves to no
+ * property of the model. 'ignore' (default) and 'allow' accept unknown keys;
+ * 'allow' does not store them, since model properties are declared.
+ */
+static void as_check_extra_fields(zval *raw_data, as_compiled_model *plan, const as_model_configs_properties *properties, zend_string *parent_path, zval *errors)
+{
+    if (properties->extra != AS_FORBID) {
+        return;
+    }
+
+    zend_string *key;
+    zend_ulong idx;
+    zval *entry;
+
+    ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(raw_data), idx, key, entry)
+    {
+        bool known = false;
+
+        if (key != NULL) {
+            for (uint32_t i = 0; i < plan->count; i++) {
+                if (plan->fields[i].name != NULL && zend_string_equals(plan->fields[i].name, key)) {
+                    known = true;
+                    break;
+                }
+            }
+        }
+
+        if (known) {
+            continue;
+        }
+
+        if (key == NULL) {
+            // Integer keys can never be field names: report under their
+            // numeric path segment
+            zend_string *num_key = zend_long_to_str((zend_long)idx);
+            as_add_extra_field_error(num_key, entry, parent_path, errors);
+            zend_string_release(num_key);
+        } else {
+            as_add_extra_field_error(key, entry, parent_path, errors);
+        }
+
+        if (properties->stop_first_error) {
+            return;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+}
+
 bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path)
 {
     ZEND_ASSERT(Z_TYPE_P(raw_data) == IS_ARRAY);
@@ -743,6 +867,11 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
             .model_ce = cf->declaring_ce,
             .property = cf->prop,
         };
+
+        // String normalizations run before the type check, so constraints
+        // and the written property see the normalized value
+        as_transform_field_value(cf, &field, properties);
+
         const bool is_valid = as_validate_compiled_type_hint(&field, cf, &property_info, properties, errors);
 
         if (!is_valid) {
@@ -788,6 +917,8 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
         zval_ptr_dtor(property_slot);
         ZVAL_COPY(property_slot, field.value);
     }
+
+    as_check_extra_fields(raw_data, plan, properties, parent_path, errors);
 
     return zend_hash_num_elements(Z_ARRVAL_P(errors)) == 0;
 }
