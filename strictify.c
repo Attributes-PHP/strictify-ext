@@ -2,6 +2,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include "php.h"
 #include "ext/standard/info.h"
 #include "strictify.h"
@@ -42,6 +44,15 @@
 
 ZEND_DECLARE_MODULE_GLOBALS(strictify)
 
+/*
+ * PHP extensions whose C APIs this module calls directly: ext/pcre for the
+ * Regex constraint (php_pcre_match_impl), ext/date for the DateTime
+ * constraint (php_date_*), and ext/spl headers for exception helpers.
+ * Declared as required module deps so the engine refuses to load this
+ * module — logging the missing extension's name — when one is absent.
+ */
+static const zend_module_dep strictify_deps[] = {ZEND_MOD_REQUIRED("pcre") ZEND_MOD_REQUIRED("date") ZEND_MOD_REQUIRED("spl") ZEND_MOD_END};
+
 static PHP_GINIT_FUNCTION(strictify)
 {
     strictify_globals->as_model_configs_cache = NULL;
@@ -54,6 +65,17 @@ static PHP_GINIT_FUNCTION(strictify)
 /* Module startup */
 PHP_MINIT_FUNCTION(strictify)
 {
+    // Safety net: the module entry declares pcre/date/spl as required deps,
+    // so the engine normally refuses to load this module when one is
+    // missing. Re-check here and log the missing name(s) before failing,
+    // so an absent extension can never crash validation at runtime.
+    for (const zend_module_dep *dep = strictify_deps; dep->name != NULL; dep++) {
+        if (dep->type == MODULE_DEP_REQUIRED && zend_hash_str_find(&module_registry, dep->name, strlen(dep->name)) == NULL) {
+            zend_error(E_CORE_WARNING, "%s: required PHP extension '%s' is not loaded; module will not start", EXTENSION_NAME, dep->name);
+            return FAILURE;
+        }
+    }
+
     // Register main classes
     as_register_BaseModel_class();
     as_register_ModelConfigs_class();
@@ -138,7 +160,9 @@ PHP_MINFO_FUNCTION(strictify)
 
 /* Module entry */
 zend_module_entry strictify_module_entry = {
-    STANDARD_MODULE_HEADER,
+    STANDARD_MODULE_HEADER_EX,
+    NULL,
+    strictify_deps,
     EXTENSION_NAME,
     ext_functions,
     PHP_MINIT(strictify),
