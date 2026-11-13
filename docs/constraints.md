@@ -47,13 +47,85 @@ All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be decla
 | `Size` | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
 | `StartsWith` | `(string\|int\|float ...$values)` | the string starts with none of the declared values |
 | `Ulid` | `()` | the string is not a valid ULID (26 Crockford base32 characters, either letter case) |
+| `Uuid` | `()` | the string is not a canonical UUID (8-4-4-4-12 hex groups separated by dashes, either letter case) |
 
 Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only the lower bound, `#[DateTime(timezone: 'Europe/London')]` parses in that timezone.
+
+### Examples
+
+One property per built-in constraint, with a value that passes and one that fails:
+
+```php
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Constraints\AlphaDash;
+use Attributes\Strictify\Fields\Constraints\Ascii;
+use Attributes\Strictify\Fields\Constraints\Between;
+use Attributes\Strictify\Fields\Constraints\Contains;
+use Attributes\Strictify\Fields\Constraints\DateTime;
+use Attributes\Strictify\Fields\Constraints\EndsWith;
+use Attributes\Strictify\Fields\Constraints\In;
+use Attributes\Strictify\Fields\Constraints\Max;
+use Attributes\Strictify\Fields\Constraints\Min;
+use Attributes\Strictify\Fields\Constraints\MultipleOf;
+use Attributes\Strictify\Fields\Constraints\Regex;
+use Attributes\Strictify\Fields\Constraints\Size;
+use Attributes\Strictify\Fields\Constraints\StartsWith;
+use Attributes\Strictify\Fields\Constraints\Ulid;
+use Attributes\Strictify\Fields\Constraints\Uuid;
+
+class Signup extends BaseModel
+{
+    #[AlphaDash]               // 'user-1_name' passes, 'user name' fails
+    public string $slug;
+
+    #[Ascii]                   // 'hello' passes, 'héllo' fails
+    public string $label;
+
+    #[Between(18, 99)]         // 30 passes, 17 fails
+    public int $age;
+
+    #[Contains('php', 'dev')]  // ['php', 'dev', 'oss'] passes, ['php'] fails; on string properties each value must appear as a substring
+    public array $tags;
+
+    #[DateTime(format: 'Y-m-d')] // '1994-01-01' passes, '01/01/1994' fails
+    public string $birthday;
+
+    #[EndsWith('.com', '.net')] // 'andre@example.com' passes, 'andre@example.org' fails
+    public string $email;
+
+    #[In('a', 'b', 'c')]        // 'b' passes, 'd' fails (strict: In('1') rejects 1)
+    public string $grade;
+
+    #[Max(100)]                 // 100 passes, 101 fails
+    public float $score;
+
+    #[Min(1)]                   // 1 passes, 0 fails
+    public int $quantity;
+
+    #[MultipleOf(5)]            // 20 passes, 21 fails (0.3 is a multiple of 0.1)
+    public int $packSize;
+
+    #[Regex('/^[a-z][a-z0-9-]*$/')] // 'user-name' passes, 'User Name' fails
+    public string $username;
+
+    #[Size(min: 3, max: 20)]    // 'andre' passes, 'ab' fails
+    public string $name;
+
+    #[StartsWith('https://')]   // 'https://example.com' passes, 'http://example.com' fails
+    public string $website;
+
+    #[Ulid]                     // '01ARZ3NDEKTSV4RRFFQ69G5FAV' passes, anything else fails
+    public string $eventId;
+
+    #[Uuid]                     // '123e4567-e89b-12d3-a456-426614174000' passes, a missing dash fails
+    public string $requestId;
+}
+```
 
 ### Value semantics
 
 - **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
-- **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
+- **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
 - **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring.
 - **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, and an invalid timezone name throws a `ValueError` at construction.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.

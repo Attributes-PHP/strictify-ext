@@ -14,6 +14,7 @@ declare(strict_types=1);
 require __DIR__.'/../../vendor/autoload.php';
 
 use Attributes\Strictify\Tests\Benchmark\Models\BenchBrokenDict;
+use Attributes\Strictify\Tests\Benchmark\Models\BenchConstrainedUser;
 use Attributes\Strictify\Tests\Benchmark\Models\BenchDateTimeEvent;
 use Attributes\Strictify\Tests\Benchmark\Models\BenchErrorForm;
 use Attributes\Strictify\Tests\Benchmark\Models\BenchIntersectionPayload;
@@ -139,6 +140,24 @@ $unionIntersectionData = ['payloads' => []];
 for ($i = 0; $i < 40; $i++) {
     $unionIntersectionData['payloads'][] = ($i % 2) === 0 ? $i : array_slice($services, 0, 5);
 }
+
+$constrainedData = [
+    'slug' => 'user-1_name',
+    'label' => 'hello',
+    'age' => 30,
+    'tags' => ['php', 'dev', 'oss'],
+    'birthday' => '1994-01-01',
+    'email' => 'andre@example.com',
+    'grade' => 'b',
+    'score' => 99.5,
+    'quantity' => 1,
+    'packSize' => 20,
+    'username' => 'user-name',
+    'name' => 'andre',
+    'website' => 'https://example.com',
+    'eventId' => '01ARZ3NDEKTSV4RRFFQ69G5FAV',
+    'requestId' => '123e4567-e89b-12d3-a456-426614174000',
+];
 
 $cases = [
     'wide model, 32 typed fields' => [
@@ -325,6 +344,13 @@ $cases = [
                 $children[] = ($i % 2) === 0 ? $i : $node(3);
             }
             validate(['name' => 'root', 'children' => $children], new BenchUnionTree);
+        },
+    ],
+
+    'constrained model, 15 constraints per call' => [
+        MIN_RUNS,
+        function () use ($constrainedData) {
+            validate($constrainedData, new BenchConstrainedUser);
         },
     ],
 
