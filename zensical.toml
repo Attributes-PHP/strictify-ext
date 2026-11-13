@@ -9,6 +9,7 @@ site_dir = "site"
 nav = [
   { "Overview" = "index.md" },
   { "validate()" = "validate.md" },
+  { "toDict()" = "toDict.md" },
   { "call()" = "call.md" },
   { "Constraints" = "constraints.md" },
 ]

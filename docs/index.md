@@ -44,7 +44,8 @@ pie install attributes-php/strictify
 
 ## What's next
 
-- [validate()](/validate/) — the full function reference: parameters, return value, validation rules, exceptions, and `toDict()` serialization.
+- [validate()](/validate/) — the full function reference: parameters, return value, validation rules and exceptions.
+- [toDict()](/toDict/) — serialize a hydrated model back to a plain array.
 - [Constraints](/constraints/) — the built-in constraint attributes and how to write custom constraints in PHP userland.
 - [call()](/call/) — invoke any callable with hydrated models and injected dependencies.
 

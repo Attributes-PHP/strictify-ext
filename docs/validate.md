@@ -464,40 +464,4 @@ abstract class BaseModel
 
 ## Serializing back to an array: toDict()
 
-`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects (aliases and `aliasGenerator` applied — nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use it). `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`), so the output round-trips through `validate()`:
-
-```php
-<?php
-class User extends BaseModel
-{
-    public string $name;
-    public ?DateTime $birthday;
-}
-
-$user = validate(['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00'], new User());
-
-$user->toDict();
-// ['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00']
-
-validate($user->toDict(), new User()); // works
-```
-
-When a property has a `#[DateTime(format: ..., timezone: ...)]` constraint, `toDict()` uses that format and timezone instead of the ISO 8601 default. The same format is also enforced during validation: on a `DateTime`-typed property, only strings matching the constraint's format exactly are accepted for coercion:
-
-```php
-<?php
-class Event extends BaseModel
-{
-    #[DateTime(format: 'Y-m-d', timezone: 'Europe/Madrid')]
-    public ?DateTime $startsAt;
-}
-
-validate(['startsAt' => '1994-01-01'], new Event());        // ok
-validate(['startsAt' => '1994-01-01T09:00:00+00:00'], new Event()); // ValidationException
-
-$event = validate(['startsAt' => '1994-01-01'], new Event());
-$event->toDict();
-// ['startsAt' => '1994-01-01'] (Madrid is UTC+1 in January, formatted as Y-m-d)
-```
-
-Nested `BaseModel` properties are serialized recursively. Uninitialized typed properties are omitted from the output.
+`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects, so the output round-trips through `validate()`. See [toDict()](/toDict/) for the full reference: `DateTime` formatting, nested models and property hooks.
