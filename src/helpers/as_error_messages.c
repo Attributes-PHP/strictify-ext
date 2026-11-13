@@ -38,6 +38,35 @@ const char *as_default_error_type_messages[] = {
 };
 
 /*
+ * Stable message keys, one per error type, handed to the translator registered
+ * via ModelConfigs::setDefaultErrorMessages(). An #[ErrorMessage] attribute
+ * value is also passed as a key, so custom per-property messages can be
+ * translated the same way.
+ */
+const char *as_error_type_names[] = {
+    [AS_ERROR_REQUIRED] = "required",
+    [AS_ERROR_TYPE] = "type",
+    [AS_ERROR_ALPHA_DASH] = "alpha_dash",
+    [AS_ERROR_ALPHA_DASH_TYPE] = "alpha_dash_type",
+    [AS_ERROR_ASCII] = "ascii",
+    [AS_ERROR_ASCII_TYPE] = "ascii_type",
+    [AS_ERROR_BETWEEN] = "between",
+    [AS_ERROR_BETWEEN_TYPE] = "between_type",
+    [AS_ERROR_CONTAINS] = "contains",
+    [AS_ERROR_DATETIME] = "datetime",
+    [AS_ERROR_ENDS_WITH] = "ends_with",
+    [AS_ERROR_IN] = "in",
+    [AS_ERROR_MAX] = "max",
+    [AS_ERROR_MIN] = "min",
+    [AS_ERROR_MULTIPLE_OF] = "multiple_of",
+    [AS_ERROR_REGEX] = "regex",
+    [AS_ERROR_SIZE] = "size",
+    [AS_ERROR_STARTS_WITH] = "starts_with",
+    [AS_ERROR_ULID] = "ulid",
+    [AS_ERROR_UUID] = "uuid",
+};
+
+/*
  * Per-property error rendering cache, keyed by the property info and
  * stored in the module globals (see as_globals.h): the ErrorMessage
  * attribute and the native type hint never change within a request, so
@@ -540,10 +569,12 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
 }
 
 /*
- * Returns the error message template for the given error type: the
- * custom template declared with the #[ErrorMessage] attribute when the
- * property carries one, the default template otherwise. Resolved once
- * per property, then handed out as a copy.
+ * Returns the error message template for the given error type, resolved in
+ * order of specificity: the template the registered translator returns for
+ * the #[ErrorMessage] attribute value (used as a translation key) when the
+ * property carries one, the template the translator returns for the error
+ * type key otherwise, and the built-in default template as the final
+ * fallback. Resolved once per property, then handed out as a copy.
  *
  * The result is a freshly allocated zend_string the caller must release.
  * Returns NULL when the error type is unsupported or the attribute value
@@ -564,9 +595,32 @@ static zend_string *get_custom_error_template(as_error_type type, as_property_in
         return NULL;
     }
 
-    if (template == NULL) {
-        const char *default_template = as_default_error_type_messages[type];
-        template = as_string_init(default_template, strlen(default_template), 0);
+    if (template != NULL) {
+        /* An #[ErrorMessage] value is a translation key first: when the
+         * registered translator knows it, the localized template wins;
+         * otherwise the literal attribute string is used as-is. */
+        zend_string *translated = as_translate_error_key(ZSTR_VAL(template), ZSTR_LEN(template));
+        if (UNEXPECTED(as_has_exception())) {
+            zend_string_release(template);
+            return NULL;
+        }
+        if (translated != NULL) {
+            zend_string_release(template);
+            template = translated;
+        }
+    } else {
+        /* Built-in error type: the key is the stable type name; untranslated
+         * keys fall back to the default English template. */
+        zend_string *translated = as_translate_error_key(as_error_type_names[type], strlen(as_error_type_names[type]));
+        if (UNEXPECTED(as_has_exception())) {
+            return NULL;
+        }
+        if (translated != NULL) {
+            template = translated;
+        } else {
+            const char *default_template = as_default_error_type_messages[type];
+            template = as_string_init(default_template, strlen(default_template), 0);
+        }
     }
 
     cached->templates[type] = template;

@@ -135,6 +135,141 @@ class User extends BaseModel
 
 The `{expected}` placeholder renders the expected type list.
 
+#### Translating error messages
+
+Register a translator once per request with `ModelConfigs::setDefaultErrorMessages()`. The callable receives a message key and returns the translated template, or `null` to keep the default:
+
+```php
+<?php
+use Attributes\Strictify\ModelConfigs;
+
+ModelConfigs::setDefaultErrorMessages(
+    fn (string $key): ?string => Catalog::translate($key, locale: 'pt_BR') // null = no translation
+);
+```
+
+Built-in errors use these stable keys — one per error type:
+
+| Key | Default message |
+| --- | --- |
+| `required` | `Field is required` |
+| `type` | `Must be {expected}` |
+| `alpha_dash` / `alpha_dash_type` | `Must only contain letters, numbers, dashes and underscores` |
+| `ascii` / `ascii_type` | `Must only contain ASCII characters` |
+| `between` / `between_type` | `Must be between {expected}` |
+| `contains` | `Must contain {expected}` |
+| `datetime` | `Must be a datetime in the format {expected}` |
+| `ends_with` | `Must end with one of: {expected}` |
+| `in` | `Must be one of: {expected}` |
+| `max` / `min` | `Must be at most/least {expected}` |
+| `multiple_of` | `Must be a multiple of {expected}` |
+| `regex` | `Must match the pattern {expected}` |
+| `size` | `Must have a size {expected}` |
+| `starts_with` | `Must start with one of: {expected}` |
+| `ulid` / `uuid` | `Must be a valid ULID/UUID` |
+
+Single language — one catalog, registered once; keys it doesn't know keep the built-in English message:
+
+```php
+<?php
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Constraints\Min;
+use Attributes\Strictify\ModelConfigs;
+
+use function Attributes\Strictify\validate;
+
+ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => match ($key) {
+    'required' => 'Campo obrigatório',
+    'type' => 'Deve ser {expected}',
+    'min' => 'Deve ser no mínimo {expected}',
+    default => null,
+});
+
+class User extends BaseModel
+{
+    #[Min(18)]
+    public int $age;
+
+    public string $name;
+}
+
+validate(['age' => 5], new User());
+// ValidationException: ['age' => ['Deve ser no mínimo 18'], 'name' => ['Campo obrigatório']]
+```
+
+Multiple languages — a catalog keyed by locale; switch locale by re-registering the translator (takes effect immediately, the per-property template cache is cleared):
+
+```php
+<?php
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Constraints\Min;
+use Attributes\Strictify\ModelConfigs;
+
+use function Attributes\Strictify\validate;
+
+final class Catalog
+{
+    private const MESSAGES = [
+        'en' => [
+            'required' => 'Field is required',
+            'type' => 'Must be {expected}',
+            'min' => 'Must be at least {expected}',
+        ],
+        'pt_BR' => [
+            'required' => 'Campo obrigatório',
+            'type' => 'Deve ser {expected}',
+            'min' => 'Deve ser no mínimo {expected}',
+        ],
+    ];
+
+    public static function useLocale(string $locale): void
+    {
+        ModelConfigs::setDefaultErrorMessages(
+            fn (string $key): ?string => self::MESSAGES[$locale][$key] ?? null
+        );
+    }
+}
+
+Catalog::useLocale('pt_BR');
+
+class User extends BaseModel
+{
+    #[Min(18)]
+    public int $age;
+}
+
+validate(['age' => 5], new User());
+// ValidationException: ['age' => ['Deve ser no mínimo 18']]
+
+Catalog::useLocale('en');
+validate(['age' => 5], new User());
+// ValidationException: ['age' => ['Must be at least 18']]
+```
+
+Notes:
+
+- `{field}`, `{value}` and `{expected}` placeholders are substituted after translation, so translated templates use them exactly like the defaults.
+- `ErrorMessage` attribute values are also passed to the translator as keys. Since attribute arguments must be constant expressions (no callables), use a key string or a class constant there; when the translator returns `null`, the literal attribute string is used as-is, so existing attributes keep working unchanged:
+
+```php
+<?php
+final class Msg
+{
+    public const NAME_REQUIRED = 'user.name.required';
+    public const NAME_TYPE = 'user.name.type';
+}
+
+class User extends BaseModel
+{
+    #[ErrorMessage(required: Msg::NAME_REQUIRED, type: Msg::NAME_TYPE)]
+    public string $name;
+}
+```
+
+- Re-registering the translator (e.g. switching locale) takes effect immediately: resolved templates are cached per property per request, and the setter clears that cache.
+- The translator must return `?string`; any other type throws a `ValueError`, and exceptions thrown inside it propagate to the caller of `validate()`.
+- Userland constraints (`Attributes\Strictify\Fields\Constraint`) produce their `message()` in PHP, so the engine does not translate it — call your catalog from `message()` directly.
+
 ### Constraints
 
 Value-level rules are declared with constraint attributes from `Attributes\Strictify\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:

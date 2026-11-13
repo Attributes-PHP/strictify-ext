@@ -1,5 +1,6 @@
 #include "as_model_configs.h"
 #include "as_globals.h"
+#include "helpers/as_error_messages.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
@@ -107,6 +108,10 @@ ZEND_METHOD(AS_ModelConfigs, setDefaultErrorMessages)
     }
 
     zend_update_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, errorMessages);
+
+    /* Templates resolved with the previous translator are cached per property:
+     * drop the cache so the new translator (e.g. a new locale) takes effect. */
+    as_clear_error_templates_cache();
 }
 
 /* Registration function */

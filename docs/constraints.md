@@ -344,6 +344,8 @@ Each constraint has a default message following the `Must be ...` pattern, with 
 
 The `ErrorMessage` attribute only declares `required` and `type` templates, so constraint errors always use their default messages. Constraints applied through userland classes can return any message they want (see below).
 
+Every default message has a stable translation key (`between`, `min`, `regex`, ...) passed to the translator registered with `ModelConfigs::setDefaultErrorMessages()` — see [Translating error messages](/validate/#translating-error-messages). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
+
 ## Custom constraints
 
 Write a constraint in PHP userland by implementing `Attributes\Strictify\Fields\Constraint`. Any attribute class implementing it is applied during `validate()` exactly like the built-ins — the same run order, error collection and `stopFirstError` handling. PHP enforces the interface methods and their signatures at class declaration time.

@@ -50,6 +50,10 @@ typedef struct {
 // Supported placeholders: {field}, {value} and {expected}
 extern const char *as_default_error_type_messages[];
 
+// Stable message keys, one per error type, passed to the translator registered
+// via ModelConfigs::setDefaultErrorMessages() (defined in as_error_messages.c).
+extern const char *as_error_type_names[];
+
 // Placeholder substitution
 zend_string *as_replace_placeholders(const char *template, size_t length, as_field *field, as_property_info *prop_info);
 

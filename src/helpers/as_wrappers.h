@@ -123,4 +123,13 @@ zend_result as_call_tostring(zend_object *object, zval *retval);
 void as_zval_stringl(zval *z, const char *str, size_t len);
 void as_declare_typed_property(zend_class_entry *ce, const char *name, int flags, zend_type type);
 
+/*
+ * Calls the translator registered via ModelConfigs::setDefaultErrorMessages()
+ * with the given message key. Returns a freshly allocated zend_string when the
+ * translator returns a string template, NULL when no translator is registered
+ * or it returns null. A non-string/non-null return throws a ValueError;
+ * exceptions thrown by the translator itself propagate to the caller.
+ */
+zend_string *as_translate_error_key(const char *key, size_t key_len);
+
 #endif /* AS_HELPERS_AS_WRAPPERS_H */

@@ -1,4 +1,5 @@
 #include "as_wrappers.h"
+#include "../as_model_configs.h"
 #include "php.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
@@ -183,4 +184,60 @@ void as_declare_typed_property(zend_class_entry *ce, const char *name, int flags
     zend_string *name_str = zend_string_init(name, strlen(name), 1);
     zend_declare_typed_property(ce, name_str, &default_value, flags, NULL, type);
     zend_string_release(name_str);
+}
+
+zend_string *as_translate_error_key(const char *key, size_t key_len)
+{
+    zval *translator = zend_read_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, true);
+    if (translator == NULL || Z_TYPE_P(translator) == IS_NULL || !zend_is_callable(translator, 0, NULL)) {
+        return NULL;
+    }
+
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    char *error = NULL;
+    if (zend_fcall_info_init(translator, 0, &fci, &fcc, NULL, &error) != SUCCESS) {
+        if (error != NULL) {
+            zend_throw_exception(zend_ce_type_error, error, 0);
+            efree(error);
+        }
+        return NULL;
+    }
+
+    zval key_zv;
+    ZVAL_STRINGL(&key_zv, key, key_len);
+
+    zval retval;
+    ZVAL_UNDEF(&retval);
+
+    fci.size = sizeof(fci);
+    fci.object = fcc.object;
+    fci.retval = &retval;
+    fci.param_count = 1;
+    fci.params = &key_zv;
+    fci.named_params = NULL;
+
+    zend_result call_result = zend_call_function(&fci, &fcc);
+    zval_ptr_dtor(&key_zv);
+
+    if (call_result != SUCCESS || UNEXPECTED(EG(exception) != NULL)) {
+        if (Z_TYPE(retval) != IS_UNDEF) {
+            zval_ptr_dtor(&retval);
+        }
+        return NULL;
+    }
+
+    if (Z_TYPE(retval) == IS_NULL) {
+        return NULL;
+    }
+
+    if (Z_TYPE(retval) == IS_STRING) {
+        zend_string *translated = zend_string_copy(Z_STR(retval));
+        zval_ptr_dtor(&retval);
+        return translated;
+    }
+
+    zval_ptr_dtor(&retval);
+    as_throw_value_error("The default error messages translator must return ?string");
+    return NULL;
 }
