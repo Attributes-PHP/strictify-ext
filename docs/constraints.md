@@ -53,7 +53,7 @@ Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only th
 
 ### Examples
 
-One section per built-in constraint, each with a value that passes and one that fails. All examples assume `use Attributes\Strictify\BaseModel;` and the constraint class imported from `Attributes\Strictify\Fields\Constraints`.
+One section per built-in constraint, covering every scenario of that constraint. All examples assume `use Attributes\Strictify\BaseModel;` and the constraint class imported from `Attributes\Strictify\Fields\Constraints`.
 
 #### `AlphaDash`
 
@@ -62,10 +62,12 @@ Letters, numbers, dashes and underscores only.
 ```php
 class Profile extends BaseModel
 {
-    #[AlphaDash] // 'user-1_name' passes, 'user name' fails
+    #[AlphaDash] // 'user-1_name' passes
     public string $slug;
 }
 ```
+
+Fails: `'user name'` (space), `'user.name'` (dot), and any non-string value.
 
 #### `Ascii`
 
@@ -74,34 +76,48 @@ class Profile extends BaseModel
 ```php
 class Label extends BaseModel
 {
-    #[Ascii] // 'hello' passes, 'héllo' fails
+    #[Ascii] // 'hello ~!@#' passes
     public string $text;
 }
 ```
 
+Fails: `'héllo'` (UTF-8 bytes above 0x7F), and any non-string value.
+
 #### `Between`
 
-Inclusive numeric range.
+Inclusive numeric range; works for `int` and `float`.
 
 ```php
 class User extends BaseModel
 {
-    #[Between(18, 99)] // 30 passes, 17 fails
+    #[Between(18, 99)] // 18 and 99 pass (inclusive), 17 and 100 fail
     public int $age;
+
+    #[Between(0.5, 2.5)] // 1.5 passes, 3.0 fails
+    public float $ratio;
 }
 ```
 
+Fails: any non-numeric value, with a dedicated type error.
+
 #### `Contains`
 
-On arrays, every declared value must be present; on strings, each must appear as a substring.
+Arrays and strings are both supported.
 
 ```php
 class Article extends BaseModel
 {
+    // array: every declared value must be present
     #[Contains('php', 'dev')] // ['php', 'dev', 'oss'] passes, ['php'] fails
     public array $tags;
+
+    // string: every declared value must appear as a substring
+    #[Contains('example')] // 'see example.com' passes, 'see other.org' fails
+    public string $link;
 }
 ```
+
+Fails: any value that is neither array nor string.
 
 #### `DateTime`
 
@@ -111,21 +127,34 @@ Parses in the declared format and timezone; `DateTimeInterface` instances pass a
 class Event extends BaseModel
 {
     #[DateTime(format: 'Y-m-d')] // '1994-01-01' passes, '01/01/1994' fails
-    public string $birthday;
+    public string $date;
+
+    #[DateTime(timezone: 'Europe/London')] // parses in that timezone
+    public string $startsAt;
+
+    #[DateTime(format: 'Y-m-d')] // hydrated to a DateTime, then the constraint sees the instance and passes
+    public \DateTime $birthday;
 }
 ```
 
+Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
+
 #### `EndsWith`
 
-The string must end with one of the declared values.
+The string must end with one of the declared values; numeric values match by their string representation.
 
 ```php
 class Contact extends BaseModel
 {
     #[EndsWith('.com', '.net')] // 'andre@example.com' passes, 'andre@example.org' fails
     public string $email;
+
+    #[EndsWith(42)] // 'answer 42' passes, 'answer 43' fails
+    public string $note;
 }
 ```
+
+Fails: non-string values, and strings ending with none of the declared values (including a suffix longer than the value).
 
 #### `In`
 
@@ -134,10 +163,15 @@ Strict membership in the declared values.
 ```php
 class Grade extends BaseModel
 {
-    #[In('a', 'b', 'c')] // 'b' passes, 'd' fails; strict: In('1') rejects the integer 1
+    #[In('a', 'b', 'c')] // 'b' passes, 'd' fails
     public string $letter;
+
+    #[In(1, 2, true)] // 1 and true pass; strict: the string '1' fails
+    public int|bool $code;
 }
 ```
+
+Fails: any value identical to none of the declared values.
 
 #### `Max`
 
@@ -151,6 +185,8 @@ class Score extends BaseModel
 }
 ```
 
+Fails: numbers above the bound and non-numeric values.
+
 #### `Min`
 
 Inclusive numeric lower bound.
@@ -163,17 +199,27 @@ class Cart extends BaseModel
 }
 ```
 
+Fails: numbers below the bound and non-numeric values.
+
 #### `MultipleOf`
 
-Integer modulo for int pairs, `fmod` with a small tolerance for floats.
+Integer modulo for int pairs, `fmod` with a small tolerance for float pairs.
 
 ```php
 class Pack extends BaseModel
 {
-    #[MultipleOf(5)] // 20 passes, 21 fails; 0.3 counts as a multiple of 0.1
+    #[MultipleOf(5)] // 20 passes, 21 fails
     public int $size;
+
+    #[MultipleOf(0.1)] // 0.3 passes (float tolerance), 0.35 fails
+    public float $weight;
+
+    #[MultipleOf(0)] // only 0 passes
+    public int $zero;
 }
 ```
+
+Fails: non-multiples and non-numeric values.
 
 #### `Regex`
 
@@ -184,44 +230,67 @@ class Account extends BaseModel
 {
     #[Regex('/^[a-z][a-z0-9-]*$/')] // 'user-name' passes, 'User Name' fails
     public string $username;
+
+    #[Regex('/a+/')] // 'bbbaaabb' passes (partial match), 'bbb' fails
+    public string $hasA;
 }
 ```
+
+Fails: non-matching strings, strings when the pattern fails to compile, and non-string values.
 
 #### `Size`
 
-String length in bytes or array element count within inclusive bounds; either bound may be omitted.
+String length in bytes or array element count, within inclusive bounds; either bound may be omitted.
 
 ```php
-class ProfileName extends BaseModel
+class Profile extends BaseModel
 {
-    #[Size(min: 3, max: 20)] // 'andre' passes, 'ab' fails
+    #[Size(min: 3, max: 20)] // 'andre' passes, 'ab' and a 21-character string fail
     public string $name;
+
+    #[Size(min: 1)] // only the lower bound applies: [] fails, ['a'] passes
+    public array $tags;
+
+    #[Size(max: 5)] // only the upper bound applies: [] passes, 6 elements fail
+    public array $scores;
+
+    #[Size] // no bounds: any string or array passes
+    public array|string $anything;
 }
 ```
 
+Fails: sizes outside the bounds and values that are neither string nor array.
+
 #### `StartsWith`
 
-The string must start with one of the declared values.
+The string must start with one of the declared values; numeric values match by their string representation.
 
 ```php
 class Link extends BaseModel
 {
     #[StartsWith('https://')] // 'https://example.com' passes, 'http://example.com' fails
     public string $url;
+
+    #[StartsWith(42)] // '4242' passes, '142' fails
+    public string $code;
 }
 ```
+
+Fails: non-string values, non-matching strings, and prefixes longer than the value.
 
 #### `Ulid`
 
 Exactly 26 Crockford base32 characters, either letter case.
 
 ```php
-class EventId extends BaseModel
+class Event extends BaseModel
 {
-    #[Ulid] // '01ARZ3NDEKTSV4RRFFQ69G5FAV' passes, anything else fails
+    #[Ulid] // '01ARZ3NDEKTSV4RRFFQ69G5FAV' (or lowercase) passes
     public string $id;
 }
 ```
+
+Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, any other character, and non-string values.
 
 #### `Uuid`
 
@@ -230,10 +299,12 @@ Canonical 8-4-4-4-12 hexadecimal UUID, either letter case.
 ```php
 class Request extends BaseModel
 {
-    #[Uuid] // '123e4567-e89b-12d3-a456-426614174000' passes, a missing dash fails
+    #[Uuid] // '123e4567-e89b-12d3-a456-426614174000' and '123E4567-E89B-12D3-A456-426614174000' pass
     public string $id;
 }
 ```
+
+Fails: wrong length, a dash in the wrong position, a non-hex character, and non-string values.
 
 ### Value semantics
 
