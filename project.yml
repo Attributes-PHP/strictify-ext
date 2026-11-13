@@ -143,6 +143,9 @@
         - -I$(php-config --include-dir)/Zend
         - -I$(php-config --include-dir)/ext
         - -I$(php-config --include-dir)/ext/date/lib
+        # pcre2.h lives outside the PHP include dir on package-managed
+        # builds (same lookup as config.m4)
+        - -I$(pkg-config --variable=includedir libpcre2-8 2>/dev/null || echo /opt/homebrew/include)
         - -D_GNU_SOURCE
         - -Wno-implicit-function-declaration
 
