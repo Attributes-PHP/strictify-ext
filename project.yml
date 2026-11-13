@@ -148,6 +148,10 @@
         - -I$(pkg-config --variable=includedir libpcre2-8 2>/dev/null || echo /opt/homebrew/include)
         - -D_GNU_SOURCE
         - -Wno-implicit-function-declaration
+    :link:
+      # libm for fmod() in the MultipleOf constraint: Linux linkers need it
+      # explicitly (macOS resolves it from libSystem)
+      - -lm
 
 # Configuration Options specific to CMock. See CMock docs for details
 :cmock:
