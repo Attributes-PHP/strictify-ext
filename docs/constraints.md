@@ -9,6 +9,7 @@ description: 'Reference for the Strictify constraint attributes: the built-in co
 Constraints are attributes that add value-level rules on top of the native type hints. They run after the property's type check succeeds (so they always see a value of the declared type, or the coerced value in loose mode) and before the value is written to the model — a failing constraint keeps the value out of the model.
 
 ```php
+<?php
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Fields\Constraints\Between;
 use Attributes\Strictify\Fields\Constraints\Regex;
@@ -60,6 +61,7 @@ One section per built-in constraint, covering every scenario of that constraint.
 Letters, numbers, dashes and underscores only.
 
 ```php
+<?php
 class Profile extends BaseModel
 {
     #[AlphaDash] // 'user-1_name' passes
@@ -74,6 +76,7 @@ Fails: `'user name'` (space), `'user.name'` (dot), and any non-string value.
 7-bit ASCII bytes (0x00-0x7F) only.
 
 ```php
+<?php
 class Label extends BaseModel
 {
     #[Ascii] // 'hello ~!@#' passes
@@ -88,6 +91,7 @@ Fails: `'héllo'` (UTF-8 bytes above 0x7F), and any non-string value.
 Inclusive numeric range; works for `int` and `float`.
 
 ```php
+<?php
 class User extends BaseModel
 {
     #[Between(18, 99)] // 18 and 99 pass (inclusive), 17 and 100 fail
@@ -105,6 +109,7 @@ Fails: any non-numeric value, with a dedicated type error.
 Arrays and strings are both supported.
 
 ```php
+<?php
 class Article extends BaseModel
 {
     // array: every declared value must be present
@@ -124,6 +129,7 @@ Fails: any value that is neither array nor string.
 Parses in the declared format and timezone; `DateTimeInterface` instances pass as-is.
 
 ```php
+<?php
 class Event extends BaseModel
 {
     #[DateTime(format: 'Y-m-d')] // '1994-01-01' passes, '01/01/1994' fails
@@ -144,6 +150,7 @@ Fails: a string that does not parse in the declared format, and any value that i
 The string must end with one of the declared values; numeric values match by their string representation.
 
 ```php
+<?php
 class Contact extends BaseModel
 {
     #[EndsWith('.com', '.net')] // 'andre@example.com' passes, 'andre@example.org' fails
@@ -161,6 +168,7 @@ Fails: non-string values, and strings ending with none of the declared values (i
 Strict membership in the declared values.
 
 ```php
+<?php
 class Grade extends BaseModel
 {
     #[In('a', 'b', 'c')] // 'b' passes, 'd' fails
@@ -178,6 +186,7 @@ Fails: any value identical to none of the declared values.
 Inclusive numeric upper bound.
 
 ```php
+<?php
 class Score extends BaseModel
 {
     #[Max(100)] // 100 passes, 101 fails
@@ -192,6 +201,7 @@ Fails: numbers above the bound and non-numeric values.
 Inclusive numeric lower bound.
 
 ```php
+<?php
 class Cart extends BaseModel
 {
     #[Min(1)] // 1 passes, 0 fails
@@ -206,6 +216,7 @@ Fails: numbers below the bound and non-numeric values.
 Integer modulo for int pairs, `fmod` with a small tolerance for float pairs.
 
 ```php
+<?php
 class Pack extends BaseModel
 {
     #[MultipleOf(5)] // 20 passes, 21 fails
@@ -226,6 +237,7 @@ Fails: non-multiples and non-numeric values.
 `preg_match` semantics: a partial match passes.
 
 ```php
+<?php
 class Account extends BaseModel
 {
     #[Regex('/^[a-z][a-z0-9-]*$/')] // 'user-name' passes, 'User Name' fails
@@ -243,6 +255,7 @@ Fails: non-matching strings, strings when the pattern fails to compile, and non-
 String length in bytes or array element count, within inclusive bounds; either bound may be omitted.
 
 ```php
+<?php
 class Profile extends BaseModel
 {
     #[Size(min: 3, max: 20)] // 'andre' passes, 'ab' and a 21-character string fail
@@ -266,6 +279,7 @@ Fails: sizes outside the bounds and values that are neither string nor array.
 The string must start with one of the declared values; numeric values match by their string representation.
 
 ```php
+<?php
 class Link extends BaseModel
 {
     #[StartsWith('https://')] // 'https://example.com' passes, 'http://example.com' fails
@@ -283,6 +297,7 @@ Fails: non-string values, non-matching strings, and prefixes longer than the val
 Exactly 26 Crockford base32 characters, either letter case.
 
 ```php
+<?php
 class Event extends BaseModel
 {
     #[Ulid] // '01ARZ3NDEKTSV4RRFFQ69G5FAV' (or lowercase) passes
@@ -297,6 +312,7 @@ Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either c
 Canonical 8-4-4-4-12 hexadecimal UUID, either letter case.
 
 ```php
+<?php
 class Request extends BaseModel
 {
     #[Uuid] // '123e4567-e89b-12d3-a456-426614174000' and '123E4567-E89B-12D3-A456-426614174000' pass
@@ -319,6 +335,7 @@ Fails: wrong length, a dash in the wrong position, a non-hex character, and non-
 Each constraint has a default message following the `Must be ...` pattern, with the constraint parameters rendered in place of `{expected}`:
 
 ```php
+<?php
 // ['age' => ['Must be between 18 and 99']]
 // ['username' => ["Must match the pattern '/^[a-z][a-z0-9-]*$/'"]]
 // ['size' => ['Must have a size of at least 3']
@@ -332,6 +349,7 @@ The `ErrorMessage` attribute only declares `required` and `type` templates, so c
 Write a constraint in PHP userland by implementing `Attributes\Strictify\Fields\Constraint`. Any attribute class implementing it is applied during `validate()` exactly like the built-ins — the same run order, error collection and `stopFirstError` handling. PHP enforces the interface methods and their signatures at class declaration time.
 
 ```php
+<?php
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Fields\Constraint;
 

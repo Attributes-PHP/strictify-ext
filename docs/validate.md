@@ -9,12 +9,14 @@ description: 'Reference for the Attributes\Strictify\validate() function: parame
 Validates a raw data array against the type hints and attributes of a `BaseModel` instance, and returns the hydrated model.
 
 ```php
+<?php
 namespace Attributes\Strictify;
 
 function validate(array $rawData, BaseModel $model): BaseModel
 ```
 
 ```php
+<?php
 use function Attributes\Strictify\validate;
 
 $user = validate($rawData, new User());
@@ -46,6 +48,7 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 `ValidationException::getErrors()` returns an array keyed by field path, each value holding one or more messages:
 
 ```php
+<?php
 use Attributes\Strictify\Exceptions\ValidationException;
 
 try {
@@ -62,6 +65,7 @@ try {
 Nested structures report dot-notation paths, including array element keys:
 
 ```php
+<?php
 // ['users.0.email' => ['Must be string'], 'scores.5' => ['Must be integer']]
 ```
 
@@ -76,6 +80,7 @@ Every typed, non-nullable property is required. A missing key produces a `Field 
 Validation is **strict by default**: a value must already have the declared type. Declare loose mode on the model to enable scalar coercion:
 
 ```php
+<?php
 use Attributes\Strictify\ModelConfigs;
 
 #[ModelConfigs(strict: false)]
@@ -101,6 +106,7 @@ In loose mode:
 Map an input key to a property with the `Alias` attribute:
 
 ```php
+<?php
 use Attributes\Strictify\Fields\Alias;
 
 class User extends BaseModel
@@ -117,6 +123,7 @@ class User extends BaseModel
 Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Override them per property with the `ErrorMessage` attribute:
 
 ```php
+<?php
 use Attributes\Strictify\Fields\ErrorMessage;
 
 class User extends BaseModel
@@ -133,6 +140,7 @@ The `{expected}` placeholder renders the expected type list.
 Value-level rules are declared with constraint attributes from `Attributes\Strictify\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:
 
 ```php
+<?php
 use Attributes\Strictify\Fields\Constraints\Between;
 use Attributes\Strictify\Fields\Constraints\Regex;
 
@@ -153,6 +161,7 @@ Constraints apply to the property value itself, not to `Sequence`/`Dict` element
 Typed `array` properties declare their element shape with the `Sequence`, `Union`, `Intersection` and `Dict` attributes:
 
 ```php
+<?php
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Fields\Union;
 use Attributes\Strictify\Type;
@@ -180,6 +189,7 @@ Element types come from the `Attributes\Strictify\Type` enum (`Type::int`, `Type
 The same attributes compose with `new` expressions to describe nested arrays:
 
 ```php
+<?php
 #[Sequence(of: new Union(string, int, float))]
 public array $values;
 ```
@@ -191,6 +201,7 @@ Arguments of a composed `new` expression are validated at construction: an unsup
 Models may override two protected hooks, called by `validate()` around the validation run:
 
 ```php
+<?php
 abstract class BaseModel
 {
     protected function beforeValidation(array $rawData, ModelConfigs $configs): array {}
@@ -203,6 +214,7 @@ abstract class BaseModel
 `BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects (aliases and `aliasGenerator` applied — nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use it). `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`), so the output round-trips through `validate()`:
 
 ```php
+<?php
 class User extends BaseModel
 {
     public string $name;
@@ -220,6 +232,7 @@ validate($user->toDict(), new User()); // works
 When a property has a `#[DateTime(format: ..., timezone: ...)]` constraint, `toDict()` uses that format and timezone instead of the ISO 8601 default. The same format is also enforced during validation: on a `DateTime`-typed property, only strings matching the constraint's format exactly are accepted for coercion:
 
 ```php
+<?php
 class Event extends BaseModel
 {
     #[DateTime(format: 'Y-m-d', timezone: 'Europe/Madrid')]

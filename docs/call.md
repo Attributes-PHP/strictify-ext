@@ -9,12 +9,14 @@ description: 'Reference for the Attributes\Strictify\call() function: model hydr
 Calls a function or callable with validated models: `BaseModel` parameters hydrate from the raw data array through the same engine [validate()](/validate/) uses, and every other parameter is injected from a dependencies array or `ArrayAccess` container.
 
 ```php
+<?php
 namespace Attributes\Strictify;
 
 function call(string|callable $function, array $params, array|ArrayAccess $dependencies = []): mixed
 ```
 
 ```php
+<?php
 use function Attributes\Strictify\call;
 
 $result = call(myFunction(...), $rawData, $dependencies);
@@ -33,6 +35,7 @@ $result = call(myFunction(...), $rawData, $dependencies);
 Every `BaseModel`-typed parameter of the callable is hydrated from `$params` through the full validate() flow: strict/loose mode, [aliases](/validate/#aliases), array type-hint attributes, hooks and `ValidationException` with dot-notation field paths all behave identically.
 
 ```php
+<?php
 use Attributes\Strictify\BaseModel;
 use function Attributes\Strictify\call;
 
@@ -68,6 +71,7 @@ Non-model parameters take their values from `$dependencies`:
 Instead of an array, pass any `ArrayAccess` instance — `ArrayObject` or a lazy DI container. The container is only asked for the dependencies the call actually consumes: `offsetGet()` runs solely for parameters that look a value up by name or position, so a service inside a lazy container is constructed only when a parameter needs it.
 
 ```php
+<?php
 $container = new ArrayObject(['logger' => $logger]);
 
 function ship(stdClass $logger): string
