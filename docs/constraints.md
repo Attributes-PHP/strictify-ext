@@ -33,21 +33,21 @@ All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be decla
 
 | Attribute | Constructor | Fails when |
 | --------- | ----------- | ---------- |
-| `AlphaDash` | `()` | the string contains characters other than letters, numbers, dashes and underscores |
-| `Ascii` | `()` | the string contains bytes outside 7-bit ASCII (0x00-0x7F) |
-| `Between` | `(int\|float $min, int\|float $max)` | the number is outside the inclusive range |
-| `Contains` | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
-| `DateTime` | `(string $format = 'X-m-d\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
-| `EndsWith` | `(string\|int\|float ...$values)` | the string ends with none of the declared values |
-| `In` | `(string\|int\|float\|bool ...$values)` | the value matches none of the declared values |
-| `Max` | `(int\|float $value)` | the number exceeds the inclusive upper bound |
-| `Min` | `(int\|float $value)` | the number is below the inclusive lower bound |
-| `MultipleOf` | `(int\|float $value)` | the number is not a multiple of the divisor |
-| `Regex` | `(string $regex)` | the string does not match the pattern (`preg_match` semantics: a partial match passes) |
-| `Size` | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
-| `StartsWith` | `(string\|int\|float ...$values)` | the string starts with none of the declared values |
-| `Ulid` | `()` | the string is not a valid ULID (26 Crockford base32 characters, either letter case) |
-| `Uuid` | `()` | the string is not a canonical UUID (8-4-4-4-12 hex groups separated by dashes, either letter case) |
+| [`AlphaDash`](#alphadash) | `()` | the string contains characters other than letters, numbers, dashes and underscores |
+| [`Ascii`](#ascii) | `()` | the string contains bytes outside 7-bit ASCII (0x00-0x7F) |
+| [`Between`](#between) | `(int\|float $min, int\|float $max)` | the number is outside the inclusive range |
+| [`Contains`](#contains) | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
+| [`DateTime`](#datetime) | `(string $format = 'X-m-d\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
+| [`EndsWith`](#endswith) | `(string\|int\|float ...$values)` | the string ends with none of the declared values |
+| [`In`](#in) | `(string\|int\|float\|bool ...$values)` | the value matches none of the declared values |
+| [`Max`](#max) | `(int\|float $value)` | the number exceeds the inclusive upper bound |
+| [`Min`](#min) | `(int\|float $value)` | the number is below the inclusive lower bound |
+| [`MultipleOf`](#multipleof) | `(int\|float $value)` | the number is not a multiple of the divisor |
+| [`Regex`](#regex) | `(string $regex)` | the string does not match the pattern (`preg_match` semantics: a partial match passes) |
+| [`Size`](#size) | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
+| [`StartsWith`](#startswith) | `(string\|int\|float ...$values)` | the string starts with none of the declared values |
+| [`Ulid`](#ulid) | `()` | the string is not a valid ULID (26 Crockford base32 characters, either letter case) |
+| [`Uuid`](#uuid) | `()` | the string is not a canonical UUID (8-4-4-4-12 hex groups separated by dashes, either letter case) |
 
 Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only the lower bound, `#[DateTime(timezone: 'Europe/London')]` parses in that timezone.
 
