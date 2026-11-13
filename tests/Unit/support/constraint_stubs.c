@@ -152,7 +152,15 @@ zend_property_info *zend_declare_typed_property(zend_class_entry *ce, zend_strin
     return NULL;
 }
 
-void zend_update_property(const zend_class_entry *scope, zend_object *object, const char *name, size_t name_length, zval *value)
+/* PHP 8.4 constified the scope parameter of the zend_update_property*
+ * family; the stubs must match the headers of the PHP version under test. */
+#if PHP_VERSION_ID >= 80400
+#define AS_STUB_UPDATE_PROPERTY_SCOPE const zend_class_entry
+#else
+#define AS_STUB_UPDATE_PROPERTY_SCOPE zend_class_entry
+#endif
+
+void zend_update_property(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, zval *value)
 {
     (void)scope;
     (void)object;
@@ -161,7 +169,7 @@ void zend_update_property(const zend_class_entry *scope, zend_object *object, co
     (void)value;
 }
 
-void zend_update_property_long(const zend_class_entry *scope, zend_object *object, const char *name, size_t name_length, zend_long value)
+void zend_update_property_long(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, zend_long value)
 {
     (void)scope;
     (void)object;
@@ -170,7 +178,7 @@ void zend_update_property_long(const zend_class_entry *scope, zend_object *objec
     (void)value;
 }
 
-void zend_update_property_null(const zend_class_entry *scope, zend_object *object, const char *name, size_t name_length)
+void zend_update_property_null(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length)
 {
     (void)scope;
     (void)object;
@@ -178,7 +186,7 @@ void zend_update_property_null(const zend_class_entry *scope, zend_object *objec
     (void)name_length;
 }
 
-void zend_update_property_string(const zend_class_entry *scope, zend_object *object, const char *name, size_t name_length, const char *value)
+void zend_update_property_string(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, const char *value)
 {
     (void)scope;
     (void)object;
@@ -474,12 +482,21 @@ pcre_cache_entry *pcre_get_compiled_regex_cache(zend_string *regex)
     return (pcre_cache_entry *)stub_pcre_cache;
 }
 
+/* PHP 8.4 removed the use_flags argument and changed global/flags to
+ * bool/zend_long; the stub must match the headers of the PHP under test. */
+#if PHP_VERSION_ID >= 80400
 void php_pcre_match_impl(pcre_cache_entry *pce, zend_string *subject_str, zval *return_value, zval *subpats, bool global, zend_long flags, zend_off_t start_offset)
+#else
+void php_pcre_match_impl(pcre_cache_entry *pce, zend_string *subject_str, zval *return_value, zval *subpats, int global, int use_flags, zend_long flags, zend_off_t start_offset)
+#endif
 {
     (void)pce;
     (void)subject_str;
     (void)subpats;
     (void)global;
+#if PHP_VERSION_ID < 80400
+    (void)use_flags;
+#endif
     (void)flags;
     (void)start_offset;
     ZVAL_LONG(return_value, stub_pcre_match_result);
