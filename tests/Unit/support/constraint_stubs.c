@@ -152,12 +152,20 @@ zend_property_info *zend_declare_typed_property(zend_class_entry *ce, zend_strin
     return NULL;
 }
 
-/* PHP 8.4 constified the scope parameter of the zend_update_property*
+/* PHP 8.5 constified the scope parameter of the zend_update_property*
  * family; the stubs must match the headers of the PHP version under test. */
-#if PHP_VERSION_ID >= 80400
+#if PHP_VERSION_ID >= 80500
 #define AS_STUB_UPDATE_PROPERTY_SCOPE const zend_class_entry
 #else
 #define AS_STUB_UPDATE_PROPERTY_SCOPE zend_class_entry
+#endif
+
+/* PHP 8.3 constified the zval parameter of the slow-path argument parsers
+ * (bool/long/double) and of zend_is_identical. */
+#if PHP_VERSION_ID >= 80300
+#define AS_STUB_CONST_ZVAL const zval
+#else
+#define AS_STUB_CONST_ZVAL zval
 #endif
 
 void zend_update_property(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, zval *value)
@@ -204,7 +212,7 @@ zend_result zend_parse_parameters(uint32_t num_args, const char *type_spec, ...)
 
 /* Slow paths of the ZEND_PARSE_PARAMETERS macros, referenced by the
  * __construct methods (never called by the tests) */
-bool zend_parse_arg_bool_slow(const zval *arg, bool *dest, uint32_t arg_num)
+bool zend_parse_arg_bool_slow(AS_STUB_CONST_ZVAL *arg, bool *dest, uint32_t arg_num)
 {
     (void)arg;
     (void)dest;
@@ -212,7 +220,7 @@ bool zend_parse_arg_bool_slow(const zval *arg, bool *dest, uint32_t arg_num)
     return false;
 }
 
-bool zend_parse_arg_long_slow(const zval *arg, zend_long *dest, uint32_t arg_num)
+bool zend_parse_arg_long_slow(AS_STUB_CONST_ZVAL *arg, zend_long *dest, uint32_t arg_num)
 {
     (void)arg;
     (void)dest;
@@ -220,7 +228,7 @@ bool zend_parse_arg_long_slow(const zval *arg, zend_long *dest, uint32_t arg_num
     return false;
 }
 
-bool zend_parse_arg_double_slow(const zval *arg, double *dest, uint32_t arg_num)
+bool zend_parse_arg_double_slow(AS_STUB_CONST_ZVAL *arg, double *dest, uint32_t arg_num)
 {
     (void)arg;
     (void)dest;
@@ -422,7 +430,7 @@ void zend_clear_exception(void)
 // Comparison / conversion stubs used by the validate paths
 // ---------------------------------------------------------------------------
 
-bool zend_is_identical(const zval *op1, const zval *op2)
+bool zend_is_identical(AS_STUB_CONST_ZVAL *op1, AS_STUB_CONST_ZVAL *op2)
 {
     if (Z_TYPE_P(op1) != Z_TYPE_P(op2)) {
         return false;
