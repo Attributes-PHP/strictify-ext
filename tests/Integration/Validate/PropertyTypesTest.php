@@ -179,12 +179,12 @@ describe('property types', function () {
         expect($roundTripped->when->format('Y-m-d'))->toBe('2024-01-02');
     });
 
-    it('hydrates a backed enum property from its scalar value', function () {
+    it('hydrates a backed enum property from the enum case', function () {
         $model = new class extends BaseModel {
             public EnumStrThreeValues $role;
         };
 
-        validate(['role' => 'two'], $model);
+        validate(['role' => EnumStrThreeValues::Two], $model);
 
         expect($model->role)->toBe(EnumStrThreeValues::Two);
         expect($model->toDict()['role'])->toBe(EnumStrThreeValues::Two);
@@ -195,8 +195,13 @@ describe('property types', function () {
             public EnumStrThreeValues $role;
         };
 
-        validate(['role' => 'four'], $model);
-    })->throws(ValidationException::class);
+        try {
+            validate(['role' => 'four'], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['role' => ["Must be 'one', 'two' or 'three'"]]);
+        }
+    });
 
     it('accepts null and a value for a nullable property', function () {
         $model = new class extends BaseModel {
