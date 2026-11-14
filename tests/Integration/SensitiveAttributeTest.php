@@ -7,9 +7,13 @@ namespace Attributes\Strictify\Tests\Integration;
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Alias;
+use Attributes\Strictify\Fields\Constraints\Min;
 use Attributes\Strictify\Fields\ErrorMessage;
 use Attributes\Strictify\Fields\Field;
 use Attributes\Strictify\Fields\Sensitive;
+use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
+use DateTime;
+use DateTimeInterface;
 use ReflectionClass;
 
 use function Attributes\Strictify\validate;
@@ -112,10 +116,118 @@ it('does not redact values of non-sensitive properties in error messages', funct
     }
 });
 
+describe('sensitive properties of every type', function () {
+    it('omits all of them from toDict() and includes the real values with includeSensitive', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveAllTypesModel();
+
+        validate([
+            'label' => 'visible',
+            'pin' => 1234,
+            'price' => 9.99,
+            'note' => $secret,
+            'active' => true,
+            'tags' => ['a', 'b'],
+            'when' => '2024-01-02T03:04:05+00:00',
+            'role' => EnumStrThreeValues::One,
+            'nickname' => null,
+            'id' => 42,
+            'misc' => ['k' => 1],
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ], $model);
+
+        // Only the non-sensitive property is serialized by default
+        expect($model->toDict())->toBe(['label' => 'visible']);
+
+        expect($model->toDict(includeSensitive: true))->toBe([
+            'label' => 'visible',
+            'pin' => 1234,
+            'price' => 9.99,
+            'note' => $secret,
+            'active' => true,
+            'tags' => ['a', 'b'],
+            'when' => '2024-01-02T03:04:05+00:00',
+            'role' => EnumStrThreeValues::One,
+            'nickname' => null,
+            'id' => 42,
+            'misc' => ['k' => 1],
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ]);
+
+        // The model itself still holds the real, typed values
+        expect($model->pin)->toBe(1234);
+        expect($model->price)->toBe(9.99);
+        expect($model->note)->toBe($secret);
+        expect($model->active)->toBeTrue();
+        expect($model->tags)->toBe(['a', 'b']);
+        expect($model->when)->toBeInstanceOf(DateTime::class);
+        expect($model->role)->toBe(EnumStrThreeValues::One);
+        expect($model->nickname)->toBeNull();
+        expect($model->id)->toBe(42);
+        expect($model->misc)->toBe(['k' => 1]);
+        expect($model->address)->toBeInstanceOf(SensitiveAddress::class);
+    });
+
+    it('omits a sensitive nested BaseModel property as a whole subtree', function () {
+        $model = new class extends BaseModel {
+            public string $name;
+
+            #[Sensitive]
+            public SensitiveAddress $address;
+        };
+
+        validate(['name' => 'andre', 'address' => ['street' => 'Main St', 'city' => 'London']], $model);
+
+        expect($model->address->street)->toBe('Main St');
+        expect($model->toDict())->toBe(['name' => 'andre']);
+        expect($model->toDict(true))->toBe([
+            'name' => 'andre',
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ]);
+    });
+
+    it('redacts {value} for sensitive properties of any type, not just strings', function () {
+        $model = new class extends BaseModel {
+            #[Sensitive]
+            #[ErrorMessage(type: 'Bad value: {value}')]
+            public array $tags;
+        };
+
+        try {
+            validate(['tags' => 'not-an-array'], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['tags' => ['Bad value: ***']]);
+        }
+    });
+
+    it('still runs constraints on sensitive properties without leaking the value', function () {
+        $model = new class extends BaseModel {
+            #[Sensitive]
+            #[Min(5)]
+            public int $pin;
+        };
+
+        try {
+            validate(['pin' => 3], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['pin' => ['Must be at least 5']]);
+        }
+    });
+});
+
 class TestClassWithSensitiveProperty
 {
     #[Sensitive]
     public string $password;
+}
+
+class SensitiveAddress extends BaseModel
+{
+    public string $street;
+
+    public string $city;
 }
 
 class SensitiveInnerModel extends BaseModel
@@ -132,4 +244,42 @@ class SensitiveOuterModel extends BaseModel
 
     #[Sensitive]
     public string $password;
+}
+
+class SensitiveAllTypesModel extends BaseModel
+{
+    public string $label;
+
+    #[Sensitive]
+    public int $pin;
+
+    #[Sensitive]
+    public float $price;
+
+    #[Sensitive]
+    public string $note;
+
+    #[Sensitive]
+    public bool $active;
+
+    #[Sensitive]
+    public array $tags;
+
+    #[Sensitive]
+    public DateTimeInterface $when;
+
+    #[Sensitive]
+    public EnumStrThreeValues $role;
+
+    #[Sensitive]
+    public ?string $nickname;
+
+    #[Sensitive]
+    public int|string $id;
+
+    #[Sensitive]
+    public $misc;
+
+    #[Sensitive]
+    public SensitiveAddress $address;
 }
