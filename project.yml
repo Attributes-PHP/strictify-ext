@@ -148,10 +148,6 @@
         - -I$(pkg-config --variable=includedir libpcre2-8 2>/dev/null || echo /opt/homebrew/include)
         - -D_GNU_SOURCE
         - -Wno-implicit-function-declaration
-    :link:
-      # libm for fmod() in the MultipleOf constraint: Linux linkers need it
-      # explicitly (macOS resolves it from libSystem)
-      - -lm
 
 # Configuration Options specific to CMock. See CMock docs for details
 :cmock:
@@ -242,7 +238,10 @@
   :placement: :end
   :flag: "-l${1}"
   :path_flag: "-L ${1}"
-  :system: []    # for example, you might list 'm' to grab the math library
+  # libm for fmod()/fabs() in MultipleOf and the typehint validator.
+  # :placement: :end above makes Ceedling append -lm after the object files;
+  # GNU ld (--as-needed) drops -lm if it appears before them.
+  :system: [m]
   :test: []
   :release: []
 
