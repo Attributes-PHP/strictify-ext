@@ -117,9 +117,9 @@ it('does not redact values of non-sensitive properties in error messages', funct
 });
 
 describe('sensitive properties of every type', function () {
-    it('omits all of them from toDict() and includes the real values with includeSensitive', function () {
+    it('omits sensitive scalar/array properties and includes them with includeSensitive', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveAllTypesModel();
+        $model = new SensitiveScalarTypesModel();
 
         validate([
             'label' => 'visible',
@@ -128,12 +128,6 @@ describe('sensitive properties of every type', function () {
             'note' => $secret,
             'active' => true,
             'tags' => ['a', 'b'],
-            'when' => '2024-01-02T03:04:05+00:00',
-            'role' => EnumStrThreeValues::One,
-            'nickname' => null,
-            'id' => 42,
-            'misc' => ['k' => 1],
-            'address' => ['street' => 'Main St', 'city' => 'London'],
         ], $model);
 
         // Only the non-sensitive property is serialized by default
@@ -146,12 +140,6 @@ describe('sensitive properties of every type', function () {
             'note' => $secret,
             'active' => true,
             'tags' => ['a', 'b'],
-            'when' => '2024-01-02T03:04:05+00:00',
-            'role' => EnumStrThreeValues::One,
-            'nickname' => null,
-            'id' => 42,
-            'misc' => ['k' => 1],
-            'address' => ['street' => 'Main St', 'city' => 'London'],
         ]);
 
         // The model itself still holds the real, typed values
@@ -160,6 +148,33 @@ describe('sensitive properties of every type', function () {
         expect($model->note)->toBe($secret);
         expect($model->active)->toBeTrue();
         expect($model->tags)->toBe(['a', 'b']);
+    });
+
+    it('omits sensitive object-typed properties and includes them with includeSensitive', function () {
+        $model = new SensitiveObjectTypesModel();
+
+        validate([
+            'label' => 'visible',
+            'when' => '2024-01-02T03:04:05+00:00',
+            'role' => EnumStrThreeValues::One,
+            'nickname' => null,
+            'id' => 42,
+            'misc' => ['k' => 1],
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ], $model);
+
+        expect($model->toDict())->toBe(['label' => 'visible']);
+
+        expect($model->toDict(includeSensitive: true))->toBe([
+            'label' => 'visible',
+            'when' => '2024-01-02T03:04:05+00:00',
+            'role' => EnumStrThreeValues::One,
+            'nickname' => null,
+            'id' => 42,
+            'misc' => ['k' => 1],
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ]);
+
         expect($model->when)->toBeInstanceOf(DateTime::class);
         expect($model->role)->toBe(EnumStrThreeValues::One);
         expect($model->nickname)->toBeNull();
@@ -246,7 +261,7 @@ class SensitiveOuterModel extends BaseModel
     public string $password;
 }
 
-class SensitiveAllTypesModel extends BaseModel
+class SensitiveScalarTypesModel extends BaseModel
 {
     public string $label;
 
@@ -264,6 +279,11 @@ class SensitiveAllTypesModel extends BaseModel
 
     #[Sensitive]
     public array $tags;
+}
+
+class SensitiveObjectTypesModel extends BaseModel
+{
+    public string $label;
 
     #[Sensitive]
     public DateTimeInterface $when;
