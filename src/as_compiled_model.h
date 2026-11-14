@@ -62,6 +62,7 @@ typedef struct {
     bool untyped;
     bool is_intersection_group; // pure intersection hint: every class arm must match
     bool has_default;
+    bool sensitive; // carries #[Sensitive]: value is redacted in toDict() and error messages
 
     as_array_state array_state;
     as_spec *array_spec; // borrowed, owned by the array spec cache

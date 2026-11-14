@@ -640,6 +640,15 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
         return false;
     }
 
+    /*
+     * #[Sensitive] marks the field's value for redaction: toDict() and the
+     * {value} error placeholder render AS_SENSITIVE_VALUE_MASK instead of
+     * the raw value. Presence-only check, resolved once per field compile.
+     */
+    if (cf->prop->attributes != NULL) {
+        cf->sensitive = zend_get_attribute_str(cf->prop->attributes, "attributes\\strictify\\fields\\sensitive", sizeof("attributes\\strictify\\fields\\sensitive") - 1) != NULL;
+    }
+
     // The plan owns one reference to a stable string
     cf->name = (resolved == cf->prop->name) ? zend_string_copy(cf->prop->name) : resolved;
 
@@ -1112,7 +1121,11 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
         }
 
         zval serialized;
-        if (!as_serialize_value(slot, generator, cf, &serialized)) {
+        if (cf->sensitive) {
+            // The value itself stays on the model; only the serialized
+            // output is redacted, like #[\SensitiveParameter] in traces
+            ZVAL_STRING(&serialized, AS_SENSITIVE_VALUE_MASK);
+        } else if (!as_serialize_value(slot, generator, cf, &serialized)) {
             return false;
         }
         zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &serialized);

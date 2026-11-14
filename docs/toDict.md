@@ -51,6 +51,7 @@ validate($user->toDict(), new User()); // works
 - Scalars and arrays (including `Sequence`/`Dict` shapes) are returned as-is, recursing into nested elements.
 - `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`).
 - Nested `BaseModel` properties are serialized recursively.
+- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are redacted: the value is replaced with `'***'`.
 - Uninitialized typed properties are omitted from the output.
 
 ```php

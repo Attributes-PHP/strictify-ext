@@ -271,6 +271,30 @@ class User extends BaseModel
 - The translator must return `?string`; any other type throws a `ValueError`, and exceptions thrown inside it propagate to the caller of `validate()`.
 - Userland constraints (`Attributes\Strictify\Fields\Constraint`) produce their `message()` in PHP, so the engine does not translate it — call your catalog from `message()` directly.
 
+### Sensitive fields
+
+Mark a property with `Sensitive` to redact its value wherever the library exposes it — like `#[\SensitiveParameter]` redacts parameter values in stack traces. The property itself still holds the real value after `validate()`; only the rendered output is masked with `***`:
+
+```php
+<?php
+use Attributes\Strictify\Fields\Sensitive;
+
+class Credentials extends BaseModel
+{
+    public string $username;
+
+    #[Sensitive]
+    public string $password;
+}
+
+$model = validate(['username' => 'andre', 'password' => 'hunter2'], new Credentials());
+
+$model->password;   // 'hunter2'
+$model->toDict();   // ['username' => 'andre', 'password' => '***']
+```
+
+The redaction also applies to the `{value}` placeholder in error message templates, so secrets do not leak into `ValidationException` messages, and it composes with `Alias` and nested models (each level's sensitive fields are masked in the nested `toDict()` output).
+
 ### Constraints
 
 Value-level rules are declared with constraint attributes from `Attributes\Strictify\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:

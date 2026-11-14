@@ -3,6 +3,14 @@
 
 #include "php.h"
 
+/*
+ * Placeholder rendered instead of the real value of a #[Sensitive] field
+ * wherever the library exposes it (toDict() output, the {value} error
+ * message placeholder), mirroring how #[\SensitiveParameter] redacts
+ * parameter values in stack traces.
+ */
+#define AS_SENSITIVE_VALUE_MASK "***"
+
 typedef struct {
     zend_string *parent;
     zend_string *name;
