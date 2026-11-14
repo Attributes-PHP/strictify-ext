@@ -24,7 +24,8 @@ it('Sensitive is a valid PHP attribute for class properties', function () {
     expect($instance)->toBeInstanceOf(Field::class);
 });
 
-it('keeps the real value on the property but redacts it in toDict()', function () {
+it('keeps the real value on the property and omits it from toDict() by default', function () {
+    $secret = str_repeat('x', 8);
     $model = new class extends BaseModel {
         public string $name;
 
@@ -32,35 +33,53 @@ it('keeps the real value on the property but redacts it in toDict()', function (
         public string $password;
     };
 
-    validate(['name' => 'andre', 'password' => 'hunter2'], $model);
+    validate(['name' => 'andre', 'password' => $secret], $model);
 
-    expect($model->name)->toBe('andre');
-    expect($model->password)->toBe('hunter2');
-    expect($model->toDict())->toBe(['name' => 'andre', 'password' => '***']);
+    expect($model->password)->toBe($secret);
+    expect($model->toDict())->toBe(['name' => 'andre']);
 });
 
-it('redacts sensitive fields keyed by their alias in toDict()', function () {
+it('includes sensitive values in toDict() when includeSensitive is true', function () {
+    $secret = str_repeat('x', 8);
     $model = new class extends BaseModel {
-        #[Alias('api_key')]
+        public string $name;
+
+        #[Sensitive]
+        public string $password;
+    };
+
+    validate(['name' => 'andre', 'password' => $secret], $model);
+
+    expect($model->toDict(includeSensitive: true))->toBe(['name' => 'andre', 'password' => $secret]);
+    expect($model->toDict(true))->toBe(['name' => 'andre', 'password' => $secret]);
+});
+
+it('omits aliased sensitive fields from toDict() unless includeSensitive is set', function () {
+    $secret = str_repeat('k', 16);
+    $model = new class extends BaseModel {
+        #[Alias('public_id')]
         #[Sensitive]
         public string $apiKey;
     };
 
-    validate(['api_key' => 'secret'], $model);
+    validate(['public_id' => $secret], $model);
 
-    expect($model->apiKey)->toBe('secret');
-    expect($model->toDict())->toBe(['api_key' => '***']);
+    expect($model->toDict())->toBe([]);
+    expect($model->toDict(includeSensitive: true))->toBe(['public_id' => $secret]);
 });
 
-it('redacts sensitive values inside nested models', function () {
+it('omits sensitive values inside nested models unless includeSensitive is set', function () {
+    $token = str_repeat('t', 8);
+    $secret = str_repeat('x', 8);
     $model = new SensitiveOuterModel();
 
-    validate(['inner' => ['token' => 'tok123', 'label' => 'x'], 'password' => 'pw'], $model);
+    validate(['inner' => ['token' => $token, 'label' => 'x'], 'password' => $secret], $model);
 
-    expect($model->inner->token)->toBe('tok123');
-    expect($model->toDict())->toBe([
-        'inner' => ['token' => '***', 'label' => 'x'],
-        'password' => '***',
+    expect($model->inner->token)->toBe($token);
+    expect($model->toDict())->toBe(['inner' => ['label' => 'x']]);
+    expect($model->toDict(includeSensitive: true))->toBe([
+        'inner' => ['token' => $token, 'label' => 'x'],
+        'password' => $secret,
     ]);
 });
 

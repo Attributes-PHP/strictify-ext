@@ -273,7 +273,7 @@ class User extends BaseModel
 
 ### Sensitive fields
 
-Mark a property with `Sensitive` to redact its value wherever the library exposes it — like `#[\SensitiveParameter]` redacts parameter values in stack traces. The property itself still holds the real value after `validate()`; only the rendered output is masked with `***`:
+Mark a property with `Sensitive` to keep its value out of the library's output — like `#[\SensitiveParameter]` keeps parameter values out of stack traces. The property itself still holds the real value after `validate()`:
 
 ```php
 <?php
@@ -289,11 +289,12 @@ class Credentials extends BaseModel
 
 $model = validate(['username' => 'andre', 'password' => 'hunter2'], new Credentials());
 
-$model->password;   // 'hunter2'
-$model->toDict();   // ['username' => 'andre', 'password' => '***']
+$model->password;                        // 'hunter2'
+$model->toDict();                        // ['username' => 'andre'] — password omitted
+$model->toDict(includeSensitive: true);  // ['username' => 'andre', 'password' => 'hunter2']
 ```
 
-The redaction also applies to the `{value}` placeholder in error message templates, so secrets do not leak into `ValidationException` messages, and it composes with `Alias` and nested models (each level's sensitive fields are masked in the nested `toDict()` output).
+By default `toDict()` omits sensitive properties entirely; pass `includeSensitive: true` to serialize their real values. The omission composes with `Alias` (the aliased key is dropped) and nested models (each level omits its own sensitive fields). Separately, the `{value}` placeholder in error message templates is always redacted to `***` for sensitive properties, so secrets do not leak into `ValidationException` messages.
 
 ### Constraints
 

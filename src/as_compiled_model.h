@@ -62,7 +62,7 @@ typedef struct {
     bool untyped;
     bool is_intersection_group; // pure intersection hint: every class arm must match
     bool has_default;
-    bool sensitive; // carries #[Sensitive]: value is redacted in toDict() and error messages
+    bool sensitive; // carries #[Sensitive]: omitted from toDict() unless requested, redacted in error messages
 
     as_array_state array_state;
     as_spec *array_spec; // borrowed, owned by the array spec cache
@@ -102,7 +102,7 @@ as_compiled_model *as_get_root_compiled_model(zval *model);
  * validation), matching the previous semantics.
  */
 bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path);
-bool as_compiled_model_to_dict(zval *model, zval *return_value);
+bool as_compiled_model_to_dict(zval *model, bool include_sensitive, zval *return_value);
 
 void as_clear_compiled_model_cache(void);
 void as_clear_field_name_cache(void);

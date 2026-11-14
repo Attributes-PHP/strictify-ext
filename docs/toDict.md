@@ -14,7 +14,7 @@ namespace Attributes\Strictify;
 
 abstract class BaseModel
 {
-    public function toDict(): array {}
+    public function toDict(bool $includeSensitive = false): array {}
 }
 ```
 
@@ -51,7 +51,7 @@ validate($user->toDict(), new User()); // works
 - Scalars and arrays (including `Sequence`/`Dict` shapes) are returned as-is, recursing into nested elements.
 - `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`).
 - Nested `BaseModel` properties are serialized recursively.
-- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are redacted: the value is replaced with `'***'`.
+- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are omitted from the output. Pass `includeSensitive: true` to `toDict()` to serialize their real values (the flag propagates into nested models and arrays).
 - Uninitialized typed properties are omitted from the output.
 
 ```php
