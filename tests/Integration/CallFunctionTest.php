@@ -454,7 +454,7 @@ describe('call function sensitive parameters', function () {
 
     it('redacts #[SensitiveParameter] arguments in traces of callables invoked via call()', function () {
         $secret = str_repeat('s', 8);
-        $GLOBALS['sensitive_call_backtrace'] = null;
+        SensitiveCallRecorder::$backtrace = null;
 
         try {
             call('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws', [], ['user' => 'andre', 'password' => $secret]);
@@ -464,7 +464,7 @@ describe('call function sensitive parameters', function () {
 
             // Backtrace captured inside the callable: the sensitive arg is
             // replaced by SensitiveParameterValue, the other arg is intact
-            $args = $GLOBALS['sensitive_call_backtrace'][0]['args'];
+            $args = SensitiveCallRecorder::$backtrace[0]['args'];
             expect($args[0])->toBe('andre');
             expect($args[1])->toBeInstanceOf(\SensitiveParameterValue::class);
 
@@ -500,9 +500,14 @@ function call_function_sensitive_echo(string $user, #[\SensitiveParameter] strin
     return $user.':'.strlen($password);
 }
 
+class SensitiveCallRecorder
+{
+    public static ?array $backtrace = null;
+}
+
 function call_function_sensitive_throws(string $user, #[\SensitiveParameter] string $password): void
 {
-    $GLOBALS['sensitive_call_backtrace'] = debug_backtrace();
+    SensitiveCallRecorder::$backtrace = debug_backtrace();
 
     throw new Error('sensitive failure');
 }
