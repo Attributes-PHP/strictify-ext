@@ -54,10 +54,11 @@ static bool target_has_user_arg_info(const zend_function *function)
 }
 
 /*
- * Whether the target's i-th parameter carries #[\SensitiveParameter].
- * Parameter attributes live on the function's attribute table with a
- * 1-based offset (see zend_get_parameter_attribute_str), so this works
- * for userland functions and for internal functions alike.
+ * Whether the target's i-th parameter (0-based index) carries
+ * #[\SensitiveParameter]. Parameter attributes live on the function's
+ * attribute table; zend_get_parameter_attribute_str() takes the 0-based
+ * index and applies the 1-based offset internally, so this works for
+ * userland functions and for internal functions alike.
  */
 static bool parameter_is_sensitive(const zend_function *function, uint32_t index)
 {
@@ -65,7 +66,7 @@ static bool parameter_is_sensitive(const zend_function *function, uint32_t index
         return false;
     }
 
-    return zend_get_parameter_attribute_str(function->common.attributes, "sensitiveparameter", sizeof("sensitiveparameter") - 1, index + 1) != NULL;
+    return zend_get_parameter_attribute_str(function->common.attributes, "sensitiveparameter", sizeof("sensitiveparameter") - 1, index) != NULL;
 }
 
 /*

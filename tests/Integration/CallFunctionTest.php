@@ -461,7 +461,7 @@ describe('call function sensitive parameters', function () {
         } catch (Error $e) {
             expect($e->getMessage())->toBe('sensitive failure');
             $frame = $e->getTrace()[0];
-            expect($frame['function'])->toBe('call_function_sensitive_throws');
+            expect($frame['function'])->toBe('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws');
             expect($frame['args'][0])->toBe('andre');
             expect($frame['args'][1])->toBeInstanceOf(\SensitiveParameterValue::class);
             expect($e->getTraceAsString())->not->toContain($secret);
