@@ -640,6 +640,16 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
         return false;
     }
 
+    /*
+     * #[Sensitive] marks the field: toDict() omits it unless includeSensitive
+     * is passed, and the {value} error placeholder renders
+     * AS_SENSITIVE_VALUE_MASK instead of the raw value. Presence-only
+     * check, resolved once per field compile.
+     */
+    if (cf->prop->attributes != NULL) {
+        cf->sensitive = zend_get_attribute_str(cf->prop->attributes, "attributes\\strictify\\fields\\sensitive", sizeof("attributes\\strictify\\fields\\sensitive") - 1) != NULL;
+    }
+
     // The plan owns one reference to a stable string
     cf->name = (resolved == cf->prop->name) ? zend_string_copy(cf->prop->name) : resolved;
 
@@ -941,11 +951,12 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
 /*
  * Serializes a single value for toDict: DateTimeInterface -> string,
  * BaseModel -> recursive dict, array -> recurse into elements, else copy.
+ * include_sensitive propagates into nested models and arrays.
  */
-static bool as_model_to_dict_with_generator(zval *model, char generator, zval *return_value);
-static bool as_serialize_value(zval *value, char generator, as_compiled_field *cf, zval *out);
+static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, zval *return_value);
+static bool as_serialize_value(zval *value, char generator, bool include_sensitive, as_compiled_field *cf, zval *out);
 
-static bool as_serialize_value(zval *value, char generator, as_compiled_field *cf, zval *out)
+static bool as_serialize_value(zval *value, char generator, bool include_sensitive, as_compiled_field *cf, zval *out)
 {
     if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), datetime_interface_ce)) {
         zend_string *fmt_str = NULL;
@@ -1034,7 +1045,7 @@ static bool as_serialize_value(zval *value, char generator, as_compiled_field *c
         if (nested_props.alias_generator != false) {
             nested_generator = nested_props.alias_generator;
         }
-        return as_model_to_dict_with_generator(value, nested_generator, out);
+        return as_model_to_dict_with_generator(value, nested_generator, include_sensitive, out);
     }
 
     if (Z_TYPE_P(value) == IS_ARRAY) {
@@ -1045,7 +1056,7 @@ static bool as_serialize_value(zval *value, char generator, as_compiled_field *c
         ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(value), idx, key, el)
         {
             zval serialized;
-            if (!as_serialize_value(el, generator, NULL, &serialized)) {
+            if (!as_serialize_value(el, generator, include_sensitive, NULL, &serialized)) {
                 zval_ptr_dtor(out);
                 return false;
             }
@@ -1067,10 +1078,12 @@ static bool as_serialize_value(zval *value, char generator, as_compiled_field *c
  * Serializes the model's public properties into an array keyed by the
  * resolved field names (Alias / aliasGenerator), matching what
  * validate() expects as input. Uninitialized typed properties are
- * skipped. DateTimeInterface values are formatted as strings.
- * Nested BaseModel values recurse under the appropriate generator.
+ * skipped, and so are #[Sensitive] properties unless include_sensitive
+ * is set (then their real values are serialized). DateTimeInterface
+ * values are formatted as strings. Nested BaseModel values recurse
+ * under the appropriate generator.
  */
-static bool as_model_to_dict_with_generator(zval *model, char generator, zval *return_value)
+static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, zval *return_value)
 {
     zend_class_entry *ce = Z_OBJCE_P(model);
     as_class_plans *plans = get_class_plans(ce);
@@ -1093,6 +1106,11 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
             }
         }
 
+        // #[Sensitive] fields are omitted unless explicitly requested
+        if (cf->sensitive && !include_sensitive) {
+            continue;
+        }
+
 #if PHP_VERSION_ID >= 80400
         zval *slot;
         if (cf->prop->hooks != NULL) {
@@ -1112,7 +1130,7 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
         }
 
         zval serialized;
-        if (!as_serialize_value(slot, generator, cf, &serialized)) {
+        if (!as_serialize_value(slot, generator, include_sensitive, cf, &serialized)) {
             return false;
         }
         zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &serialized);
@@ -1121,12 +1139,12 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, zval *r
     return true;
 }
 
-bool as_compiled_model_to_dict(zval *model, zval *return_value)
+bool as_compiled_model_to_dict(zval *model, bool include_sensitive, zval *return_value)
 {
     as_compiled_model *plan = as_get_root_compiled_model(model);
     if (UNEXPECTED(plan == NULL)) {
         return false;
     }
 
-    return as_model_to_dict_with_generator(model, plan->generator, return_value);
+    return as_model_to_dict_with_generator(model, plan->generator, include_sensitive, return_value);
 }

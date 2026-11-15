@@ -488,6 +488,21 @@ static zend_attribute *get_error_message_attribute(as_property_info *property)
     return as_get_attribute_str(property->property->attributes, "attributes\\strictify\\fields\\errormessage", sizeof("attributes\\strictify\\fields\\errormessage") - 1);
 }
 
+/*
+ * Whether the property carries the #[Sensitive] attribute: its value must
+ * be redacted wherever it is rendered (the {value} placeholder here;
+ * toDict() in as_compiled_model.c), like #[\SensitiveParameter] redacts
+ * parameter values in stack traces.
+ */
+static bool property_is_sensitive(as_property_info *property)
+{
+    if (property == NULL || property->property == NULL || property->property->attributes == NULL) {
+        return false;
+    }
+
+    return as_get_attribute_str(property->property->attributes, "attributes\\strictify\\fields\\sensitive", sizeof("attributes\\strictify\\fields\\sensitive") - 1) != NULL;
+}
+
 static zend_always_inline bool attribute_argument_name_equals(const zend_string *name, const char *expected, size_t length)
 {
     return as_binary_strcasecmp(ZSTR_VAL(name), ZSTR_LEN(name), expected, length) == 0;
@@ -870,8 +885,8 @@ static zend_string *replace_placeholders(const char *template, size_t length, as
         total_placeholders += table[i].counts;
 
         if (table[i].replace == NULL) {
-            if (i == 1) { // {value}
-                table[i].replace = as_value_to_string(field->value);
+            if (i == 1) { // {value}: redacted for #[Sensitive] properties
+                table[i].replace = property_is_sensitive(prop_info) ? as_string_init(AS_SENSITIVE_VALUE_MASK, sizeof(AS_SENSITIVE_VALUE_MASK) - 1, 0) : as_value_to_string(field->value);
             } else if (i == 2) { // {expected}
                 if (expected_override != NULL) {
                     table[i].replace = as_string_copy((zend_string *)expected_override);

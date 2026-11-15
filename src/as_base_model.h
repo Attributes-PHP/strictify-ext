@@ -18,6 +18,7 @@ ZEND_ARG_OBJ_INFO(0, configs, Attributes\\Strictify\\ModelConfigs, 0)
 ZEND_END_ARG_INFO()
 
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_AS_BaseModel_toDict, 0, 0, IS_ARRAY, 0)
+ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, includeSensitive, _IS_BOOL, 0, "false")
 ZEND_END_ARG_INFO()
 
 ZEND_METHOD(AS_BaseModel, beforeValidation);

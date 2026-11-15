@@ -18,9 +18,14 @@ ZEND_METHOD(AS_BaseModel, afterValidation)
 
 ZEND_METHOD(AS_BaseModel, toDict)
 {
-    ZEND_PARSE_PARAMETERS_NONE();
+    bool include_sensitive = false;
 
-    if (!as_compiled_model_to_dict(getThis(), return_value)) {
+    ZEND_PARSE_PARAMETERS_START(0, 1)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_BOOL(include_sensitive)
+    ZEND_PARSE_PARAMETERS_END();
+
+    if (!as_compiled_model_to_dict(getThis(), include_sensitive, return_value)) {
         RETURN_THROWS();
     }
 }

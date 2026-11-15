@@ -21,6 +21,7 @@
 #include "src/fields/as_alias.h"
 #include "src/fields/as_dict.h"
 #include "src/fields/as_error_message.h"
+#include "src/fields/as_sensitive.h"
 #include "src/fields/as_intersection.h"
 #include "src/fields/as_sequence.h"
 #include "src/fields/as_union.h"
@@ -91,6 +92,7 @@ PHP_MINIT_FUNCTION(strictify)
     as_register_ConfigAwareConstraint_interface();
     as_register_Alias_class();
     as_register_ErrorMessage_class();
+    as_register_Sensitive_class();
     as_register_Sequence_class();
     as_register_Union_class();
     as_register_Intersection_class();
