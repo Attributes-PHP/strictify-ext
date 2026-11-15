@@ -64,6 +64,7 @@ Non-model parameters take their values from `$dependencies`:
 - Internal functions (whose signatures cannot declare models) receive them positionally: `call('str_repeat', [], ['x', 3])` returns `xxx`.
 - A missing value for an optional parameter lets the engine apply the declared default.
 - A missing value for a required parameter throws an `Error`: `No value provided for parameter $second of registerUser().`.
+- A parameter marked `#[\SensitiveParameter]` is never named by that `Error`: `No value provided for a sensitive parameter of registerUser().`.
 - Variadic targets receive the leftover positional dependencies.
 
 ## Lazy ArrayAccess containers

@@ -155,6 +155,16 @@ function call_function_takes_service(stdClass $logger): string
     return $logger->name;
 }
 
+function call_function_takes_sensitive_parameter(#[\SensitiveParameter] stdClass $secret): string
+{
+    return $secret->name;
+}
+
+function call_function_takes_sensitive_and_plain(#[\SensitiveParameter] string $apiKey, string $label): string
+{
+    return $label;
+}
+
 class CallFunctionGreeter
 {
     public static function hello(CallFunctionUser $user): string
@@ -311,6 +321,48 @@ describe('call function dependencies', function () {
         Error::class,
         'No value provided for parameter $second of Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies().',
     );
+
+    it('redacts the parameter name when a missing required parameter is sensitive', function () {
+        try {
+            call(
+                'Attributes\Strictify\Tests\Integration\call_function_takes_sensitive_parameter',
+                [],
+                [],
+            );
+        } catch (Error $error) {
+            $message = $error->getMessage();
+
+            expect($message)->toBe('No value provided for a sensitive parameter of Attributes\Strictify\Tests\Integration\call_function_takes_sensitive_parameter().');
+            expect($message)->not->toContain('secret');
+
+            return;
+        }
+
+        $this->fail('Expected an Error to be thrown.');
+    });
+
+    it('still names a plain parameter when a sensitive one is satisfied', function () {
+        call(
+            'Attributes\Strictify\Tests\Integration\call_function_takes_sensitive_and_plain',
+            [],
+            ['apiKey' => 'k3y'],
+        );
+    })->throws(
+        Error::class,
+        'No value provided for parameter $label of Attributes\Strictify\Tests\Integration\call_function_takes_sensitive_and_plain().',
+    );
+
+    it('passes a provided sensitive dependency through unchanged', function () {
+        $secret = new stdClass;
+        $secret->name = 'classified';
+
+        $result = call(
+            'Attributes\Strictify\Tests\Integration\call_function_takes_sensitive_parameter',
+            [],
+            ['secret' => $secret],
+        );
+        expect($result)->toBe('classified');
+    });
 
     it('passes the leftover positional dependencies to a variadic target', function () {
         $result = call('Attributes\Strictify\Tests\Integration\call_function_takes_variadic', [], ['a', 'b', 'c']);

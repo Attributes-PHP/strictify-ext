@@ -2,6 +2,7 @@
 #include "as_base_model.h"
 #include "as_validate_function.h"
 #include "Zend/zend_API.h"
+#include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
 #include "Zend/zend_interfaces.h"
 #include "zend_hash.h"
@@ -30,6 +31,7 @@ typedef struct {
 } as_dependency;
 
 static bool target_has_user_arg_info(const zend_function *function);
+static bool parameter_is_sensitive(const zend_function *function, uint32_t offset);
 static zend_class_entry *parameter_class_ce(const zend_arg_info *arg_info, zend_class_entry *scope);
 static void as_dependency_release(as_dependency *dependency);
 static bool array_access_offset_call(as_dependencies *dependencies, const char *method, zval *offset, zval *retval);
@@ -49,6 +51,19 @@ static void release_call_arguments(zval *args, uint32_t args_count);
 static bool target_has_user_arg_info(const zend_function *function)
 {
     return function->type != ZEND_INTERNAL_FUNCTION || (function->common.fn_flags & ZEND_ACC_USER_ARG_INFO) != 0;
+}
+
+/*
+ * Whether the parameter at the given position carries #[\SensitiveParameter]:
+ * call()'s own errors must not disclose the name of such a parameter.
+ */
+static bool parameter_is_sensitive(const zend_function *function, uint32_t offset)
+{
+    if (function->common.attributes == NULL) {
+        return false;
+    }
+
+    return zend_get_parameter_attribute_str(function->common.attributes, ZEND_STRL("sensitiveparameter"), offset + 1) != NULL;
 }
 
 /*
@@ -299,7 +314,9 @@ static bool build_call_arguments(zend_function *function, zval *params, as_depen
         }
 
         const char *callable_name = function->common.function_name != NULL ? ZSTR_VAL(function->common.function_name) : "the callable";
-        if (name != NULL) {
+        if (name != NULL && parameter_is_sensitive(function, i)) {
+            zend_throw_exception_ex(zend_ce_error, 0, "No value provided for a sensitive parameter of %s().", callable_name);
+        } else if (name != NULL) {
             zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter $%s of %s().", ZSTR_VAL(name), callable_name);
         } else {
             zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
