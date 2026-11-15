@@ -452,18 +452,23 @@ describe('call function sensitive parameters', function () {
         expect($result)->toBe('andre:8');
     });
 
-    it('redacts #[SensitiveParameter] arguments in exception traces of callables invoked via call()', function () {
+    it('redacts #[SensitiveParameter] arguments in traces of callables invoked via call()', function () {
         $secret = str_repeat('s', 8);
+        $GLOBALS['sensitive_call_backtrace'] = null;
 
         try {
             call('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws', [], ['user' => 'andre', 'password' => $secret]);
             expect(false)->toBeTrue('Error expected');
         } catch (Error $e) {
             expect($e->getMessage())->toBe('sensitive failure');
-            $frame = $e->getTrace()[0];
-            expect($frame['function'])->toBe('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws');
-            expect($frame['args'][0])->toBe('andre');
-            expect($frame['args'][1])->toBeInstanceOf(\SensitiveParameterValue::class);
+
+            // Backtrace captured inside the callable: the sensitive arg is
+            // replaced by SensitiveParameterValue, the other arg is intact
+            $args = $GLOBALS['sensitive_call_backtrace'][0]['args'];
+            expect($args[0])->toBe('andre');
+            expect($args[1])->toBeInstanceOf(\SensitiveParameterValue::class);
+
+            // The exception trace must not leak the secret either
             expect($e->getTraceAsString())->not->toContain($secret);
         }
     });
@@ -497,6 +502,8 @@ function call_function_sensitive_echo(string $user, #[\SensitiveParameter] strin
 
 function call_function_sensitive_throws(string $user, #[\SensitiveParameter] string $password): void
 {
+    $GLOBALS['sensitive_call_backtrace'] = debug_backtrace();
+
     throw new Error('sensitive failure');
 }
 
