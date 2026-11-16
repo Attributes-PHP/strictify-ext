@@ -8,10 +8,27 @@ site_dir = "site"
 
 nav = [
   { "Overview" = "index.md" },
-  { "validate()" = "validate.md" },
-  { "toDict()" = "toDict.md" },
-  { "call()" = "call.md" },
-  { "Constraints" = "constraints.md" },
+  { "Quickstart" = "quickstart.md" },
+  { "Guides" = [
+    { "Validating payloads" = "guides/validating-payloads.md" },
+    { "Nested models and arrays" = "guides/nested-models.md" },
+    { "Aliases and aliasGenerator" = "guides/aliases.md" },
+    { "Error messages" = "guides/error-messages.md" },
+    { "Sensitive data" = "guides/sensitive-data.md" },
+    { "Calling functions" = "guides/calling-functions.md" },
+    { "Serializing models" = "guides/serializing-models.md" },
+  ]},
+  { "Reference" = [
+    { "validate()" = "validate.md" },
+    { "toDict()" = "toDict.md" },
+    { "call()" = "call.md" },
+    { "ModelConfigs" = "model-configs.md" },
+    { "Constraints" = "constraints.md" },
+    { "Exceptions" = "exceptions.md" },
+    { "API" = "api.md" },
+  ]},
+  { "FAQ" = "faq.md" },
+  { "Changelog" = "changelog.md" },
 ]
 
 [project.theme]
@@ -19,6 +36,7 @@ features = [
   "navigation.tracking",
   "navigation.top",
   "navigation.footer",
+  "navigation.sections",
   "content.code.copy",
 ]
 

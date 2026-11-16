@@ -32,7 +32,7 @@ $result = call(myFunction(...), $rawData, $dependencies);
 
 ## Model hydration
 
-Every `BaseModel`-typed parameter of the callable is hydrated from `$params` through the full validate() flow: strict/loose mode, [aliases](/validate/#aliases), array type-hint attributes, hooks and `ValidationException` with dot-notation field paths all behave identically.
+Every `BaseModel`-typed parameter of the callable is hydrated from `$params` through the full validate() flow: strict/loose mode, [aliases](/guides/aliases/), array type-hint attributes, hooks and `ValidationException` with dot-notation field paths all behave identically.
 
 ```php
 <?php
@@ -102,3 +102,9 @@ call('login', [], ['user' => 'andre', 'password' => $secret]);
 ## Return value
 
 `call()` returns the callable's return value, unchanged.
+
+## See also
+
+- [Calling functions guide](/guides/calling-functions/)
+- [validate() reference](/validate/)
+- [Sensitive data](/guides/sensitive-data/)

@@ -111,7 +111,7 @@ tasks:
       - build
       - _ensure-vendor
     cmds:
-      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_strictify.so ./vendor/bin/pest --colors=always tests/Integration
+      - php -d extension={{.TASKFILE_DIR}}/modules/attributes_strictify.so ./vendor/bin/pest --colors=always tests/Integration tests/Docs
 
   test:
     desc: Run all tests (lint, unit, integration)

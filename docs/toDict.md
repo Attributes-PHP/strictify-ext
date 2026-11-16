@@ -28,7 +28,7 @@ $array = $user->toDict();
 
 ## Field names
 
-By default the output is keyed by the raw PHP property names. Pass `useAlias: true` to key it by the resolved field names [validate()](/validate/) expects instead: [aliases](/validate/#aliases) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use their own generator. With `useAlias: true` the output therefore round-trips through `validate()`:
+By default the output is keyed by the raw PHP property names. Pass `useAlias: true` to key it by the resolved field names [validate()](/validate/) expects instead: [aliases](/guides/aliases/) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use their own generator. With `useAlias: true` the output therefore round-trips through `validate()`:
 
 ```php
 <?php
@@ -57,7 +57,7 @@ validate($user->toDict(useAlias: true), new User()); // works
 - Scalars and arrays (including `Sequence`/`Dict` shapes) are returned as-is, recursing into nested elements.
 - `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`).
 - Nested `BaseModel` properties are serialized recursively.
-- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are omitted from the output. Pass `includeSensitive: true` to `toDict()` to serialize their real values (the flag propagates into nested models and arrays). The key is the property name by default and the resolved alias with `useAlias: true`.
+- Properties marked with [`#[Sensitive]`](/guides/sensitive-data/) are omitted from the output. Pass `includeSensitive: true` to `toDict()` to serialize their real values (the flag propagates into nested models and arrays). The key is the property name by default and the resolved alias with `useAlias: true`.
 - Uninitialized typed properties are omitted from the output.
 
 ```php
@@ -96,3 +96,10 @@ $event->toDict();
 // ['startsAt' => '1994-01-01'] (Madrid is UTC+1 in January, formatted as Y-m-d)
 ```
 
+
+## See also
+
+- [Serializing models guide](/guides/serializing-models/)
+- [Aliases and aliasGenerator](/guides/aliases/)
+- [Sensitive data](/guides/sensitive-data/)
+- [validate() reference](/validate/)

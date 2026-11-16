@@ -14,7 +14,8 @@
     "autoload-dev": {
         "psr-4": {
             "Attributes\\Strictify\\Tests\\": "tests/Integration/",
-            "Attributes\\Strictify\\Tests\\Benchmark\\": "tests/Benchmark/"
+            "Attributes\\Strictify\\Tests\\Benchmark\\": "tests/Benchmark/",
+            "Attributes\\Strictify\\Tests\\Docs\\": "tests/Docs/"
         },
         "classmap": [
             "tests/Integration/Models/"

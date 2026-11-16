@@ -32,6 +32,15 @@ var_dump($user->age);      // int(30)
 var_dump($user->birthday); // object(DateTime) "1994-01-01 09:00:00.000000" (+00:00)
 ```
 
+## How it works
+
+```text
+$rawData ──▶ validate($rawData, new User())
+               │
+               ├─ valid ───▶ hydrated User model (typed properties)
+               └─ invalid ─▶ ValidationException ─▶ getErrors(): ['field.path' => ['message', ...]]
+```
+
 ## Requirements
 
 - PHP 8.2 or later
@@ -42,17 +51,20 @@ var_dump($user->birthday); // object(DateTime) "1994-01-01 09:00:00.000000" (+00
 pie install attributes-php/strictify
 ```
 
+New here? The [Quickstart](/quickstart/) takes under a minute.
+
 ## What's next
 
-- [validate()](/validate/) — the full function reference: parameters, return value, validation rules and exceptions.
-- [toDict()](/toDict/) — serialize a hydrated model back to a plain array.
-- [Constraints](/constraints/) — the built-in constraint attributes and how to write custom constraints in PHP userland.
-- [call()](/call/) — invoke any callable with hydrated models and injected dependencies.
+- [Quickstart](/quickstart/) — install, first model, first validation error.
+- **Guides** — task-oriented: [validating payloads](/guides/validating-payloads/), [nested models and arrays](/guides/nested-models/), [aliases](/guides/aliases/), [error messages](/guides/error-messages/), [sensitive data](/guides/sensitive-data/), [calling functions](/guides/calling-functions/), [serializing models](/guides/serializing-models/).
+- **Reference** — [validate()](/validate/), [toDict()](/toDict/), [call()](/call/), [ModelConfigs](/model-configs/), [Constraints](/constraints/), [Exceptions](/exceptions/), [API](/api/).
+- [FAQ](/faq/) and [Changelog](/changelog/).
 
 ## Running this documentation locally
 
 ```bash
 pip install zensical
+python tools/generate_api_docs.py   # regenerate docs/api.md from the stubs
 zensical serve
 ```
 

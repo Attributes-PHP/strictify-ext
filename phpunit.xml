@@ -3,6 +3,7 @@
     <testsuites>
         <testsuite name="Default">
             <directory>tests/Integration/</directory>
+            <directory>tests/Docs/</directory>
         </testsuite>
     </testsuites>
     <php>
