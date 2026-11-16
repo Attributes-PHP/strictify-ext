@@ -296,6 +296,22 @@ $model->toDict(includeSensitive: true);  // ['username' => 'andre', 'password' =
 
 By default `toDict()` omits sensitive properties entirely; pass `includeSensitive: true` to serialize their real values. The omission composes with `Alias` (the aliased key is dropped) and nested models (each level omits its own sensitive fields). Separately, the `{value}` placeholder in error message templates is always redacted to `***` for sensitive properties, so secrets do not leak into `ValidationException` messages.
 
+Debug output masks them as well: `var_dump()`, `print_r()`, `debug_zval_dump()` — including model objects dumped as arguments inside exception traces — render a sensitive property as `***`, for every property type (ints, floats, strings, bools, arrays, objects and nested `BaseModel` properties). `BaseModel` installs a custom `get_properties_for` object handler that only alters the engine's debug view (`ZEND_PROP_PURPOSE_DEBUG`); property access, `foreach`, `(array)` casts, `get_object_vars()`, `json_encode()`, `serialize()` and `var_export()` all keep the real values:
+
+```php
+$model = validate(['username' => 'andre', 'password' => 'hunter2'], new Credentials());
+
+print_r($model, true); // Credentials Object ( [username] => andre [password] => *** )
+var_dump($model);
+// object(Credentials)#1 (2) {
+//   ["username"]=>
+//   string(5) "andre"
+//   ["password"]=>
+//   string(3) "***"
+// }
+json_encode($model);   // {"username":"andre","password":"hunter2"} — real values
+```
+
 ### Constraints
 
 Value-level rules are declared with constraint attributes from `Attributes\Strictify\Fields\Constraints`. They run after the property's type check, before the value is written, and each failing constraint reports its own error:
