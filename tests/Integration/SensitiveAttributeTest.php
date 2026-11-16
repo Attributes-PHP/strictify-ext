@@ -70,7 +70,8 @@ it('omits aliased sensitive fields from toDict() unless includeSensitive is set'
     validate(['public_id' => $secret], $model);
 
     expect($model->toDict())->toBe([]);
-    expect($model->toDict(includeSensitive: true))->toBe(['public_id' => $secret]);
+    expect($model->toDict(includeSensitive: true))->toBe(['apiKey' => $secret]);
+    expect($model->toDict(includeSensitive: true, useAlias: true))->toBe(['public_id' => $secret]);
 });
 
 it('omits sensitive values inside nested models unless includeSensitive is set', function () {

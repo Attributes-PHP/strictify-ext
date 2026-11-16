@@ -980,12 +980,12 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
 /*
  * Serializes a single value for toDict: DateTimeInterface -> string,
  * BaseModel -> recursive dict, array -> recurse into elements, else copy.
- * include_sensitive propagates into nested models and arrays.
+ * include_sensitive and use_alias propagate into nested models and arrays.
  */
-static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, zval *return_value);
-static bool as_serialize_value(zval *value, char generator, bool include_sensitive, as_compiled_field *cf, zval *out);
+static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, bool use_alias, zval *return_value);
+static bool as_serialize_value(zval *value, char generator, bool include_sensitive, bool use_alias, as_compiled_field *cf, zval *out);
 
-static bool as_serialize_value(zval *value, char generator, bool include_sensitive, as_compiled_field *cf, zval *out)
+static bool as_serialize_value(zval *value, char generator, bool include_sensitive, bool use_alias, as_compiled_field *cf, zval *out)
 {
     if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), datetime_interface_ce)) {
         zend_string *fmt_str = NULL;
@@ -1063,7 +1063,8 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
     }
 
     if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), AS_BaseModel_ce)) {
-        // Match validate(): a nested model with its own aliasGenerator uses it
+        // Match validate(): a nested model with its own aliasGenerator uses it,
+        // unless alias resolution is turned off for the whole dict
         char nested_generator = generator;
         as_model_configs_properties nested_props;
         zval nested_configs_obj;
@@ -1071,10 +1072,10 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
         if (UNEXPECTED(EG(exception) != NULL)) {
             return false;
         }
-        if (nested_props.alias_generator != false) {
+        if (use_alias && nested_props.alias_generator != false) {
             nested_generator = nested_props.alias_generator;
         }
-        return as_model_to_dict_with_generator(value, nested_generator, include_sensitive, out);
+        return as_model_to_dict_with_generator(value, nested_generator, include_sensitive, use_alias, out);
     }
 
     if (Z_TYPE_P(value) == IS_ARRAY) {
@@ -1085,7 +1086,7 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
         ZEND_HASH_FOREACH_KEY_VAL(Z_ARRVAL_P(value), idx, key, el)
         {
             zval serialized;
-            if (!as_serialize_value(el, generator, include_sensitive, NULL, &serialized)) {
+            if (!as_serialize_value(el, generator, include_sensitive, use_alias, NULL, &serialized)) {
                 zval_ptr_dtor(out);
                 return false;
             }
@@ -1104,15 +1105,16 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
 }
 
 /*
- * Serializes the model's public properties into an array keyed by the
- * resolved field names (Alias / aliasGenerator), matching what
- * validate() expects as input. Uninitialized typed properties are
- * skipped, and so are #[Sensitive] properties unless include_sensitive
- * is set (then their real values are serialized). DateTimeInterface
- * values are formatted as strings. Nested BaseModel values recurse
- * under the appropriate generator.
+ * Serializes the model's public properties into an array. Keys are the
+ * resolved field names (Alias / aliasGenerator) when use_alias is set,
+ * matching what validate() expects as input, and the raw property names
+ * otherwise. Uninitialized typed properties are skipped, and so are
+ * #[Sensitive] properties unless include_sensitive is set (then their
+ * real values are serialized). DateTimeInterface values are formatted
+ * as strings. Nested BaseModel values recurse under the appropriate
+ * generator.
  */
-static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, zval *return_value)
+static bool as_model_to_dict_with_generator(zval *model, char generator, bool include_sensitive, bool use_alias, zval *return_value)
 {
     zend_class_entry *ce = Z_OBJCE_P(model);
     as_class_plans *plans = get_class_plans(ce);
@@ -1159,21 +1161,22 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, bool in
         }
 
         zval serialized;
-        if (!as_serialize_value(slot, generator, include_sensitive, cf, &serialized)) {
+        if (!as_serialize_value(slot, generator, include_sensitive, use_alias, cf, &serialized)) {
             return false;
         }
-        zend_hash_update(Z_ARRVAL_P(return_value), cf->name, &serialized);
+        zend_hash_update(Z_ARRVAL_P(return_value), use_alias ? cf->name : cf->prop->name, &serialized);
     }
 
     return true;
 }
 
-bool as_compiled_model_to_dict(zval *model, bool include_sensitive, zval *return_value)
+bool as_compiled_model_to_dict(zval *model, bool include_sensitive, bool use_alias, zval *return_value)
 {
     as_compiled_model *plan = as_get_root_compiled_model(model);
     if (UNEXPECTED(plan == NULL)) {
         return false;
     }
 
-    return as_model_to_dict_with_generator(model, plan->generator, include_sensitive, return_value);
+    char generator = use_alias ? plan->generator : false;
+    return as_model_to_dict_with_generator(model, generator, include_sensitive, use_alias, return_value);
 }

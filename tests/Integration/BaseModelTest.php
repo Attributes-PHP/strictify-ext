@@ -31,17 +31,18 @@ it('toDict returns public properties as array', function () {
     expect($model->toDict())->toBe(['name' => 'John', 'age' => 30]);
 });
 
-it('toDict uses resolved field names with Alias attribute', function () {
+it('toDict uses property names by default and resolved field names with useAlias for the Alias attribute', function () {
     $model = new class extends BaseModel {
         #[Alias('user_name')]
         public string $name;
     };
 
     validate(['user_name' => 'John'], $model);
-    expect($model->toDict())->toBe(['user_name' => 'John']);
+    expect($model->toDict())->toBe(['name' => 'John']);
+    expect($model->toDict(useAlias: true))->toBe(['user_name' => 'John']);
 });
 
-it('toDict uses resolved field names with aliasGenerator', function () {
+it('toDict uses property names by default and resolved field names with useAlias for the aliasGenerator', function () {
     $model = new
         #[ModelConfigs(aliasGenerator: 'snake')]
         class extends BaseModel {
@@ -50,10 +51,11 @@ it('toDict uses resolved field names with aliasGenerator', function () {
         };
 
     validate(['first_name' => 'John', 'last_name' => 'Doe'], $model);
-    expect($model->toDict())->toBe(['first_name' => 'John', 'last_name' => 'Doe']);
+    expect($model->toDict())->toBe(['firstName' => 'John', 'lastName' => 'Doe']);
+    expect($model->toDict(useAlias: true))->toBe(['first_name' => 'John', 'last_name' => 'Doe']);
 });
 
-it('toDict uses resolved field names with both Alias and aliasGenerator', function () {
+it('toDict with useAlias applies both Alias and aliasGenerator', function () {
     $model = new
         #[ModelConfigs(aliasGenerator: 'snake')]
         class extends BaseModel {
@@ -63,7 +65,34 @@ it('toDict uses resolved field names with both Alias and aliasGenerator', functi
         };
 
     validate(['first_name' => 'John', 'last' => 'Doe'], $model);
-    expect($model->toDict())->toBe(['first_name' => 'John', 'last' => 'Doe']);
+    expect($model->toDict())->toBe(['firstName' => 'John', 'lastName' => 'Doe']);
+    expect($model->toDict(useAlias: true))->toBe(['first_name' => 'John', 'last' => 'Doe']);
+});
+
+it('toDict(useAlias: true) round-trips through validate with aliases', function () {
+    $model = new
+        #[ModelConfigs(aliasGenerator: 'snake')]
+        class extends BaseModel {
+            public string $firstName;
+            #[Alias('last')]
+            public string $lastName;
+        };
+
+    validate(['first_name' => 'John', 'last' => 'Doe'], $model);
+    $dict = $model->toDict(useAlias: true);
+    expect($dict)->toBe(['first_name' => 'John', 'last' => 'Doe']);
+
+    $model2 = new
+        #[ModelConfigs(aliasGenerator: 'snake')]
+        class extends BaseModel {
+            public string $firstName;
+            #[Alias('last')]
+            public string $lastName;
+        };
+
+    validate($dict, $model2);
+    expect($model2->firstName)->toBe('John');
+    expect($model2->lastName)->toBe('Doe');
 });
 
 it('toDict skips uninitialized properties', function () {
@@ -185,6 +214,13 @@ it('toDict supports nested models', function () {
     validate($expectedResult, $model);
     expect($model->toDict())->toBe([
         'user' => [
+            'name' => 'Andre',
+            'dateAdded' => '2025-10-10',
+        ],
+        'timestamp' => '1994-01-01T09:00:00+00:00',
+    ]);
+    expect($model->toDict(useAlias: true))->toBe([
+        'user' => [
             'fullName' => 'Andre',
             'date_added' => '2025-10-10',
         ],
@@ -192,7 +228,7 @@ it('toDict supports nested models', function () {
     ]);
 });
 
-it('nested models use their own aliasGenerator', function () {
+it('nested models use their own aliasGenerator with useAlias: true', function () {
     #[ModelConfigs(aliasGenerator: 'camel')]
     class CamelAddress extends BaseModel
     {
@@ -210,6 +246,7 @@ it('nested models use their own aliasGenerator', function () {
     validate($input, $model);
     expect($model->address->postCode)->toBe('M00');
     expect($model->toDict())->toBe(['address' => ['postCode' => 'M00']]);
+    expect($model->toDict(useAlias: true))->toBe(['address' => ['postCode' => 'M00']]);
 });
 
 it('toDict uses DateTime constraint format and timezone', function () {

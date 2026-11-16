@@ -102,7 +102,7 @@ as_compiled_model *as_get_root_compiled_model(zval *model);
  * validation), matching the previous semantics.
  */
 bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path);
-bool as_compiled_model_to_dict(zval *model, bool include_sensitive, zval *return_value);
+bool as_compiled_model_to_dict(zval *model, bool include_sensitive, bool use_alias, zval *return_value);
 
 void as_clear_compiled_model_cache(void);
 void as_clear_field_name_cache(void);
