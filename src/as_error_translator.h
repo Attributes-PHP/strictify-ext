@@ -16,9 +16,8 @@ ZEND_END_ARG_INFO()
 ZEND_METHOD(AS_ErrorTranslator, get);
 ZEND_METHOD(AS_ErrorTranslator, set);
 
-static const zend_function_entry class_AS_ErrorTranslator_methods[] = {
-    ZEND_ME(AS_ErrorTranslator, get, arginfo_class_AS_ErrorTranslator_get, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) ZEND_ME(AS_ErrorTranslator, set, arginfo_class_AS_ErrorTranslator_set, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) ZEND_FE_END
-};
+static const zend_function_entry class_AS_ErrorTranslator_methods[] = {ZEND_ME(AS_ErrorTranslator, get, arginfo_class_AS_ErrorTranslator_get, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+                                                                           ZEND_ME(AS_ErrorTranslator, set, arginfo_class_AS_ErrorTranslator_set, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) ZEND_FE_END};
 
 /* Registration function */
 void as_register_ErrorTranslator_class(void);
