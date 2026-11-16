@@ -41,6 +41,13 @@ afterEach(function () {
     ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
 });
 
+it('returns the registered translator via ModelConfigs::getDefaultErrorMessages()', function () {
+    $translator = fn (string $key): ?string => $key === 'extra' ? 'translated' : null;
+    ModelConfigs::setDefaultErrorMessages($translator);
+
+    expect(ModelConfigs::getDefaultErrorMessages())->toBe($translator);
+});
+
 describe('error message translation', function () {
     it('uses built-in default messages when the translator returns null', function () {
         ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);

@@ -94,6 +94,12 @@ ZEND_METHOD(AS_ModelConfigs, isStopAtFirstError)
     AS_GET_PROPERTY_AND_RETURN("stopAtFirstError");
 }
 
+ZEND_METHOD(AS_ModelConfigs, getDefaultErrorMessages)
+{
+    ZEND_PARSE_PARAMETERS_NONE();
+    RETURN_COPY(zend_read_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, 1));
+}
+
 ZEND_METHOD(AS_ModelConfigs, setDefaultErrorMessages)
 {
     zval *errorMessages;

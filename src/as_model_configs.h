@@ -28,6 +28,9 @@ ZEND_END_ARG_INFO()
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_AS_ModelConfigs_isStopAtFirstError, 0, 0, _IS_BOOL, 0)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_AS_ModelConfigs_getDefaultErrorMessages, 0, 0, IS_CALLABLE, 1)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class_AS_ModelConfigs_setDefaultErrorMessages, 0, 1, IS_VOID, 0)
 ZEND_ARG_TYPE_INFO(0, setErrorMessages, IS_CALLABLE, 0)
 ZEND_END_ARG_INFO()
@@ -39,6 +42,7 @@ ZEND_METHOD(AS_ModelConfigs, isStripWhitespace);
 ZEND_METHOD(AS_ModelConfigs, getExtra);
 ZEND_METHOD(AS_ModelConfigs, isStrict);
 ZEND_METHOD(AS_ModelConfigs, isStopAtFirstError);
+ZEND_METHOD(AS_ModelConfigs, getDefaultErrorMessages);
 ZEND_METHOD(AS_ModelConfigs, setDefaultErrorMessages);
 
 static const zend_function_entry class_AS_ModelConfigs_methods[] = {
@@ -46,7 +50,8 @@ static const zend_function_entry class_AS_ModelConfigs_methods[] = {
         ZEND_ME(AS_ModelConfigs, isStrToUpper, arginfo_class_AS_ModelConfigs_isStrToUpper, ZEND_ACC_PUBLIC) ZEND_ME(AS_ModelConfigs, isStripWhitespace, arginfo_class_AS_ModelConfigs_isStripWhitespace, ZEND_ACC_PUBLIC)
             ZEND_ME(AS_ModelConfigs, getExtra, arginfo_class_AS_ModelConfigs_getExtra, ZEND_ACC_PUBLIC) ZEND_ME(AS_ModelConfigs, isStrict, arginfo_class_AS_ModelConfigs_isStrict, ZEND_ACC_PUBLIC)
                 ZEND_ME(AS_ModelConfigs, isStopAtFirstError, arginfo_class_AS_ModelConfigs_isStopAtFirstError, ZEND_ACC_PUBLIC)
-                    ZEND_ME(AS_ModelConfigs, setDefaultErrorMessages, arginfo_class_AS_ModelConfigs_setDefaultErrorMessages, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) ZEND_FE_END
+                    ZEND_ME(AS_ModelConfigs, getDefaultErrorMessages, arginfo_class_AS_ModelConfigs_getDefaultErrorMessages, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+                        ZEND_ME(AS_ModelConfigs, setDefaultErrorMessages, arginfo_class_AS_ModelConfigs_setDefaultErrorMessages, ZEND_ACC_PUBLIC | ZEND_ACC_STATIC) ZEND_FE_END
 };
 
 // Alias

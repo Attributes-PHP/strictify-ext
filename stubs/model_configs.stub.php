@@ -22,6 +22,7 @@ namespace Attributes\Strictify {
       public function isStrict(): bool {}
       public function isStopAtFirstError(): bool {}
 
+      public static function getDefaultErrorMessages(): ?callable {}
       public static function setDefaultErrorMessages(callable $setErrorMessages): void {}
    }
 }

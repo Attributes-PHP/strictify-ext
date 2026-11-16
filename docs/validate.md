@@ -346,7 +346,7 @@ An invalid option value throws a `ValueError` listing the valid options (e.g. `a
 | `strToUpper` | `bool` | `false` | uppercase string values before validation (wins over `strToLower`), see below |
 | `stripWhitespace` | `bool` | `false` | trim string values before validation, see below |
 
-`defaultErrorMessages` is not an attribute argument: it is a static callable set with [`ModelConfigs::setDefaultErrorMessages()`](#translating-error-messages).
+`defaultErrorMessages` is not an attribute argument: it is a static callable set with [`ModelConfigs::setDefaultErrorMessages()`](#translating-error-messages) and read back with `ModelConfigs::getDefaultErrorMessages()` (null until set).
 
 ### aliasGenerator
 
