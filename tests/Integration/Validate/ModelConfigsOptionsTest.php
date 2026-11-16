@@ -491,7 +491,7 @@ describe('ModelConfigs inheritance', function () {
         $result = validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John'], new OptionsConfigChildModel());
         expect($result->count)->toBe(5)
             ->and($result->label)->toBe('abc')
-            ->and($result->firstName)->toBe('John');
+            ->and($result->firstName)->toBe('john'); // strToLower is inherited too
     });
 
     it('lets a child class override the parent ModelConfigs entirely', function () {
