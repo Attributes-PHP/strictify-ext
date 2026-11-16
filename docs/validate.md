@@ -341,7 +341,7 @@ An invalid option value throws a `ValueError` listing the valid options (e.g. `a
 | `aliasGenerator` | `?string` | `null` | `'pascal'` \| `'camel'` \| `'snake'` \| `'kebab'` — derives the expected input keys from property names |
 | `strict` | `bool` | `true` | `false` enables loose-mode coercion, see [Strict and loose mode](#strict-and-loose-mode) |
 | `stopAtFirstError` | `bool` | `false` | `true` aborts the validation run at the first error |
-| `extra` | `string` | `'ignore'` | `'ignore'` \| `'forbid'` \| `'allow'` — what to do with unknown input keys, see below |
+| `extra` | `?string` | `null` | `null` resolves to `'allow'` when the class is marked `#[\AllowDynamicProperties]`, `'ignore'` otherwise; `'ignore'` \| `'forbid'` \| `'allow'` — what to do with unknown input keys, see below |
 | `strToLower` | `bool` | `false` | lowercase string values before validation, see below |
 | `strToUpper` | `bool` | `false` | uppercase string values before validation (wins over `strToLower`), see below |
 | `stripWhitespace` | `bool` | `false` | trim string values before validation, see below |
@@ -395,8 +395,9 @@ validate([], new User());
 
 Controls what happens with input keys that resolve to no property of the model:
 
-- `'ignore'` (default): unknown keys are silently dropped.
-- `'allow'`: unknown keys are accepted but not stored — model properties are declared, so there is nowhere to put them.
+- `null` (default): resolved per model class — `'allow'` when the class is marked `#[\AllowDynamicProperties]`, `'ignore'` otherwise.
+- `'ignore'`: unknown keys are silently dropped.
+- `'allow'`: unknown keys are stored as dynamic properties on the model instance. Integer keys have no property name and keys naming a declared property (e.g. the raw property name when `aliasGenerator` renames the expected key) are never stored.
 - `'forbid'`: every unknown key produces an error keyed by the raw key (dot path for nested models), with the default message `Extra inputs are not permitted`, translatable under the `extra` key. Keys produced by `aliasGenerator`/`Alias` count as known, integer keys are reported under their numeric name, and `stopAtFirstError` reports only the first one.
 
 ```php

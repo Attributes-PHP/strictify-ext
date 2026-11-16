@@ -128,7 +128,7 @@ void as_register_ModelConfigs_class(void)
     declare_typed_property_bool("strToLower", sizeof("strToLower") - 1, false);
     declare_typed_property_bool("strToUpper", sizeof("strToUpper") - 1, false);
     declare_typed_property_bool("stripWhitespace", sizeof("stripWhitespace") - 1, false);
-    declare_typed_property_string("extra", sizeof("extra") - 1, "ignore", sizeof("ignore") - 1, false);
+    declare_typed_property_string("extra", sizeof("extra") - 1, NULL, 0, true);
     declare_typed_property_bool("strict", sizeof("strict") - 1, true);
     declare_typed_property_bool("stopAtFirstError", sizeof("stopAtFirstError") - 1, false);
 
@@ -147,6 +147,9 @@ void as_register_ModelConfigs_class(void)
  * Inheritance is supported: if Child extends Parent and Parent has ModelConfigs,
  * those configs are used for Child unless Child overrides them with its own ModelConfigs.
  *
+ * A null (or omitted) extra resolves against the model class itself: 'allow'
+ * when it carries #[AllowDynamicProperties], 'ignore' otherwise.
+ *
  * A parse that fails (invalid option value) returns with a pending exception
  * and must never be cached, so the error keeps firing.
  */
@@ -156,60 +159,71 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
 
     set_default_properties(properties);
     alias_generator_name[0] = '\0';
-    strcpy(extra_name, "ignore");
+    extra_name[0] = '\0';
 
-    if (model_configs_attr == NULL) {
-        return;
+    if (model_configs_attr != NULL) {
+        /* Parse attribute arguments */
+        for (uint32_t i = 0; i < model_configs_attr->argc; i++) {
+            zval arg_val;
+            if (zend_get_attribute_value(&arg_val, model_configs_attr, i, model_ce) != SUCCESS)
+                continue;
+
+            zend_attribute_arg argument = model_configs_attr->args[i];
+            int index = argument.name == NULL ? i : get_argument_index_by_name(argument.name);
+
+            switch (index) {
+                case 0: /* aliasGenerator */
+                    if (Z_TYPE(arg_val) == IS_STRING) {
+                        if (!validate_alias_generator(Z_STRVAL(arg_val)))
+                            return;
+
+                        properties->alias_generator = Z_STRVAL(arg_val)[0];
+                        strcpy(alias_generator_name, Z_STRVAL(arg_val));
+                    }
+                    break;
+                case 1: /* strToLower */
+                    properties->str_to_lower = Z_TYPE(arg_val) == IS_TRUE;
+                    break;
+                case 2: /* strToUpper */
+                    properties->str_to_upper = Z_TYPE(arg_val) == IS_TRUE;
+                    break;
+                case 3: /* stripWhitespace */
+                    properties->strip_whitespace = Z_TYPE(arg_val) == IS_TRUE;
+                    break;
+                case 4: /* extra: a null value stays unset and resolves per class below */
+                    if (Z_TYPE(arg_val) == IS_STRING) {
+                        if (!validate_extra(Z_STRVAL(arg_val)))
+                            return;
+
+                        properties->extra = Z_STRVAL(arg_val)[0];
+                        strcpy(extra_name, Z_STRVAL(arg_val));
+                    }
+                    break;
+                case 5: /* strict */
+                    properties->strict = Z_TYPE(arg_val) == IS_TRUE;
+                    break;
+                case 6: /* stopAtFirstError */
+                    properties->stop_first_error = Z_TYPE(arg_val) == IS_TRUE;
+                    break;
+                default:
+                    zval_ptr_dtor(&arg_val);
+                    return;
+            }
+            zval_ptr_dtor(&arg_val);
+        }
     }
 
-    /* Parse attribute arguments */
-    for (uint32_t i = 0; i < model_configs_attr->argc; i++) {
-        zval arg_val;
-        if (zend_get_attribute_value(&arg_val, model_configs_attr, i, model_ce) != SUCCESS)
-            continue;
-
-        zend_attribute_arg argument = model_configs_attr->args[i];
-        int index = argument.name == NULL ? i : get_argument_index_by_name(argument.name);
-
-        switch (index) {
-            case 0: /* aliasGenerator */
-                if (Z_TYPE(arg_val) == IS_STRING) {
-                    if (!validate_alias_generator(Z_STRVAL(arg_val)))
-                        return;
-
-                    properties->alias_generator = Z_STRVAL(arg_val)[0];
-                    strcpy(alias_generator_name, Z_STRVAL(arg_val));
-                }
-                break;
-            case 1: /* strToLower */
-                properties->str_to_lower = Z_TYPE(arg_val) == IS_TRUE;
-                break;
-            case 2: /* strToUpper */
-                properties->str_to_upper = Z_TYPE(arg_val) == IS_TRUE;
-                break;
-            case 3: /* stripWhitespace */
-                properties->strip_whitespace = Z_TYPE(arg_val) == IS_TRUE;
-                break;
-            case 4: /* extra */
-                if (Z_TYPE(arg_val) == IS_STRING) {
-                    if (!validate_extra(Z_STRVAL(arg_val)))
-                        return;
-
-                    properties->extra = Z_STRVAL(arg_val)[0];
-                    strcpy(extra_name, Z_STRVAL(arg_val));
-                }
-                break;
-            case 5: /* strict */
-                properties->strict = Z_TYPE(arg_val) == IS_TRUE;
-                break;
-            case 6: /* stopAtFirstError */
-                properties->stop_first_error = Z_TYPE(arg_val) == IS_TRUE;
-                break;
-            default:
-                zval_ptr_dtor(&arg_val);
-                return;
+    /* An omitted (or explicitly null) extra resolves per model class:
+     * 'allow' when the class is marked #[AllowDynamicProperties] (the flag
+     * is inherited by child classes), 'ignore' otherwise. */
+    if (extra_name[0] == '\0') {
+        if (model_ce->ce_flags & ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES) {
+            properties->extra = AS_ALLOW;
+            strcpy(extra_name, "allow");
+        } else {
+            properties->extra = AS_IGNORE;
+            strcpy(extra_name, "ignore");
         }
-        zval_ptr_dtor(&arg_val);
     }
 }
 
@@ -280,7 +294,7 @@ static zend_always_inline void set_default_properties(as_model_configs_propertie
     properties->str_to_lower = false;
     properties->str_to_upper = false;
     properties->strip_whitespace = false;
-    properties->extra = AS_IGNORE;
+    properties->extra = '\0'; // unset: resolved per class in as_parse_model_configs
     properties->strict = true;
     properties->stop_first_error = false;
 }

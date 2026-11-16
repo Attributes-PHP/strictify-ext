@@ -9,7 +9,7 @@ namespace Attributes\Strictify {
       private bool $strToLower = false;
       private bool $strToUpper = false;
       private bool $stripWhitespace = false;
-      private string $extra = "ignore";
+      private ?string $extra = null;
       private bool $strict = true;
       private bool $stopAtFirstError = false;
       private static ?callable $defaultErrorMessages = null;
@@ -18,7 +18,7 @@ namespace Attributes\Strictify {
       public function isStrToLower(): bool {}
       public function isStrToUpper(): bool {}
       public function isStripWhitespace(): bool {}
-      public function getExtra(): string {}
+      public function getExtra(): ?string {}
       public function isStrict(): bool {}
       public function isStopAtFirstError(): bool {}
 

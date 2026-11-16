@@ -23,18 +23,36 @@ afterEach(function () {
 });
 
 describe('ModelConfigs extra option', function () {
-    it('ignores unknown keys by default', function () {
+    it('ignores unknown keys by default (null extra resolves to ignore without #[AllowDynamicProperties])', function () {
         $model = new class extends BaseModel {
             public string $name;
         };
 
         $result = validate(['name' => 'John', 'junk' => 1], $model);
-        expect($result->name)->toBe('John');
+        expect($result->name)->toBe('John')
+            ->and(isset($result->junk))
+            ->toBeFalse();
     });
 
-    it('accepts unknown keys with extra=allow without storing them', function () {
+    it('resolves a null extra to allow and stores unknown keys for classes with #[AllowDynamicProperties]', function () {
         $model = new
-            #[ModelConfigs(extra: 'allow')]
+            #[\AllowDynamicProperties]
+            class extends BaseModel {
+                public string $name;
+            };
+
+        $result = validate(['name' => 'John', 'junk' => 1, 'tags' => ['a']], $model);
+        expect($result->name)->toBe('John')
+            ->and($result->junk)
+            ->toBe(1)
+            ->and($result->tags)
+            ->toBe(['a']);
+    });
+
+    it('lets an explicit extra=ignore win over #[AllowDynamicProperties]', function () {
+        $model = new
+            #[\AllowDynamicProperties]
+            #[ModelConfigs(extra: 'ignore')]
             class extends BaseModel {
                 public string $name;
             };
@@ -43,6 +61,72 @@ describe('ModelConfigs extra option', function () {
         expect($result->name)->toBe('John')
             ->and(isset($result->junk))
             ->toBeFalse();
+    });
+
+    it('stores unknown keys as dynamic properties with extra=allow', function () {
+        $model = new
+            #[\AllowDynamicProperties]
+            #[ModelConfigs(extra: 'allow')]
+            class extends BaseModel {
+                public string $name;
+            };
+
+        $result = validate(['name' => 'John', 'junk' => 1], $model);
+        expect($result->name)->toBe('John')
+            ->and($result->junk)
+            ->toBe(1);
+    });
+
+    it('does not store integer keys or declared property names with extra=allow', function () {
+        $model = new
+            #[\AllowDynamicProperties]
+            #[ModelConfigs(extra: 'allow', aliasGenerator: 'snake')]
+            class extends BaseModel {
+                public string $firstName;
+            };
+
+        $result = validate(['first_name' => 'John', 'firstName' => 'Doe', 5 => 'x', 'junk' => 1], $model);
+        expect($result->firstName)->toBe('John')
+            ->and($result->junk)
+            ->toBe(1)
+            ->and(isset($result->{'5'}))
+            ->toBeFalse();
+    });
+
+    it('exposes the resolved extra to hooks via getExtra()', function () {
+        $allowed = new
+            #[\AllowDynamicProperties]
+            class extends BaseModel {
+                public string $name;
+
+                public ?string $seenExtra = null;
+
+                protected function beforeValidation(array $rawData, ModelConfigs $configs): array
+                {
+                    $this->seenExtra = $configs->getExtra();
+
+                    return $rawData;
+                }
+            };
+
+        validate(['name' => 'John', 'junk' => 1], $allowed);
+        expect($allowed->seenExtra)->toBe('allow');
+
+        $ignored = new class extends BaseModel {
+            public string $name;
+
+            public ?string $seenExtra = null;
+
+            protected function beforeValidation(array $rawData, ModelConfigs $configs): array
+            {
+                $this->seenExtra = $configs->getExtra();
+
+                return $rawData;
+            }
+        };
+
+        validate(['name' => 'John', 'junk' => 1], $ignored);
+        expect($ignored->seenExtra)->toBe('ignore');
     });
 
     it('reports every unknown key with extra=forbid', function () {
