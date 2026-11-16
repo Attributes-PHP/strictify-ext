@@ -328,11 +328,12 @@ describe('sensitive properties in debug output', function () {
             $thrower($model);
             expect(false)->toBeTrue('RuntimeException expected');
         } catch (RuntimeException $e) {
-            $dump = print_r($e->getTrace(), true);
+            $trace = $e->getTrace();
+            $dump = print_r($trace[0]['args'], true);
 
             expect($dump)->toContain('***');
             expect($dump)->not->toContain($secret);
-            expect($e->getTrace()[0]['args'][0]->password)->toBe($secret);
+            expect($trace[0]['args'][0]->password)->toBe($secret);
         }
     });
 });
