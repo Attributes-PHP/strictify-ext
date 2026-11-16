@@ -26,7 +26,7 @@ print_r($user->toDict()); // Array ( [name] => John [age] => 30 )
 
 ## Field names: property names vs aliases
 
-By default the output is keyed by the **raw PHP property names**. Pass `useAlias: true` to key it by the resolved field names ([aliases](/guides/aliases/) and `aliasGenerator` are applied, and nested models with their own generator use their own) — the output then round-trips through `validate()`:
+By default the output is keyed by the **raw PHP property names**. Pass `useAlias: true` to key it by the resolved field names ([aliases](/guides/aliases/) and `aliasGenerator` are applied; each nested model uses only its own generator, never the enclosing model's) — the output then round-trips through `validate()`:
 
 ```php
 <?php

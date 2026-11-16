@@ -28,7 +28,7 @@ $array = $user->toDict();
 
 ## Field names
 
-By default the output is keyed by the raw PHP property names. Pass `useAlias: true` to key it by the resolved field names [validate()](/validate/) expects instead: [aliases](/guides/aliases/) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use their own generator. With `useAlias: true` the output therefore round-trips through `validate()`:
+By default the output is keyed by the raw PHP property names. Pass `useAlias: true` to key it by the resolved field names [validate()](/validate/) expects instead: [aliases](/guides/aliases/) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and each nested model uses only its own generator (inherited at most from its parent class, never from the enclosing model). With `useAlias: true` the output therefore round-trips through `validate()`:
 
 ```php
 <?php
