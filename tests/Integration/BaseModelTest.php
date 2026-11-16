@@ -207,7 +207,7 @@ it('toDict supports nested models', function () {
     $expectedResult = [
         'user' => [
             'fullName' => 'Andre',
-            'date_added' => '2025-10-10',
+            'dateAdded' => '2025-10-10',
         ],
         'timestamp' => '1994-01-01T09:00:00+00:00',
     ];
@@ -219,10 +219,12 @@ it('toDict supports nested models', function () {
         ],
         'timestamp' => '1994-01-01T09:00:00+00:00',
     ]);
+    // the nested User has no aliasGenerator of its own, so useAlias keeps
+    // its raw property names (only the #[Alias] on $name applies)
     expect($model->toDict(useAlias: true))->toBe([
         'user' => [
             'fullName' => 'Andre',
-            'date_added' => '2025-10-10',
+            'dateAdded' => '2025-10-10',
         ],
         'timestamp' => '1994-01-01T09:00:00+00:00',
     ]);

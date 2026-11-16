@@ -780,8 +780,8 @@ static void as_transform_field_value(as_compiled_field *cf, as_field *field, con
  *
  * A null extra is resolved here, per model class: 'allow' when the class is
  * marked #[AllowDynamicProperties] (the flag is inherited by child classes),
- * 'ignore' otherwise. A non-null extra propagates unchanged from the root
- * model into nested models sharing the configs.
+ * 'ignore' otherwise. Each model validates with its own class's configs, so
+ * a non-null extra of the enclosing model never applies to nested models.
  */
 static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model *plan, const as_model_configs_properties *properties, zend_string *parent_path, zval *errors)
 {
@@ -1063,18 +1063,16 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
     }
 
     if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), AS_BaseModel_ce)) {
-        // Match validate(): a nested model with its own aliasGenerator uses it,
-        // unless alias resolution is turned off for the whole dict
-        char nested_generator = generator;
+        // Match validate(): a nested model serializes with its own
+        // aliasGenerator only (inherited at most from a parent class), never
+        // the enclosing model's; with use_alias off no generator applies
         as_model_configs_properties nested_props;
         zval nested_configs_obj;
         as_get_model_configs(&nested_configs_obj, value, &nested_props, false);
         if (UNEXPECTED(EG(exception) != NULL)) {
             return false;
         }
-        if (use_alias && nested_props.alias_generator != false) {
-            nested_generator = nested_props.alias_generator;
-        }
+        char nested_generator = use_alias ? nested_props.alias_generator : false;
         return as_model_to_dict_with_generator(value, nested_generator, include_sensitive, use_alias, out);
     }
 

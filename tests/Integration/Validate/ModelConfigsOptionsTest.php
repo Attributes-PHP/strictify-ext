@@ -18,6 +18,32 @@ class OptionsInnerModel extends BaseModel
     public string $street;
 }
 
+#[ModelConfigs(extra: 'forbid')]
+class OptionsForbidInnerModel extends BaseModel
+{
+    public string $street;
+}
+
+class OptionsPlainInnerModel extends BaseModel
+{
+    public int $count;
+    public string $label;
+    public string $firstName;
+}
+
+#[ModelConfigs(strict: false, strToLower: true, aliasGenerator: 'snake')]
+class OptionsConfigParentModel extends BaseModel
+{
+    public int $count;
+    public string $label;
+    public string $firstName;
+}
+
+class OptionsConfigChildModel extends OptionsConfigParentModel {}
+
+#[ModelConfigs(strict: true)]
+class OptionsStrictChildModel extends OptionsConfigParentModel {}
+
 #[\AllowDynamicProperties]
 class OptionsDynamicInnerModel extends BaseModel
 {
@@ -135,7 +161,7 @@ describe('ModelConfigs extra option', function () {
         expect($ignored->seenExtra)->toBe('ignore');
     });
 
-    it('resolves a null extra per nested model class when the configs are shared', function () {
+    it('resolves a null extra against each nested model class own #[AllowDynamicProperties] flag', function () {
         $model = new class extends BaseModel {
             public string $name;
 
@@ -148,7 +174,7 @@ describe('ModelConfigs extra option', function () {
             ->toBe('1');
     });
 
-    it('does not leak a root-resolved allow into a nested model without #[AllowDynamicProperties]', function () {
+    it('resolves null extra to ignore in a nested model without #[AllowDynamicProperties], even when the root allows dynamic properties', function () {
         $model = new
             #[\AllowDynamicProperties]
             class extends BaseModel {
@@ -219,7 +245,27 @@ describe('ModelConfigs extra option', function () {
         }
     });
 
-    it('reports nested unknown keys under dot paths with extra=forbid', function () {
+    it('reports nested unknown keys under dot paths when the nested model forbids extra too', function () {
+        $model = new
+            #[ModelConfigs(extra: 'forbid')]
+            class extends BaseModel {
+                public string $name;
+
+                public OptionsForbidInnerModel $addr;
+            };
+
+        try {
+            validate(['name' => 'J', 'addr' => ['street' => 's', 'zip' => '1'], 'top' => 1], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe([
+                'addr.zip' => ['Extra inputs are not permitted'],
+                'top' => ['Extra inputs are not permitted'],
+            ]);
+        }
+    });
+
+    it('does not report nested unknown keys when only the root sets extra=forbid', function () {
         $model = new
             #[ModelConfigs(extra: 'forbid')]
             class extends BaseModel {
@@ -232,10 +278,8 @@ describe('ModelConfigs extra option', function () {
             validate(['name' => 'J', 'addr' => ['street' => 's', 'zip' => '1'], 'top' => 1], $model);
             expect(false)->toBeTrue();
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe([
-                'addr.zip' => ['Extra inputs are not permitted'],
-                'top' => ['Extra inputs are not permitted'],
-            ]);
+            // the nested model resolves its own configs: null extra -> ignore
+            expect($e->getErrors())->toBe(['top' => ['Extra inputs are not permitted']]);
         }
     });
 
@@ -438,5 +482,64 @@ describe('ModelConfigs string normalization options', function () {
             };
 
         expect(validate(['name' => '  JOHN  '], $model)->name)->toBe('john');
+    });
+});
+
+describe('ModelConfigs inheritance', function () {
+    it('inherits ModelConfigs from a parent class', function () {
+        // strict: false, strToLower and aliasGenerator: 'snake' come from the parent class
+        $result = validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John'], new OptionsConfigChildModel());
+        expect($result->count)->toBe(5)
+            ->and($result->label)->toBe('abc')
+            ->and($result->firstName)->toBe('John');
+    });
+
+    it('lets a child class override the parent ModelConfigs entirely', function () {
+        // the child's own attribute wins: strict mode back on, no generator, no strToLower
+        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel());
+        expect($result->label)->toBe('ABC');
+
+        try {
+            validate(['count' => '5', 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel());
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['count' => ['Must be integer']]);
+        }
+    });
+
+    it('never inherits the enclosing model ModelConfigs into a nested model', function () {
+        $model = new
+            #[ModelConfigs(strict: false, strToLower: true, aliasGenerator: 'snake')]
+            class extends BaseModel {
+                public string $title;
+
+                public OptionsPlainInnerModel $inner;
+            };
+
+        // the root is loose, lowercases strings and expects snake_case keys;
+        // the nested model keeps its own defaults
+        $result = validate([
+            'title' => 'HELLO',
+            'inner' => ['count' => 5, 'label' => 'ABC', 'firstName' => 'John'],
+        ], $model);
+        expect($result->title)->toBe('hello')
+            ->and($result->inner->label)->toBe('ABC');
+
+        // the nested model is strict: a numeric string is rejected there
+        // while the root would coerce it
+        try {
+            validate(['title' => 5, 'inner' => ['count' => '5', 'label' => 'ABC', 'firstName' => 'John']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['inner.count' => ['Must be integer']]);
+        }
+
+        // the nested model expects raw property names, not the root snake_case
+        try {
+            validate(['title' => 'x', 'inner' => ['count' => 5, 'label' => 'ABC', 'first_name' => 'John']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['inner.firstName' => ['Field is required']]);
+        }
     });
 });

@@ -213,8 +213,9 @@ bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_cl
             nested_path = zend_string_copy(field->name);
         }
 
-        // A nested model with its own ModelConfigs aliasGenerator uses
-        // it; otherwise the parent's generator propagates as before
+        // A nested model always validates with its own class's ModelConfigs
+        // (which may be inherited from a parent class); the enclosing
+        // model's configs never propagate into it
         as_model_configs_properties nested_props;
         zval nested_configs_obj;
         as_get_model_configs(&nested_configs_obj, &model_obj, &nested_props, false);
@@ -224,15 +225,7 @@ bool as_handle_class_by_ce(as_field *field, as_property_info *prop_info, zend_cl
             return false;
         }
 
-        as_model_configs_properties effective_props;
-        const as_model_configs_properties *props_to_use = properties;
-        if (nested_props.alias_generator != false) {
-            effective_props = *properties;
-            effective_props.alias_generator = nested_props.alias_generator;
-            props_to_use = &effective_props;
-        }
-
-        bool result = as_compiled_validate_model(field->value, &model_obj, props_to_use, errors, nested_path);
+        bool result = as_compiled_validate_model(field->value, &model_obj, &nested_props, errors, nested_path);
 
         zend_string_release(nested_path);
 
