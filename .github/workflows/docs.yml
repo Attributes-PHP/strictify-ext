@@ -40,6 +40,9 @@ jobs:
       - name: Install Zensical
         run: pip install zensical
 
+      - name: Generate API reference from stubs
+        run: python tools/generate_api_docs.py
+
       - name: Build docs
         run: zensical build
 

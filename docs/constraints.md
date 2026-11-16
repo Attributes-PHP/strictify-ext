@@ -1,7 +1,6 @@
 ---
 title: "Constraints"
-description: 'Reference for the Strictify constraint attributes: the built-in constraints and how to write custom constraints in PHP userland.'
-
+description: "Reference for the Strictify constraint attributes: the built-in constraints grouped by category, and how to write custom constraints in PHP userland."
 ---
 
 # Constraints
@@ -24,39 +23,39 @@ class User extends BaseModel
 }
 ```
 
-Constraints compose: every constraint declared on a property runs, and each failing one reports its own error under the resolved field name (the `Alias` name, when one is declared). `ModelConfigs(stopFirstError: true)` aborts the run at the first error, as with type errors.
+Constraints compose: every constraint declared on a property runs, and each failing one reports its own error under the resolved field name (the `Alias` name, when one is declared). `ModelConfigs(stopAtFirstError: true)` aborts the run at the first error, as with type errors.
 
 Attribute constructor arguments are validated at construction — an argument rejected by the constructor (`#[Between('a', 'b')]`) throws a `TypeError` on the first `validate()` call and keeps throwing on every call until the attribute is fixed.
 
-## Built-in constraints
+## Built-in constraints at a glance
 
 All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be declared on properties and parameters.
 
-| Attribute | Constructor | Fails when |
-| --------- | ----------- | ---------- |
-| [`AlphaDash`](#alphadash) | `()` | the string contains characters other than letters, numbers, dashes and underscores |
-| [`Ascii`](#ascii) | `()` | the string contains bytes outside 7-bit ASCII (0x00-0x7F) |
-| [`Between`](#between) | `(int\|float $min, int\|float $max)` | the number is outside the inclusive range |
-| [`Contains`](#contains) | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
-| [`DateTime`](#datetime) | `(string $format = 'X-m-d\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
-| [`EndsWith`](#endswith) | `(string\|int\|float ...$values)` | the string ends with none of the declared values |
-| [`In`](#in) | `(string\|int\|float\|bool ...$values)` | the value matches none of the declared values |
-| [`Max`](#max) | `(int\|float $value)` | the number exceeds the inclusive upper bound |
-| [`Min`](#min) | `(int\|float $value)` | the number is below the inclusive lower bound |
-| [`MultipleOf`](#multipleof) | `(int\|float $value)` | the number is not a multiple of the divisor |
-| [`Regex`](#regex) | `(string $regex)` | the string does not match the pattern (`preg_match` semantics: a partial match passes) |
-| [`Size`](#size) | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
-| [`StartsWith`](#startswith) | `(string\|int\|float ...$values)` | the string starts with none of the declared values |
-| [`Ulid`](#ulid) | `()` | the string is not a valid ULID (26 Crockford base32 characters, either letter case) |
-| [`Uuid`](#uuid) | `()` | the string is not a canonical UUID (8-4-4-4-12 hex groups separated by dashes, either letter case) |
+| Attribute | Category | Constructor | Fails when |
+| --------- | -------- | ----------- | ---------- |
+| [`AlphaDash`](#alphadash) | string | `()` | the string contains characters other than letters, numbers, dashes and underscores |
+| [`Ascii`](#ascii) | string | `()` | the string contains bytes outside 7-bit ASCII (0x00-0x7F) |
+| [`Regex`](#regex) | string | `(string $regex)` | the string does not match the pattern (`preg_match` semantics: a partial match passes) |
+| [`StartsWith`](#startswith) | string | `(string\|int\|float ...$values)` | the string starts with none of the declared values |
+| [`EndsWith`](#endswith) | string | `(string\|int\|float ...$values)` | the string ends with none of the declared values |
+| [`Ulid`](#ulid) | string | `()` | the string is not a valid ULID (26 Crockford base32 characters, either letter case) |
+| [`Uuid`](#uuid) | string | `()` | the string is not a canonical UUID (8-4-4-4-12 hex groups separated by dashes, either letter case) |
+| [`Between`](#between) | numeric | `(int\|float $min, int\|float $max)` | the number is outside the inclusive range |
+| [`Max`](#max) | numeric | `(int\|float $value)` | the number exceeds the inclusive upper bound |
+| [`Min`](#min) | numeric | `(int\|float $value)` | the number is below the inclusive lower bound |
+| [`MultipleOf`](#multipleof) | numeric | `(int\|float $value)` | the number is not a multiple of the divisor |
+| [`In`](#in) | membership | `(string\|int\|float\|bool ...$values)` | the value matches none of the declared values |
+| [`Contains`](#contains) | membership | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
+| [`Size`](#size) | size | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
+| [`DateTime`](#datetime) | date/time | `(string $format = 'X-m-d\\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
 
 Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only the lower bound, `#[DateTime(timezone: 'Europe/London')]` parses in that timezone.
 
-### Examples
+## String constraints
 
 One section per built-in constraint, covering every scenario of that constraint. All examples assume `use Attributes\Strictify\BaseModel;` and the constraint class imported from `Attributes\Strictify\Fields\Constraints`.
 
-#### `AlphaDash`
+### `AlphaDash`
 
 Letters, numbers, dashes and underscores only.
 
@@ -71,7 +70,7 @@ class Profile extends BaseModel
 
 Fails: `'user name'` (space), `'user.name'` (dot), and any non-string value.
 
-#### `Ascii`
+### `Ascii`
 
 7-bit ASCII bytes (0x00-0x7F) only.
 
@@ -86,66 +85,43 @@ class Label extends BaseModel
 
 Fails: `'héllo'` (UTF-8 bytes above 0x7F), and any non-string value.
 
-#### `Between`
+### `Regex`
 
-Inclusive numeric range; works for `int` and `float`.
-
-```php
-<?php
-class User extends BaseModel
-{
-    #[Between(18, 99)] // 18 and 99 pass (inclusive), 17 and 100 fail
-    public int $age;
-
-    #[Between(0.5, 2.5)] // 1.5 passes, 3.0 fails
-    public float $ratio;
-}
-```
-
-Fails: any non-numeric value, with a dedicated type error.
-
-#### `Contains`
-
-Arrays and strings are both supported.
+`preg_match` semantics: a partial match passes.
 
 ```php
 <?php
-class Article extends BaseModel
+class Account extends BaseModel
 {
-    // array: every declared value must be present
-    #[Contains('php', 'dev')] // ['php', 'dev', 'oss'] passes, ['php'] fails
-    public array $tags;
+    #[Regex('/^[a-z][a-z0-9-]*$/')] // 'user-name' passes, 'User Name' fails
+    public string $username;
 
-    // string: every declared value must appear as a substring
-    #[Contains('example')] // 'see example.com' passes, 'see other.org' fails
-    public string $link;
+    #[Regex('/a+/')] // 'bbbaaabb' passes (partial match), 'bbb' fails
+    public string $hasA;
 }
 ```
 
-Fails: any value that is neither array nor string.
+Fails: non-matching strings, strings when the pattern fails to compile, and non-string values.
 
-#### `DateTime`
+### `StartsWith`
 
-Parses in the declared format and timezone; `DateTimeInterface` instances pass as-is.
+The string must start with one of the declared values; numeric values match by their string representation.
 
 ```php
 <?php
-class Event extends BaseModel
+class Link extends BaseModel
 {
-    #[DateTime(format: 'Y-m-d')] // '1994-01-01' passes, '01/01/1994' fails
-    public string $date;
+    #[StartsWith('https://')] // 'https://example.com' passes, 'http://example.com' fails
+    public string $url;
 
-    #[DateTime(timezone: 'Europe/London')] // parses in that timezone
-    public string $startsAt;
-
-    #[DateTime(format: 'Y-m-d')] // hydrated to a DateTime, then the constraint sees the instance and passes
-    public \DateTime $birthday;
+    #[StartsWith(42)] // '4242' passes, '142' fails
+    public string $code;
 }
 ```
 
-Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
+Fails: non-string values, non-matching strings, and prefixes longer than the value.
 
-#### `EndsWith`
+### `EndsWith`
 
 The string must end with one of the declared values; numeric values match by their string representation.
 
@@ -163,25 +139,57 @@ class Contact extends BaseModel
 
 Fails: non-string values, and strings ending with none of the declared values (including a suffix longer than the value).
 
-#### `In`
+### `Ulid`
 
-Strict membership in the declared values.
+Exactly 26 Crockford base32 characters, either letter case.
 
 ```php
 <?php
-class Grade extends BaseModel
+class Event extends BaseModel
 {
-    #[In('a', 'b', 'c')] // 'b' passes, 'd' fails
-    public string $letter;
-
-    #[In(1, 2, true)] // 1 and true pass; strict: the string '1' fails
-    public int|bool $code;
+    #[Ulid] // '01ARZ3NDEKTSV4RRFFQ69G5FAV' (or lowercase) passes
+    public string $id;
 }
 ```
 
-Fails: any value identical to none of the declared values.
+Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, any other character, and non-string values.
 
-#### `Max`
+### `Uuid`
+
+Canonical 8-4-4-4-12 hexadecimal UUID, either letter case.
+
+```php
+<?php
+class Request extends BaseModel
+{
+    #[Uuid] // '123e4567-e89b-12d3-a456-426614174000' and '123E4567-E89B-12D3-A456-426614174000' pass
+    public string $id;
+}
+```
+
+Fails: wrong length, a dash in the wrong position, a non-hex character, and non-string values.
+
+## Numeric constraints
+
+### `Between`
+
+Inclusive numeric range; works for `int` and `float`.
+
+```php
+<?php
+class User extends BaseModel
+{
+    #[Between(18, 99)] // 18 and 99 pass (inclusive), 17 and 100 fail
+    public int $age;
+
+    #[Between(0.5, 2.5)] // 1.5 passes, 3.0 fails
+    public float $ratio;
+}
+```
+
+Fails: any non-numeric value, with a dedicated type error.
+
+### `Max`
 
 Inclusive numeric upper bound.
 
@@ -196,7 +204,7 @@ class Score extends BaseModel
 
 Fails: numbers above the bound and non-numeric values.
 
-#### `Min`
+### `Min`
 
 Inclusive numeric lower bound.
 
@@ -211,7 +219,7 @@ class Cart extends BaseModel
 
 Fails: numbers below the bound and non-numeric values.
 
-#### `MultipleOf`
+### `MultipleOf`
 
 Integer modulo for int pairs, `fmod` with a small tolerance for float pairs.
 
@@ -232,25 +240,49 @@ class Pack extends BaseModel
 
 Fails: non-multiples and non-numeric values.
 
-#### `Regex`
+## Membership constraints
 
-`preg_match` semantics: a partial match passes.
+### `In`
+
+Strict membership in the declared values.
 
 ```php
 <?php
-class Account extends BaseModel
+class Grade extends BaseModel
 {
-    #[Regex('/^[a-z][a-z0-9-]*$/')] // 'user-name' passes, 'User Name' fails
-    public string $username;
+    #[In('a', 'b', 'c')] // 'b' passes, 'd' fails
+    public string $letter;
 
-    #[Regex('/a+/')] // 'bbbaaabb' passes (partial match), 'bbb' fails
-    public string $hasA;
+    #[In(1, 2, true)] // 1 and true pass; strict: the string '1' fails
+    public int|bool $code;
 }
 ```
 
-Fails: non-matching strings, strings when the pattern fails to compile, and non-string values.
+Fails: any value identical to none of the declared values.
 
-#### `Size`
+### `Contains`
+
+Arrays and strings are both supported.
+
+```php
+<?php
+class Article extends BaseModel
+{
+    // array: every declared value must be present
+    #[Contains('php', 'dev')] // ['php', 'dev', 'oss'] passes, ['php'] fails
+    public array $tags;
+
+    // string: every declared value must appear as a substring
+    #[Contains('example')] // 'see example.com' passes, 'see other.org' fails
+    public string $link;
+}
+```
+
+Fails: any value that is neither array nor string.
+
+## Size
+
+### `Size`
 
 String length in bytes or array element count, within inclusive bounds; either bound may be omitted.
 
@@ -274,55 +306,30 @@ class Profile extends BaseModel
 
 Fails: sizes outside the bounds and values that are neither string nor array.
 
-#### `StartsWith`
+## Date and time
 
-The string must start with one of the declared values; numeric values match by their string representation.
+### `DateTime`
 
-```php
-<?php
-class Link extends BaseModel
-{
-    #[StartsWith('https://')] // 'https://example.com' passes, 'http://example.com' fails
-    public string $url;
-
-    #[StartsWith(42)] // '4242' passes, '142' fails
-    public string $code;
-}
-```
-
-Fails: non-string values, non-matching strings, and prefixes longer than the value.
-
-#### `Ulid`
-
-Exactly 26 Crockford base32 characters, either letter case.
+Parses in the declared format and timezone; `DateTimeInterface` instances pass as-is.
 
 ```php
 <?php
 class Event extends BaseModel
 {
-    #[Ulid] // '01ARZ3NDEKTSV4RRFFQ69G5FAV' (or lowercase) passes
-    public string $id;
+    #[DateTime(format: 'Y-m-d')] // '1994-01-01' passes, '01/01/1994' fails
+    public string $date;
+
+    #[DateTime(timezone: 'Europe/London')] // parses in that timezone
+    public string $startsAt;
+
+    #[DateTime(format: 'Y-m-d')] // hydrated to a DateTime, then the constraint sees the instance and passes
+    public \DateTime $birthday;
 }
 ```
 
-Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, any other character, and non-string values.
+Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
 
-#### `Uuid`
-
-Canonical 8-4-4-4-12 hexadecimal UUID, either letter case.
-
-```php
-<?php
-class Request extends BaseModel
-{
-    #[Uuid] // '123e4567-e89b-12d3-a456-426614174000' and '123E4567-E89B-12D3-A456-426614174000' pass
-    public string $id;
-}
-```
-
-Fails: wrong length, a dash in the wrong position, a non-hex character, and non-string values.
-
-### Value semantics
+## Value semantics
 
 - **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
 - **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
@@ -330,7 +337,7 @@ Fails: wrong length, a dash in the wrong position, a non-hex character, and non-
 - **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, and an invalid timezone name throws a `ValueError` at construction.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.
 
-### Error messages
+## Error messages
 
 Each constraint has a default message following the `Must be ...` pattern, with the constraint parameters rendered in place of `{expected}`:
 
@@ -344,7 +351,7 @@ Each constraint has a default message following the `Must be ...` pattern, with 
 
 The `ErrorMessage` attribute only declares `required` and `type` templates, so constraint errors always use their default messages. Constraints applied through userland classes can return any message they want (see below).
 
-Every default message has a stable translation key (`between`, `min`, `regex`, ...) passed to the translator registered with `ModelConfigs::setDefaultErrorMessages()` — see [Translating error messages](/validate/#translating-error-messages). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
+Every default message has a stable translation key (`between`, `min`, `regex`, ...) — see the [error catalog](/exceptions/#default-error-messages) and [translating error messages](/guides/error-messages/). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
 
 ## Custom constraints
 

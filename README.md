@@ -66,4 +66,13 @@ call("myFunction", $rawData);
 pie install attributes-php/strictify
 ```
 
+## Documentation
+
+Full documentation lives at [strictify.attributes-php.com](https://strictify.attributes-php.com):
+
+- [Quickstart](https://strictify.attributes-php.com/quickstart/) — first model and first validation in under a minute
+- [Guides](https://strictify.attributes-php.com/guides/validating-payloads/) — validating payloads, nested models, aliases, error messages, sensitive data, `call()`, `toDict()`
+- [Reference](https://strictify.attributes-php.com/validate/) — `validate()`, `toDict()`, `call()`, `ModelConfigs`, constraints, exceptions, API
+- [FAQ](https://strictify.attributes-php.com/faq/) and [Changelog](https://strictify.attributes-php.com/changelog/)
+
 Strictify Extension was created by **[André Gil](https://www.linkedin.com/in/andre-gil/)** and is open-sourced software licensed under the **[MIT license](https://opensource.org/licenses/MIT)**.
