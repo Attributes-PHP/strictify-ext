@@ -18,6 +18,12 @@ class OptionsInnerModel extends BaseModel
     public string $street;
 }
 
+#[\AllowDynamicProperties]
+class OptionsDynamicInnerModel extends BaseModel
+{
+    public string $street;
+}
+
 afterEach(function () {
     ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
 });
@@ -127,6 +133,34 @@ describe('ModelConfigs extra option', function () {
 
         validate(['name' => 'John', 'junk' => 1], $ignored);
         expect($ignored->seenExtra)->toBe('ignore');
+    });
+
+    it('resolves a null extra per nested model class when the configs are shared', function () {
+        $model = new class extends BaseModel {
+            public string $name;
+
+            public OptionsDynamicInnerModel $addr;
+        };
+
+        $result = validate(['name' => 'J', 'addr' => ['street' => 's', 'zip' => '1']], $model);
+        expect($result->addr->street)->toBe('s')
+            ->and($result->addr->zip)
+            ->toBe('1');
+    });
+
+    it('does not leak a root-resolved allow into a nested model without #[AllowDynamicProperties]', function () {
+        $model = new
+            #[\AllowDynamicProperties]
+            class extends BaseModel {
+                public string $name;
+
+                public OptionsInnerModel $addr;
+            };
+
+        $result = validate(['name' => 'J', 'junk' => 1, 'addr' => ['street' => 's', 'zip' => '1']], $model);
+        expect($result->junk)->toBe(1)
+            ->and(isset($result->addr->zip))
+            ->toBeFalse();
     });
 
     it('reports every unknown key with extra=forbid', function () {

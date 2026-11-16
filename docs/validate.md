@@ -400,6 +400,8 @@ Controls what happens with input keys that resolve to no property of the model:
 - `'allow'`: unknown keys are stored as dynamic properties on the model instance. Integer keys have no property name and keys naming a declared property (e.g. the raw property name when `aliasGenerator` renames the expected key) are never stored.
 - `'forbid'`: every unknown key produces an error keyed by the raw key (dot path for nested models), with the default message `Extra inputs are not permitted`, translatable under the `extra` key. Keys produced by `aliasGenerator`/`Alias` count as known, integer keys are reported under their numeric name, and `stopAtFirstError` reports only the first one.
 
+A nested model that shares the parent's `ModelConfigs` (it declares none of its own) inherits a non-null `extra` as-is; a `null` extra is instead resolved per nested model class, against each nested class's own `#[\AllowDynamicProperties]`.
+
 ```php
 <?php
 use Attributes\Strictify\ModelConfigs;

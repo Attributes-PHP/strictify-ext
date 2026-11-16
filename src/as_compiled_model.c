@@ -777,14 +777,25 @@ static void as_transform_field_value(as_compiled_field *cf, as_field *field, con
  * on the model instance; the auto-resolved 'allow' only happens for classes
  * marked #[AllowDynamicProperties], so the write does not hit the PHP 8.2+
  * dynamic-property deprecation. 'ignore' drops unknown keys.
+ *
+ * A null extra is resolved here, per model class: 'allow' when the class is
+ * marked #[AllowDynamicProperties] (the flag is inherited by child classes),
+ * 'ignore' otherwise. A non-null extra propagates unchanged from the root
+ * model into nested models sharing the configs.
  */
 static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model *plan, const as_model_configs_properties *properties, zend_string *parent_path, zval *errors)
 {
-    if (properties->extra != AS_FORBID && properties->extra != AS_ALLOW) {
+    zend_class_entry *ce = Z_OBJCE_P(model);
+
+    char extra = properties->extra;
+    if (extra == '\0') {
+        extra = (ce->ce_flags & ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES) ? AS_ALLOW : AS_IGNORE;
+    }
+
+    if (extra != AS_FORBID && extra != AS_ALLOW) {
         return;
     }
 
-    zend_class_entry *ce = Z_OBJCE_P(model);
     zend_string *key;
     zend_ulong idx;
     zval *entry;
@@ -806,7 +817,7 @@ static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model
             continue;
         }
 
-        if (properties->extra == AS_ALLOW) {
+        if (extra == AS_ALLOW) {
             // Integer keys have no property name, and a key naming a declared
             // property (reachable when an alias generator renamed the expected
             // key) is not a dynamic property: skip both

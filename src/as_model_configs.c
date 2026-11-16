@@ -153,8 +153,9 @@ void as_register_ModelConfigs_class(void)
  * Inheritance is supported: if Child extends Parent and Parent has ModelConfigs,
  * those configs are used for Child unless Child overrides them with its own ModelConfigs.
  *
- * A null (or omitted) extra resolves against the model class itself: 'allow'
- * when it carries #[AllowDynamicProperties], 'ignore' otherwise.
+ * A null (or omitted) extra is kept as-is here and resolved per model class
+ * at validation time: 'allow' when the class carries #[AllowDynamicProperties],
+ * 'ignore' otherwise.
  *
  * A parse that fails (invalid option value) returns with a pending exception
  * and must never be cached, so the error keeps firing.
@@ -219,15 +220,15 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
         }
     }
 
-    /* An omitted (or explicitly null) extra resolves per model class:
-     * 'allow' when the class is marked #[AllowDynamicProperties] (the flag
-     * is inherited by child classes), 'ignore' otherwise. */
+    /* An omitted (or explicitly null) extra stays '\0' in the properties and
+     * is resolved per model class at validation time (see
+     * as_check_extra_fields), so a nested model sharing these configs checks
+     * its own #[AllowDynamicProperties]. extra_name carries the per-class
+     * resolved value for the ModelConfigs object (getExtra()). */
     if (extra_name[0] == '\0') {
         if (model_ce->ce_flags & ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES) {
-            properties->extra = AS_ALLOW;
             strcpy(extra_name, "allow");
         } else {
-            properties->extra = AS_IGNORE;
             strcpy(extra_name, "ignore");
         }
     }
@@ -300,7 +301,7 @@ static zend_always_inline void set_default_properties(as_model_configs_propertie
     properties->str_to_lower = false;
     properties->str_to_upper = false;
     properties->strip_whitespace = false;
-    properties->extra = '\0'; // unset: resolved per class in as_parse_model_configs
+    properties->extra = '\0'; // null: resolved per model class at validation time
     properties->strict = true;
     properties->stop_first_error = false;
 }
