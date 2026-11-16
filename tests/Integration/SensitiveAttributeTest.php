@@ -314,26 +314,24 @@ describe('sensitive properties in debug output', function () {
         expect(unserialize(serialize($model))->password)->toBe($secret);
     });
 
-    it('masks sensitive properties dumped inside exception traces', function () {
+    it('masks sensitive properties dumped inside backtrace arguments', function () {
         $secret = str_repeat('x', 8);
         $model = new SensitiveDebugModel();
 
         validate(['name' => 'andre', 'password' => $secret], $model);
 
-        $thrower = static function (SensitiveDebugModel $m): void {
-            throw new RuntimeException('boom');
-        };
+        SensitiveTraceRecorder::$backtrace = null;
 
         try {
-            $thrower($model);
+            sensitive_trace_throws($model);
             expect(false)->toBeTrue('RuntimeException expected');
         } catch (RuntimeException $e) {
-            $trace = $e->getTrace();
-            $dump = print_r($trace[0]['args'], true);
+            $args = SensitiveTraceRecorder::$backtrace[0]['args'];
+            $dump = print_r($args, true);
 
             expect($dump)->toContain('***');
             expect($dump)->not->toContain($secret);
-            expect($trace[0]['args'][0]->password)->toBe($secret);
+            expect($args[0]->password)->toBe($secret);
         }
     });
 });
@@ -393,6 +391,18 @@ class SensitiveScalarTypesModel extends BaseModel
 
     #[Sensitive]
     public array $tags;
+}
+
+class SensitiveTraceRecorder
+{
+    public static ?array $backtrace = null;
+}
+
+function sensitive_trace_throws(SensitiveDebugModel $model): void
+{
+    SensitiveTraceRecorder::$backtrace = debug_backtrace();
+
+    throw new RuntimeException('boom');
 }
 
 class SensitiveObjectTypesModel extends BaseModel
