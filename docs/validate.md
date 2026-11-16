@@ -302,6 +302,13 @@ Debug output masks them as well: `var_dump()`, `print_r()`, `debug_zval_dump()` 
 $model = validate(['username' => 'andre', 'password' => 'hunter2'], new Credentials());
 
 print_r($model, true); // Credentials Object ( [username] => andre [password] => *** )
+var_dump($model);
+// object(Credentials)#1 (2) {
+//   ["username"]=>
+//   string(5) "andre"
+//   ["password"]=>
+//   string(3) "***"
+// }
 json_encode($model);   // {"username":"andre","password":"hunter2"} — real values
 ```
 
