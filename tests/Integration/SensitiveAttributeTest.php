@@ -15,6 +15,7 @@ use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
 use DateTime;
 use DateTimeInterface;
 use ReflectionClass;
+use RuntimeException;
 
 use function Attributes\Strictify\validate;
 
@@ -232,6 +233,110 @@ describe('sensitive properties of every type', function () {
     });
 });
 
+describe('sensitive properties in debug output', function () {
+    it('masks sensitive properties in print_r output but keeps the real value on the model', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveDebugModel();
+
+        validate(['name' => 'andre', 'password' => $secret], $model);
+
+        $dump = print_r($model, true);
+
+        expect($dump)->toContain('***');
+        expect($dump)->not->toContain($secret);
+        expect($dump)->toContain('andre');
+        expect($model->password)->toBe($secret);
+    });
+
+    it('masks sensitive properties in var_dump output', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveDebugModel();
+
+        validate(['name' => 'andre', 'password' => $secret], $model);
+
+        ob_start();
+        var_dump($model);
+        $dump = ob_get_clean();
+
+        expect($dump)->toContain('string(3) "***"');
+        expect($dump)->not->toContain($secret);
+        expect($dump)->toContain('andre');
+    });
+
+    it('masks sensitive properties of nested models in dumps', function () {
+        $token = str_repeat('t', 8);
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveOuterModel();
+
+        validate(['inner' => ['token' => $token, 'label' => 'visible'], 'password' => $secret], $model);
+
+        $dump = print_r($model, true);
+
+        expect($dump)->toContain('***');
+        expect($dump)->not->toContain($token);
+        expect($dump)->not->toContain($secret);
+        expect($dump)->toContain('visible');
+        expect($model->password)->toBe($secret);
+        expect($model->inner->token)->toBe($token);
+    });
+
+    it('masks sensitive properties of every type in dumps', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveScalarTypesModel();
+
+        validate([
+            'label' => 'visible',
+            'pin' => 1234,
+            'price' => 9.99,
+            'note' => $secret,
+            'active' => true,
+            'tags' => ['a', 'b'],
+        ], $model);
+
+        $dump = print_r($model, true);
+
+        expect($dump)->toContain('visible');
+        expect($dump)->toContain('***');
+        expect($dump)->not->toContain($secret);
+        expect($dump)->not->toContain('1234');
+        expect($dump)->not->toContain('9.99');
+    });
+
+    it('keeps real values for json_encode, array cast, get_object_vars and serialize', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveDebugModel();
+
+        validate(['name' => 'andre', 'password' => $secret], $model);
+
+        expect(json_encode($model))->toBe('{"name":"andre","password":"' . $secret . '"}');
+        expect((array) $model)->toBe(['name' => 'andre', 'password' => $secret]);
+        expect(get_object_vars($model))->toBe(['name' => 'andre', 'password' => $secret]);
+        expect(unserialize(serialize($model))->password)->toBe($secret);
+    });
+
+    it('masks sensitive properties dumped inside exception traces', function () {
+        $secret = str_repeat('x', 8);
+        $model = new SensitiveDebugModel();
+
+        validate(['name' => 'andre', 'password' => $secret], $model);
+
+        $thrower = static function (SensitiveDebugModel $m): void {
+            throw new RuntimeException('boom');
+        };
+
+        try {
+            $thrower($model);
+            expect(false)->toBeTrue('RuntimeException expected');
+        } catch (RuntimeException $e) {
+            $dump = print_r($e->getTrace(), true);
+
+            expect($dump)->toContain('***');
+            expect($dump)->not->toContain($secret);
+            expect($e->getTrace()[0]['args'][0]->password)->toBe($secret);
+        }
+    });
+});
+
 class TestClassWithSensitiveProperty
 {
     #[Sensitive]
@@ -256,6 +361,14 @@ class SensitiveInnerModel extends BaseModel
 class SensitiveOuterModel extends BaseModel
 {
     public SensitiveInnerModel $inner;
+
+    #[Sensitive]
+    public string $password;
+}
+
+class SensitiveDebugModel extends BaseModel
+{
+    public string $name;
 
     #[Sensitive]
     public string $password;
