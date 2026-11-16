@@ -15,6 +15,7 @@ All notable changes to Strictify are documented here, newest first. Install a re
 
 ### Changed
 
+- **BC note:** the default error-message translator moved off `ModelConfigs` onto the new final class `Attributes\Strictify\ErrorTranslator`: `ErrorTranslator::set(callable $translator): void` and `ErrorTranslator::get(): ?callable`. `ModelConfigs::setDefaultErrorMessages()` / `ModelConfigs::getDefaultErrorMessages()` and the static `$defaultErrorMessages` property were removed.
 - **BC note:** plain `toDict()` on models that use `#[Alias]` or `aliasGenerator` now returns property-name keys instead of alias keys. Pass `useAlias: true` for the previous behavior.
 
 ## Recent history

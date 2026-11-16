@@ -1,6 +1,6 @@
 ---
 title: "Guide: error messages"
-description: "Customize validation error messages per property with ErrorMessage, or translate them all with ModelConfigs::setDefaultErrorMessages()."
+description: "Customize validation error messages per property with ErrorMessage, or translate them all with ErrorTranslator::set()."
 ---
 
 # Error messages
@@ -42,7 +42,7 @@ The `{expected}` placeholder renders the expected type list. `{field}` and `{val
 
 ## Translating error messages
 
-Register a translator once per request with `ModelConfigs::setDefaultErrorMessages()`. The callable receives a message key and returns the translated template, or `null` to keep the default:
+Register a translator once per request with `ErrorTranslator::set()`. The callable receives a message key and returns the translated template, or `null` to keep the default:
 
 ```php
 <?php
@@ -50,10 +50,10 @@ Register a translator once per request with `ModelConfigs::setDefaultErrorMessag
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Min;
-use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\ErrorTranslator;
 use function Attributes\Strictify\validate;
 
-ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => match ($key) {
+ErrorTranslator::set(fn (string $key): ?string => match ($key) {
     'required' => 'Campo obrigatório',
     'type' => 'Deve ser {expected}',
     'min' => 'Deve ser no mínimo {expected}',
@@ -85,7 +85,7 @@ Multiple languages — a catalog keyed by locale; switch locale by re-registerin
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Min;
-use Attributes\Strictify\ModelConfigs;
+use Attributes\Strictify\ErrorTranslator;
 use function Attributes\Strictify\validate;
 
 final class Catalog
@@ -105,7 +105,7 @@ final class Catalog
 
     public static function useLocale(string $locale): void
     {
-        ModelConfigs::setDefaultErrorMessages(
+        ErrorTranslator::set(
             fn (string $key): ?string => self::MESSAGES[$locale][$key] ?? null
         );
     }

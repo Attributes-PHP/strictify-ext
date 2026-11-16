@@ -1,6 +1,5 @@
 #include "as_model_configs.h"
 #include "as_globals.h"
-#include "helpers/as_error_messages.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
@@ -94,32 +93,6 @@ ZEND_METHOD(AS_ModelConfigs, isStopAtFirstError)
     AS_GET_PROPERTY_AND_RETURN("stopAtFirstError");
 }
 
-ZEND_METHOD(AS_ModelConfigs, getDefaultErrorMessages)
-{
-    ZEND_PARSE_PARAMETERS_NONE();
-    RETURN_COPY(zend_read_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, 1));
-}
-
-ZEND_METHOD(AS_ModelConfigs, setDefaultErrorMessages)
-{
-    zval *errorMessages;
-
-    ZEND_PARSE_PARAMETERS_START(1, 1)
-    Z_PARAM_ZVAL(errorMessages)
-    ZEND_PARSE_PARAMETERS_END();
-
-    if (!zend_is_callable(errorMessages, 0, NULL)) {
-        zend_throw_exception_ex(zend_ce_type_error, 0, "Argument 1 passed to Attributes\\Strictify\\ModelConfigs::setDefaultErrorMessages() must be callable");
-        RETURN_THROWS();
-    }
-
-    zend_update_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, errorMessages);
-
-    /* Templates resolved with the previous translator are cached per property:
-     * drop the cache so the new translator (e.g. a new locale) takes effect. */
-    as_clear_error_templates_cache();
-}
-
 /* Registration function */
 void as_register_ModelConfigs_class(void)
 {
@@ -137,11 +110,6 @@ void as_register_ModelConfigs_class(void)
     declare_typed_property_string("extra", sizeof("extra") - 1, NULL, 0, true);
     declare_typed_property_bool("strict", sizeof("strict") - 1, true);
     declare_typed_property_bool("stopAtFirstError", sizeof("stopAtFirstError") - 1, false);
-
-    /* Declare defaultErrorMessages as a static mixed property */
-    zval default_error_messages_default;
-    ZVAL_NULL(&default_error_messages_default);
-    declare_typed_property("defaultErrorMessages", sizeof("defaultErrorMessages") - 1, &default_error_messages_default, 0, ZEND_ACC_PRIVATE | ZEND_ACC_STATIC);
 
     /* Register as an internal attribute that targets classes only */
     zend_internal_attribute_register(AS_ModelConfigs_ce, ZEND_ATTRIBUTE_TARGET_CLASS);

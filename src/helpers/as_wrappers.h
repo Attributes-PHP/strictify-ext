@@ -124,7 +124,7 @@ void as_zval_stringl(zval *z, const char *str, size_t len);
 void as_declare_typed_property(zend_class_entry *ce, const char *name, int flags, zend_type type);
 
 /*
- * Calls the translator registered via ModelConfigs::setDefaultErrorMessages()
+ * Calls the translator registered via ErrorTranslator::set()
  * with the given message key. Returns a freshly allocated zend_string when the
  * translator returns a string template, NULL when no translator is registered
  * or it returns null. A non-string/non-null return throws a ValueError;

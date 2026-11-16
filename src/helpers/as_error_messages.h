@@ -54,7 +54,7 @@ typedef struct {
 extern const char *as_default_error_type_messages[];
 
 // Stable message keys, one per error type, passed to the translator registered
-// via ModelConfigs::setDefaultErrorMessages() (defined in as_error_messages.c).
+// via ErrorTranslator::set().
 extern const char *as_error_type_names[];
 
 // Placeholder substitution

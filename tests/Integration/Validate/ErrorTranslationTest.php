@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\ErrorTranslator;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraint;
 use Attributes\Strictify\Fields\Constraints\Min;
 use Attributes\Strictify\Fields\ErrorMessage;
-use Attributes\Strictify\ModelConfigs;
 use RuntimeException;
 use TypeError;
 use ValueError;
@@ -38,19 +38,19 @@ final class RejectWithOwnMessage implements Constraint
 
 afterEach(function () {
     // The translator is a static property: reset it so other tests are unaffected.
-    ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
+    ErrorTranslator::set(fn (string $key): ?string => null);
 });
 
-it('returns the registered translator via ModelConfigs::getDefaultErrorMessages()', function () {
+it('returns the registered translator via ErrorTranslator::get()', function () {
     $translator = fn (string $key): ?string => $key === 'extra' ? 'translated' : null;
-    ModelConfigs::setDefaultErrorMessages($translator);
+    ErrorTranslator::set($translator);
 
-    expect(ModelConfigs::getDefaultErrorMessages())->toBe($translator);
+    expect(ErrorTranslator::get())->toBe($translator);
 });
 
 describe('error message translation', function () {
     it('uses built-in default messages when the translator returns null', function () {
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
+        ErrorTranslator::set(fn (string $key): ?string => null);
 
         $model = new class extends BaseModel {
             public string $name;
@@ -65,7 +65,7 @@ describe('error message translation', function () {
     });
 
     it('translates built-in error keys and still substitutes placeholders', function () {
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => match ($key) {
+        ErrorTranslator::set(fn (string $key): ?string => match ($key) {
             'required' => '{field} é obrigatório',
             'type' => 'Deve ser {expected}',
             'min' => 'Deve ser no mínimo {expected}',
@@ -98,7 +98,7 @@ describe('error message translation', function () {
     });
 
     it('treats the ErrorMessage attribute value as a translation key', function () {
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => match ($key) {
+        ErrorTranslator::set(fn (string $key): ?string => match ($key) {
             TranslationMsg::NAME_REQUIRED => 'O nome é obrigatório',
             TranslationMsg::NAME_TYPE => 'O nome deve ser {expected}',
             default => null,
@@ -125,7 +125,7 @@ describe('error message translation', function () {
     });
 
     it('keeps the literal ErrorMessage value when the translator does not know the key', function () {
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
+        ErrorTranslator::set(fn (string $key): ?string => null);
 
         $model = new class extends BaseModel {
             #[ErrorMessage(required: 'Name is mandatory', type: 'Expected {expected}')]
@@ -145,7 +145,7 @@ describe('error message translation', function () {
             public string $name;
         };
 
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => 'primeira tradução');
+        ErrorTranslator::set(fn (string $key): ?string => 'primeira tradução');
         try {
             validate([], $model);
             expect(false)->toBeTrue();
@@ -153,7 +153,7 @@ describe('error message translation', function () {
             expect($e->getErrors())->toBe(['name' => ['primeira tradução']]);
         }
 
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => 'segunda tradução');
+        ErrorTranslator::set(fn (string $key): ?string => 'segunda tradução');
         try {
             validate([], $model);
             expect(false)->toBeTrue();
@@ -163,7 +163,7 @@ describe('error message translation', function () {
     });
 
     it('propagates exceptions thrown by the translator', function () {
-        ModelConfigs::setDefaultErrorMessages(function (string $key): ?string {
+        ErrorTranslator::set(function (string $key): ?string {
             throw new RuntimeException("boom {$key}");
         });
 
@@ -175,7 +175,7 @@ describe('error message translation', function () {
     })->throws(RuntimeException::class, 'boom required');
 
     it('throws ValueError when the translator returns a non-string', function () {
-        ModelConfigs::setDefaultErrorMessages(fn (string $key): mixed => 42);
+        ErrorTranslator::set(fn (string $key): mixed => 42);
 
         $model = new class extends BaseModel {
             public string $name;
@@ -185,12 +185,12 @@ describe('error message translation', function () {
     })->throws(ValueError::class, 'must return ?string');
 
     it('throws TypeError when registering a non-callable translator', function () {
-        ModelConfigs::setDefaultErrorMessages('not a callable');
+        ErrorTranslator::set('not a callable');
     })->throws(TypeError::class, 'must be callable');
 
     it('does not translate userland constraint messages', function () {
         $seen = [];
-        ModelConfigs::setDefaultErrorMessages(function (string $key) use (&$seen): ?string {
+        ErrorTranslator::set(function (string $key) use (&$seen): ?string {
             $seen[] = $key;
 
             return null;

@@ -40,7 +40,7 @@ const char *as_default_error_type_messages[] = {
 
 /*
  * Stable message keys, one per error type, handed to the translator registered
- * via ModelConfigs::setDefaultErrorMessages(). An #[ErrorMessage] attribute
+ * via ErrorTranslator::set(). An #[ErrorMessage] attribute
  * value is also passed as a key, so custom per-property messages can be
  * translated the same way.
  */

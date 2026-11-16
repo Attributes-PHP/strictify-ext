@@ -20,6 +20,7 @@ FILE_ORDER = [
     "functions.stub.php",
     "base_model.stub.php",
     "model_configs.stub.php",
+    "error_translator.stub.php",
     "type.stub.php",
     "exceptions.stub.php",
 ]
