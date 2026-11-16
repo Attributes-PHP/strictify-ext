@@ -77,7 +77,7 @@ class User extends BaseModel
     public string $name;
     public Address $address;
     #[DateTime(format: 'Y-m-d')]
-    public ?DateTime $birthday = null;
+    public ?\DateTime $birthday = null;
 }
 
 $user = validate([
