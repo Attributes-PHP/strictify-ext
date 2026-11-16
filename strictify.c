@@ -14,6 +14,7 @@
 #include "src/as_compiled_model.h"
 #include "src/as_exception.h"
 #include "src/as_model_configs.h"
+#include "src/as_error_translator.h"
 #include "src/as_type.h"
 #include "src/fields/as_constraint.h"
 #include "src/fields/as_config_aware_constraint.h"
@@ -80,6 +81,7 @@ PHP_MINIT_FUNCTION(strictify)
     // Register main classes
     as_register_BaseModel_class();
     as_register_ModelConfigs_class();
+    as_register_ErrorTranslator_class();
     as_register_all_exception_classes();
 
     // Register the Type enum and its namespace constants

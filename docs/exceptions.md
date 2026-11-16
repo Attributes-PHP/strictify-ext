@@ -46,7 +46,7 @@ A `ValueError` is thrown when an attribute spec is malformed, for example:
 
 ## Default error messages
 
-Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Each has a stable translation key passed to the translator registered with `ModelConfigs::setDefaultErrorMessages()` — see [Error messages](/guides/error-messages/):
+Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Each has a stable translation key passed to the translator registered with `ErrorTranslator::set()` — see [Error messages](/guides/error-messages/):
 
 | Key | Default message |
 | --- | --- |

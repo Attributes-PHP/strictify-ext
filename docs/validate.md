@@ -55,7 +55,7 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 | Aliases | `#[Alias]` maps one input key; `aliasGenerator` transforms all keys; resolved names appear in error paths | [Aliases](/guides/aliases/) |
 | Nested models & arrays | `BaseModel` properties hydrate recursively; `Sequence`/`Union`/`Intersection`/`Dict` shape arrays | [Nested models and arrays](/guides/nested-models/) |
 | Constraints | Value-level rules via constraint attributes, running after the type check | [Constraints](/constraints/) |
-| Error messages | `Must be <type>` defaults; per-property `ErrorMessage`; translatable via `ModelConfigs::setDefaultErrorMessages()` | [Error messages](/guides/error-messages/) |
+| Error messages | `Must be <type>` defaults; per-property `ErrorMessage`; translatable via `ErrorTranslator::set()` | [Error messages](/guides/error-messages/) |
 | Sensitive fields | `#[Sensitive]` keeps values out of `toDict()`, error messages and debug output | [Sensitive data](/guides/sensitive-data/) |
 | Model configuration | `#[ModelConfigs(...)]` options: `aliasGenerator`, `strict`, `stopAtFirstError`, `extra`, `strToLower`/`strToUpper`/`stripWhitespace` | [ModelConfigs](/model-configs/) |
 | Hooks | `beforeValidation()` / `afterValidation()` around the validation run | [Validating payloads](/guides/validating-payloads/#hooks) |

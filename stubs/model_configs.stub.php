@@ -12,7 +12,6 @@ namespace Attributes\Strictify {
       private ?string $extra = null;
       private bool $strict = true;
       private bool $stopAtFirstError = false;
-      private static ?callable $defaultErrorMessages = null;
 
       public function getAliasGenerator(): ?string {}
       public function isStrToLower(): bool {}
@@ -21,8 +20,5 @@ namespace Attributes\Strictify {
       public function getExtra(): ?string {}
       public function isStrict(): bool {}
       public function isStopAtFirstError(): bool {}
-
-      public static function getDefaultErrorMessages(): ?callable {}
-      public static function setDefaultErrorMessages(callable $setErrorMessages): void {}
    }
 }

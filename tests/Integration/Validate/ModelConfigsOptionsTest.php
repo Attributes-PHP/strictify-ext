@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\ErrorTranslator;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Regex;
 use Attributes\Strictify\ModelConfigs;
@@ -25,7 +26,7 @@ class OptionsDynamicInnerModel extends BaseModel
 }
 
 afterEach(function () {
-    ModelConfigs::setDefaultErrorMessages(fn (string $key): ?string => null);
+    ErrorTranslator::set(fn (string $key): ?string => null);
 });
 
 describe('ModelConfigs extra option', function () {
@@ -302,7 +303,7 @@ describe('ModelConfigs extra option', function () {
     })->throws(ValueError::class, 'ignore, forbid, allow');
 
     it('translates the extra error with the "extra" key', function () {
-        ModelConfigs::setDefaultErrorMessages(
+        ErrorTranslator::set(
             fn (string $key): ?string => $key === 'extra' ? 'Campo extra não permitido: {field}' : null,
         );
 

@@ -50,7 +50,6 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `private ?string $extra` | `null` |
 | `private bool $strict` | `true` |
 | `private bool $stopAtFirstError` | `false` |
-| `private static ?callable $defaultErrorMessages` | `null` |
 
 **Methods**
 
@@ -63,8 +62,23 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public function getExtra(): ?string` |
 | `public function isStrict(): bool` |
 | `public function isStopAtFirstError(): bool` |
-| `public static function getDefaultErrorMessages(): ?callable` |
-| `public static function setDefaultErrorMessages(callable $setErrorMessages): void` |
+
+### `Attributes\Strictify\ErrorTranslator` — final class
+
+- Attribute: no
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `private static ?callable $translator` | `null` |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public static function get(): ?callable` |
+| `public static function set(callable $translator): void` |
 
 ### `Attributes\Strictify\Type` — enum (backed by `int`)
 

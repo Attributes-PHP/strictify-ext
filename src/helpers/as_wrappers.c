@@ -1,5 +1,5 @@
 #include "as_wrappers.h"
-#include "../as_model_configs.h"
+#include "../as_error_translator.h"
 #include "php.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
@@ -188,7 +188,7 @@ void as_declare_typed_property(zend_class_entry *ce, const char *name, int flags
 
 zend_string *as_translate_error_key(const char *key, size_t key_len)
 {
-    zval *translator = zend_read_static_property(AS_ModelConfigs_ce, "defaultErrorMessages", sizeof("defaultErrorMessages") - 1, true);
+    zval *translator = zend_read_static_property(AS_ErrorTranslator_ce, "translator", sizeof("translator") - 1, true);
     if (translator == NULL || Z_TYPE_P(translator) == IS_NULL || !zend_is_callable(translator, 0, NULL)) {
         return NULL;
     }
