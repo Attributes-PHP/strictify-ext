@@ -45,8 +45,11 @@ ZEND_METHOD(AS_BaseModel, toDict)
  */
 static bool as_property_info_is_sensitive(zend_property_info *prop)
 {
-    return prop != NULL && prop->attributes != NULL &&
-           zend_get_attribute_str(prop->attributes, "attributes\\strictify\\fields\\sensitive", sizeof("attributes\\strictify\\fields\\sensitive") - 1) != NULL;
+    if (prop == NULL || prop->attributes == NULL) {
+        return false;
+    }
+
+    return zend_get_attribute_str(prop->attributes, "attributes\\strictify\\fields\\sensitive", sizeof("attributes\\strictify\\fields\\sensitive") - 1) != NULL;
 }
 
 /*
@@ -61,13 +64,17 @@ static bool as_property_info_is_sensitive(zend_property_info *prop)
  */
 static zend_array *as_base_model_get_properties_for(zend_object *object, zend_prop_purpose purpose)
 {
-    zend_array *properties = zend_std_get_properties_for(object, purpose);
-
-    if (purpose != ZEND_PROP_PURPOSE_DEBUG || properties == NULL) {
-        return properties;
+    if (purpose != ZEND_PROP_PURPOSE_DEBUG) {
+        return zend_std_get_properties_for(object, purpose);
     }
 
-    zend_array *debug = zend_array_dup(properties);
+    /*
+     * The debug view is built from the plain properties hash on purpose:
+     * zend_std_get_properties_for() dispatches ZEND_PROP_PURPOSE_DEBUG back
+     * to the get_debug_info handler, which would recurse into this function.
+     */
+    HashTable *properties = zend_std_get_properties(object);
+    zend_array *debug = properties != NULL ? zend_array_dup(properties) : zend_new_array(0);
     zend_property_info *prop;
 
     ZEND_HASH_MAP_FOREACH_PTR(&object->ce->properties_info, prop)
