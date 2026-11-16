@@ -294,7 +294,7 @@ $model->toDict();                        // ['username' => 'andre'] — password
 $model->toDict(includeSensitive: true);  // ['username' => 'andre', 'password' => 'hunter2']
 ```
 
-By default `toDict()` omits sensitive properties entirely; pass `includeSensitive: true` to serialize their real values. The omission composes with `Alias` (with `useAlias: true` the aliased key is dropped; by default the property-name key is dropped) and nested models (each level omits its own sensitive fields). Separately, the `{value}` placeholder in error message templates is always redacted to `***` for sensitive properties, so secrets do not leak into `ValidationException` messages.
+By default `toDict()` omits sensitive properties entirely; pass `includeSensitive: true` to serialize their real values. The omission composes with `Alias` (the aliased key is dropped) and nested models (each level omits its own sensitive fields). Separately, the `{value}` placeholder in error message templates is always redacted to `***` for sensitive properties, so secrets do not leak into `ValidationException` messages.
 
 Debug output masks them as well: `var_dump()`, `print_r()`, `debug_zval_dump()` — including model objects dumped as arguments inside exception traces — render a sensitive property as `***`, for every property type (ints, floats, strings, bools, arrays, objects and nested `BaseModel` properties). `BaseModel` installs a custom `get_properties_for` object handler that only alters the engine's debug view (`ZEND_PROP_PURPOSE_DEBUG`); property access, `foreach`, `(array)` casts, `get_object_vars()`, `json_encode()`, `serialize()` and `var_export()` all keep the real values:
 
@@ -366,7 +366,7 @@ An invalid option value throws a `ValueError` listing the valid options (e.g. `a
 
 ### aliasGenerator
 
-Transforms property names into the keys `validate()` expects, so payloads can use a different naming convention than the PHP properties. An explicit `#[Alias]` on a property always wins over the generator. Resolved names are also used in error paths and by `toDict(useAlias: true)`:
+Transforms property names into the keys `validate()` expects, so payloads can use a different naming convention than the PHP properties. An explicit `#[Alias]` on a property always wins over the generator. Resolved names are also used in error paths and by `toDict()`:
 
 ```php
 <?php
@@ -508,4 +508,4 @@ abstract class BaseModel
 
 ## Serializing back to an array: toDict()
 
-`BaseModel::toDict()` returns the model's public properties as an array, keyed by the PHP property names by default; pass `useAlias: true` to key it by the resolved field names `validate()` expects, so the output round-trips through `validate()`. See [toDict()](/toDict/) for the full reference: `DateTime` formatting, nested models and property hooks.
+`BaseModel::toDict()` returns the model's public properties as an array, keyed by the same resolved field names `validate()` expects, so the output round-trips through `validate()`. See [toDict()](/toDict/) for the full reference: `DateTime` formatting, nested models and property hooks.

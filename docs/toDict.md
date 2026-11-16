@@ -14,7 +14,7 @@ namespace Attributes\Strictify;
 
 abstract class BaseModel
 {
-    public function toDict(bool $includeSensitive = false, bool $useAlias = false): array {}
+    public function toDict(bool $includeSensitive = false): array {}
 }
 ```
 
@@ -28,28 +28,22 @@ $array = $user->toDict();
 
 ## Field names
 
-By default the output is keyed by the raw PHP property names. Pass `useAlias: true` to key it by the resolved field names [validate()](/validate/) expects instead: [aliases](/validate/#aliases) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use their own generator. With `useAlias: true` the output therefore round-trips through `validate()`:
+The output is keyed by the same resolved field names [validate()](/validate/) expects: [aliases](/validate/#aliases) and the `aliasGenerator` from `#[ModelConfigs]` are applied, and nested models with their own `#[ModelConfigs(aliasGenerator: ...)]` use their own generator. The output therefore round-trips through `validate()`:
 
 ```php
 <?php
-use Attributes\\Strictify\\Fields\\Alias;
-
 class User extends BaseModel
 {
-    #[Alias('user_name')]
     public string $name;
     public ?DateTime $birthday;
 }
 
-$user = validate(['user_name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00'], new User());
+$user = validate(['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00'], new User());
 
 $user->toDict();
 // ['name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00']
 
-$user->toDict(useAlias: true);
-// ['user_name' => 'John', 'birthday' => '1994-01-01T09:00:00+00:00']
-
-validate($user->toDict(useAlias: true), new User()); // works
+validate($user->toDict(), new User()); // works
 ```
 
 ## Value serialization
@@ -57,7 +51,7 @@ validate($user->toDict(useAlias: true), new User()); // works
 - Scalars and arrays (including `Sequence`/`Dict` shapes) are returned as-is, recursing into nested elements.
 - `DateTimeInterface` values are formatted as ISO 8601 strings (`Y-m-d\TH:i:sP`).
 - Nested `BaseModel` properties are serialized recursively.
-- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are omitted from the output. Pass `includeSensitive: true` to `toDict()` to serialize their real values (the flag propagates into nested models and arrays). The key is the property name by default and the resolved alias with `useAlias: true`.
+- Properties marked with [`#[Sensitive]`](/validate/#sensitive-fields) are omitted from the output. Pass `includeSensitive: true` to `toDict()` to serialize their real values (the flag propagates into nested models and arrays).
 - Uninitialized typed properties are omitted from the output.
 
 ```php
