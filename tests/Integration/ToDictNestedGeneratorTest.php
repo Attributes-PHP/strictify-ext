@@ -42,6 +42,12 @@ it('deeply nested models each use their own aliasGenerator', function () {
     expect($model->middleModel->innerModel->innerValue)->toBe('deep');
 
     expect($model->toDict())->toBe([
+        'middleModel' => [
+            'innerModel' => ['innerValue' => 'deep'],
+            'middleValue' => 'mid',
+        ],
+    ]);
+    expect($model->toDict(useAlias: true))->toBe([
         'middle-model' => [
             'inner_model' => ['innerValue' => 'deep'],
             'middle_value' => 'mid',
@@ -67,4 +73,5 @@ it('array of nested models with own aliasGenerator', function () {
     validate($input, $model);
     expect($model->items[0]->itemName)->toBe('a');
     expect($model->toDict())->toBe(['items' => [['itemName' => 'a'], ['itemName' => 'b']]]);
+    expect($model->toDict(useAlias: true))->toBe(['items' => [['itemName' => 'a'], ['itemName' => 'b']]]);
 });
