@@ -39,7 +39,7 @@ try {
 }
 ```
 
-Each nested model can carry its own [`#[ModelConfigs]`](/model-configs/) (for example its own `aliasGenerator`) — see [Aliases](/guides/aliases/).
+Each nested model resolves its own [`#[ModelConfigs]`](/model-configs/) (for example its own `aliasGenerator`) — configs are inherited only from parent *classes*, never from the enclosing model. See [Aliases](/guides/aliases/).
 
 ## Typed arrays: Sequence, Union, Intersection, Dict
 

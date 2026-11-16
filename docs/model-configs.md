@@ -21,6 +21,9 @@ class ParentModel extends BaseModel
 class ChildModel extends ParentModel {} // inherits strict: false
 ```
 
+!!! note "Inheritance is class-based only"
+    `ModelConfigs` is inherited **only through the class hierarchy** (a child class from its parent class). A nested model — a `BaseModel` used as a property of another model — **never** inherits the enclosing model's configs: each model class resolves its own `#[ModelConfigs]` (or its parent class's), so `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` apply per model class.
+
 An invalid option value throws a `ValueError` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
 
 ## Options
@@ -89,7 +92,7 @@ Controls what happens with input keys that resolve to no property of the model:
 - `'allow'`: unknown keys are stored as dynamic properties on the model instance. Integer keys have no property name and keys naming a declared property (e.g. the raw property name when `aliasGenerator` renames the expected key) are never stored.
 - `'forbid'`: every unknown key produces an error keyed by the raw key (dot path for nested models), with the default message `Extra inputs are not permitted`, translatable under the `extra` key. Keys produced by `aliasGenerator`/`Alias` count as known, integer keys are reported under their numeric name, and `stopAtFirstError` reports only the first one.
 
-A nested model that shares the parent's `ModelConfigs` (it declares none of its own) inherits a non-null `extra` as-is; a `null` extra is instead resolved per nested model class, against each nested class's own `#[\AllowDynamicProperties]`.
+Each model validates with its own class's configs: a `null` extra is resolved per model class at validation time, against that class's own `#[\\AllowDynamicProperties]`, and a non-null `extra` declared on an enclosing model never applies to its nested models.
 
 ```php
 <?php
@@ -107,7 +110,7 @@ validate(['name' => 'John', 'junk' => 1], new User());
 
 ## strToLower, strToUpper, stripWhitespace
 
-Normalize string input values before the type check, so constraints and the written property see the normalized value. Applied only to values of properties whose hint accepts `string` (including `mixed` and string arms of unions) — non-string values, and strings bound for non-string hints such as `DateTime` coercion, are left untouched. The order is strip → lower → upper, so `strToUpper` wins when both case flags are set. Works in strict and loose mode, and propagates to nested models:
+Normalize string input values before the type check, so constraints and the written property see the normalized value. Applied only to values of properties whose hint accepts `string` (including `mixed` and string arms of unions) — non-string values, and strings bound for non-string hints such as `DateTime` coercion, are left untouched. The order is strip → lower → upper, so `strToUpper` wins when both case flags are set. Works in strict and loose mode. Normalization applies to the model's own properties only — nested models resolve their own configs:
 
 ```php
 <?php

@@ -16,6 +16,7 @@ All notable changes to Strictify are documented here, newest first. Install a re
 ### Changed
 
 - **BC note:** plain `toDict()` on models that use `#[Alias]` or `aliasGenerator` now returns property-name keys instead of alias keys. Pass `useAlias: true` for the previous behavior.
+- **BC note:** `#[ModelConfigs]` is now inherited **only via the class hierarchy** (parent classes). A nested model (a `BaseModel` property of another model) no longer inherits the enclosing model's configs — `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` each resolve per model class. This changes the expected input keys of nested models (raw property names unless the nested class declares its own generator) and the nested keys in `toDict(useAlias: true)` output.
 
 ## Recent history
 

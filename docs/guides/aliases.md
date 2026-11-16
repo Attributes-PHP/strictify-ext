@@ -108,7 +108,7 @@ validate($user->toDict(useAlias: true), new User()); // works
 
 ## Nested models
 
-A nested model with its own `#[ModelConfigs(aliasGenerator: ...)]` uses its own generator, both when validating and when serializing with `useAlias: true`. See [toDict()](/toDict/) and the nested-generator tests' behavior in [Nested models](/guides/nested-models/).
+A nested model uses **only its own** `aliasGenerator` (inherited at most from its parent class) — both when validating and when serializing with `useAlias: true`. It never inherits the enclosing model's generator: without one, it expects the raw property names. See [Nested models](/guides/nested-models/) and the [ModelConfigs reference](/model-configs/).
 
 ## See also
 
