@@ -118,8 +118,11 @@ void as_register_ModelConfigs_class(void)
 /**
  * Parses the ModelConfigs attribute of a model class into plain values.
  *
- * Inheritance is supported: if Child extends Parent and Parent has ModelConfigs,
- * those configs are used for Child unless Child overrides them with its own ModelConfigs.
+ * Inheritance is supported via the class hierarchy only: if Child extends
+ * Parent and Parent has ModelConfigs, those configs are used for Child
+ * unless Child overrides them with its own ModelConfigs. A nested model
+ * (a BaseModel used as a property of another model) never inherits the
+ * enclosing model's configs; each model class resolves its own.
  *
  * A null (or omitted) extra is kept as-is here and resolved per model class
  * at validation time: 'allow' when the class carries #[AllowDynamicProperties],
@@ -190,8 +193,8 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
 
     /* An omitted (or explicitly null) extra stays '\0' in the properties and
      * is resolved per model class at validation time (see
-     * as_check_extra_fields), so a nested model sharing these configs checks
-     * its own #[AllowDynamicProperties]. extra_name carries the per-class
+     * as_check_extra_fields), so each nested model checks its own
+     * #[AllowDynamicProperties]. extra_name carries the per-class
      * resolved value for the ModelConfigs object (getExtra()). */
     if (extra_name[0] == '\0') {
         if (model_ce->ce_flags & ZEND_ACC_ALLOW_DYNAMIC_PROPERTIES) {

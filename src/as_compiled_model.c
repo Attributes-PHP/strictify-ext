@@ -498,23 +498,26 @@ static as_class_plans *get_class_plans(zend_class_entry *ce)
 }
 
 /*
- * Builds the plan skeleton: one slot per public non-static property of
- * the whole hierarchy, in the same order the interpreter walked it
- * (child class first). Slot contents are compiled lazily on first use.
+ * Builds the plan skeleton: one slot per public non-static property.
+ * A child class's properties_info already contains the inherited
+ * properties, so a single pass over model_ce covers the whole hierarchy
+ * without counting any property twice. Slot contents are compiled lazily
+ * on first use.
  */
 static as_compiled_model *compile_plan_skeleton(zend_class_entry *model_ce, char generator)
 {
     uint32_t count = 0;
 
-    for (zend_class_entry *ce = model_ce; ce != NULL && ce != AS_BaseModel_ce; ce = ce->parent) {
-        zend_property_info *property;
-        ZEND_HASH_FOREACH_PTR(&ce->properties_info, property)
-        {
-            (void)property;
-            count++;
-        }
-        ZEND_HASH_FOREACH_END();
+    zend_property_info *property;
+    ZEND_HASH_FOREACH_PTR(&model_ce->properties_info, property)
+    {
+        if (property->flags & ZEND_ACC_STATIC)
+            continue;
+        if (property->flags & (ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE))
+            continue;
+        count++;
     }
+    ZEND_HASH_FOREACH_END();
 
     as_compiled_model *plan = emalloc(sizeof(as_compiled_model));
     memset(plan, 0, sizeof(as_compiled_model));
@@ -528,25 +531,19 @@ static as_compiled_model *compile_plan_skeleton(zend_class_entry *model_ce, char
     plan->fields = safe_emalloc(count, sizeof(as_compiled_field), 0);
     memset(plan->fields, 0, count * sizeof(as_compiled_field));
 
-    for (zend_class_entry *ce = model_ce; ce != NULL && ce != AS_BaseModel_ce; ce = ce->parent) {
-        zend_string *property_name;
-        zend_property_info *property;
+    ZEND_HASH_FOREACH_PTR(&model_ce->properties_info, property)
+    {
+        if (property->flags & ZEND_ACC_STATIC)
+            continue;
+        if (property->flags & (ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE))
+            continue;
 
-        ZEND_HASH_FOREACH_STR_KEY_PTR(&ce->properties_info, property_name, property)
-        {
-            (void)property_name;
-            if (property->flags & ZEND_ACC_STATIC)
-                continue;
-            if (property->flags & (ZEND_ACC_PROTECTED | ZEND_ACC_PRIVATE))
-                continue;
-
-            ZEND_ASSERT(plan->count < count);
-            as_compiled_field *cf = &plan->fields[plan->count++];
-            cf->prop = property;
-            cf->declaring_ce = ce;
-        }
-        ZEND_HASH_FOREACH_END();
+        ZEND_ASSERT(plan->count < count);
+        as_compiled_field *cf = &plan->fields[plan->count++];
+        cf->prop = property;
+        cf->declaring_ce = model_ce;
     }
+    ZEND_HASH_FOREACH_END();
 
     return plan;
 }
@@ -780,8 +777,8 @@ static void as_transform_field_value(as_compiled_field *cf, as_field *field, con
  *
  * A null extra is resolved here, per model class: 'allow' when the class is
  * marked #[AllowDynamicProperties] (the flag is inherited by child classes),
- * 'ignore' otherwise. A non-null extra propagates unchanged from the root
- * model into nested models sharing the configs.
+ * 'ignore' otherwise. Each model validates with its own class's configs, so
+ * a non-null extra of the enclosing model never applies to nested models.
  */
 static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model *plan, const as_model_configs_properties *properties, zend_string *parent_path, zval *errors)
 {
@@ -1063,18 +1060,16 @@ static bool as_serialize_value(zval *value, char generator, bool include_sensiti
     }
 
     if (Z_TYPE_P(value) == IS_OBJECT && instanceof_function(Z_OBJCE_P(value), AS_BaseModel_ce)) {
-        // Match validate(): a nested model with its own aliasGenerator uses it,
-        // unless alias resolution is turned off for the whole dict
-        char nested_generator = generator;
+        // Match validate(): a nested model serializes with its own
+        // aliasGenerator only (inherited at most from a parent class), never
+        // the enclosing model's; with use_alias off no generator applies
         as_model_configs_properties nested_props;
         zval nested_configs_obj;
         as_get_model_configs(&nested_configs_obj, value, &nested_props, false);
         if (UNEXPECTED(EG(exception) != NULL)) {
             return false;
         }
-        if (use_alias && nested_props.alias_generator != false) {
-            nested_generator = nested_props.alias_generator;
-        }
+        char nested_generator = use_alias ? nested_props.alias_generator : false;
         return as_model_to_dict_with_generator(value, nested_generator, include_sensitive, use_alias, out);
     }
 

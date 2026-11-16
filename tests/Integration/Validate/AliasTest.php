@@ -96,7 +96,7 @@ describe('validate function alias attribute handling', function () {
         validate([
             'user' => [
                 'fullName' => 'John Brown',
-                'user_address' => ['address' => '78 Street Road', 'post_code' => 'M00'],
+                'userAddress' => ['address' => '78 Street Road', 'postCode' => 'M00'],
             ],
         ], $model);
         expect($model->user->firstAndLastName)->toBe('John Brown')
@@ -104,5 +104,29 @@ describe('validate function alias attribute handling', function () {
             ->toBe('78 Street Road')
             ->and($model->user->userAddress->postCode)
             ->toBe('M00');
+    });
+
+    it('nested models do not inherit the enclosing model aliasGenerator', function () {
+        class PlainAddress extends BaseModel
+        {
+            public string $postCode;
+        }
+
+        $model = new
+            #[ModelConfigs(aliasGenerator: 'snake')]
+            class extends BaseModel {
+                public PlainAddress $addr;
+            };
+
+        // the nested model expects its raw property name, not snake_case
+        $result = validate(['addr' => ['postCode' => 'M00']], $model);
+        expect($result->addr->postCode)->toBe('M00');
+
+        try {
+            validate(['addr' => ['post_code' => 'M00']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['addr.postCode' => ['Field is required']]);
+        }
     });
 });

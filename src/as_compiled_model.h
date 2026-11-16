@@ -98,8 +98,9 @@ as_compiled_model *as_get_root_compiled_model(zval *model);
 
 /*
  * Validates raw_data against the model's compiled plan. properties are
- * the configs in effect (the root model's, propagated into nested
- * validation), matching the previous semantics.
+ * the configs in effect for this model: the root model's own class
+ * configs, and each nested model's own class configs (ModelConfigs is
+ * inherited via parent classes only, never from an enclosing model).
  */
 bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path);
 bool as_compiled_model_to_dict(zval *model, bool include_sensitive, bool use_alias, zval *return_value);
