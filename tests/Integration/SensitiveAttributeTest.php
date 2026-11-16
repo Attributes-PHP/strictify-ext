@@ -297,9 +297,43 @@ describe('sensitive properties in debug output', function () {
 
         expect($dump)->toContain('visible');
         expect($dump)->toContain('***');
+        expect(substr_count($dump, '***'))->toBe(5);
         expect($dump)->not->toContain($secret);
         expect($dump)->not->toContain('1234');
         expect($dump)->not->toContain('9.99');
+    });
+
+    it('masks sensitive object-typed and BaseModel-typed properties in dumps', function () {
+        $model = new SensitiveObjectTypesModel();
+
+        validate([
+            'label' => 'visible',
+            'when' => '2024-01-02T03:04:05+00:00',
+            'role' => EnumStrThreeValues::One,
+            'nickname' => null,
+            'id' => 42,
+            'misc' => ['k' => 1],
+            'address' => ['street' => 'Main St', 'city' => 'London'],
+        ], $model);
+
+        $dump = print_r($model, true);
+
+        expect($dump)->toContain('visible');
+        // All six sensitive properties are masked
+        expect(substr_count($dump, '***'))->toBe(6);
+        expect($dump)->not->toContain('2024-01-02');
+        expect($dump)->not->toContain('Main St');
+        expect($dump)->not->toContain('London');
+        expect($dump)->not->toContain('42');
+
+        // The model itself still holds the real, typed values
+        expect($model->when)->toBeInstanceOf(DateTime::class);
+        expect($model->role)->toBe(EnumStrThreeValues::One);
+        expect($model->nickname)->toBeNull();
+        expect($model->id)->toBe(42);
+        expect($model->misc)->toBe(['k' => 1]);
+        expect($model->address)->toBeInstanceOf(SensitiveAddress::class);
+        expect($model->address->street)->toBe('Main St');
     });
 
     it('keeps real values for json_encode, array cast, get_object_vars and serialize', function () {
