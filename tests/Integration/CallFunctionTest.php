@@ -62,7 +62,7 @@ class CallFunctionHooksUser extends BaseModel
 
     protected function afterValidation(array $rawData, ModelConfigs $configs): void
     {
-        $this->name += '-validated';
+        $this->name .= '-validated';
     }
 }
 
