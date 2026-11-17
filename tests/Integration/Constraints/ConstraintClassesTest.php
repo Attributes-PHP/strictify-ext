@@ -18,7 +18,6 @@ use Attributes\Strictify\Fields\Constraints\Regex;
 use Attributes\Strictify\Fields\Constraints\Size;
 use Attributes\Strictify\Fields\Constraints\StartsWith;
 use Attributes\Strictify\Fields\Constraints\Ulid;
-use Attributes\Strictify\Fields\Constraints\Union;
 use Attributes\Strictify\Fields\Constraints\Uuid;
 use Attributes\Strictify\Fields\Field;
 
@@ -37,7 +36,6 @@ $allConstraintClasses = [
     Size::class,
     StartsWith::class,
     Ulid::class,
-    Union::class,
     Uuid::class,
 ];
 

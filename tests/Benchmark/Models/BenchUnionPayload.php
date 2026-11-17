@@ -16,9 +16,9 @@ use const Attributes\Strictify\string;
 #[ModelConfigs(strict: false)]
 class BenchUnionPayload extends BaseModel
 {
-    #[Union(int, string, bool)]
+    #[Sequence(of: new Union(int, string, bool))]
     public array $mixed;
 
-    #[Union(int, float)]
+    #[Sequence(of: new Union(int, float))]
     public array $coerced;
 }

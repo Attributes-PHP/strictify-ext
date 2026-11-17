@@ -11,6 +11,6 @@ use const Attributes\Strictify\int;
 
 class BenchUnionModelArm extends BaseModel
 {
-    #[Union(BenchAddress::class, int)]
+    #[Sequence(of: new Union(BenchAddress::class, int))]
     public array $items;
 }

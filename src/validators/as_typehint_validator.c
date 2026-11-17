@@ -394,12 +394,32 @@ static bool validate_intersection_group(as_field *field, as_compiled_field *cf, 
  * @param errors        Error collection array
  * @return              true if validation succeeds, false otherwise
  */
+/* Reports a Sequence/Dict-declared field whose value is not an array */
+static void as_add_array_expected_error(as_field *field, as_property_info *prop_info, zval *errors)
+{
+    zend_string *expected = zend_string_init("array", sizeof("array") - 1, 0);
+    as_add_field_error_with_expected(AS_ERROR_TYPE, field, prop_info, errors, expected);
+    zend_string_release(expected);
+}
+
 bool as_validate_compiled_type_hint(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors)
 {
     ZEND_ASSERT(field->value != NULL);
 
-    if (cf->untyped)
+    if (cf->untyped) {
+        // No native hint to check, but the array type-hint attributes
+        // still apply when the value is an array
+        if (Z_TYPE_P(field->value) == IS_ARRAY) {
+            return as_validate_array_typehint_cached(field, cf, prop_info, properties, errors);
+        }
+        if (cf->has_array_attr) {
+            // Sequence/Dict on an untyped property: a non-array value
+            // cannot satisfy them
+            as_add_array_expected_error(field, prop_info, errors);
+            return false;
+        }
         return true;
+    }
 
     if (cf->is_intersection_group) {
         return validate_intersection_group(field, cf, prop_info, errors);
@@ -408,9 +428,18 @@ bool as_validate_compiled_type_hint(as_field *field, as_compiled_field *cf, as_p
     if (cf->contains_code & (1u << Z_TYPE_P(field->value))) {
         if (Z_TYPE_P(field->value) == IS_ARRAY) {
             // The native hint accepted the array: enforce the array
-            // type-hint attributes (Sequence, Union, Intersection, Dict), when
+            // type-hint attributes (Sequence, Intersection, Dict), when
             // the property declares any
             return as_validate_array_typehint_cached(field, cf, prop_info, properties, errors);
+        }
+
+        if (cf->has_array_attr && ZEND_TYPE_PURE_MASK(prop_info->property->type) == MAY_BE_ANY) {
+            // mixed with #[Sequence(...)] and a non-array value: the
+            // hint accepts anything, so the attribute would silently
+            // never apply — report it instead. Typed hints that also
+            // accept the value's type (e.g. ?array with null) pass.
+            as_add_array_expected_error(field, prop_info, errors);
+            return false;
         }
 
         return true;

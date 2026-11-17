@@ -18,8 +18,8 @@
 #include "fields/constraints/as_size.h"
 #include "fields/constraints/as_starts_with.h"
 #include "fields/constraints/as_ulid.h"
-#include "fields/constraints/as_union.h"
 #include "fields/constraints/as_uuid.h"
+#include "fields/as_union.h"
 #include "helpers/as_error_messages.h"
 #include "helpers/as_string.h"
 #include "validators/as_array_typehint_validator.h"
@@ -70,8 +70,11 @@ static const as_constraint_dispatch_entry constraint_dispatch_table[] = {
     AS_CONSTRAINT_ENTRY("size", Size),
     AS_CONSTRAINT_ENTRY("startswith", StartsWith),
     AS_CONSTRAINT_ENTRY("ulid", Ulid),
-    AS_CONSTRAINT_ENTRY("union", Union),
     AS_CONSTRAINT_ENTRY("uuid", Uuid),
+    /* The single Union class doubles as the scalar whole-value constraint:
+     * declared directly on a non-array property it checks the value
+     * against its arms; on arrays it must be nested in Sequence/Dict */
+    {"attributes\\strictify\\fields\\union", sizeof("attributes\\strictify\\fields\\union") - 1, &AS_Fields_Union_ce, as_validate_Union_scalar},
 };
 
 #define CONSTRAINT_DISPATCH_TABLE_SIZE (sizeof(constraint_dispatch_table) / sizeof(constraint_dispatch_table[0]))
@@ -225,6 +228,12 @@ static zend_always_inline bool has_property_default_value(as_property_info *prop
 
     const zval *default_value = &property_info->model_ce->default_properties_table[index];
     return Z_TYPE_P(default_value) != IS_UNDEF;
+}
+
+/* Exact, length-aware comparison of a lowercase attribute name */
+static bool lcname_equals_str(const zend_string *lcname, const char *name, size_t length)
+{
+    return lcname != NULL && ZSTR_LEN(lcname) == length && memcmp(ZSTR_VAL(lcname), name, length) == 0;
 }
 
 static const as_constraint_dispatch_entry *find_constraint_dispatch(const zend_string *lcname)
@@ -624,6 +633,48 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
                 }
             }
         }
+    }
+
+    /*
+     * Placement rules for the array type-hint attributes, checked once
+     * per field compile (a failure keeps firing on every validation):
+     * - Sequence/Dict may only be declared on array-like properties (the
+     *   native hint accepts array, or the property is untyped)
+     * - Union is never declared directly on an array-only hint: element
+     *   specs go inside Sequence(of: new Union(...)) or Dict(of: ...)
+     */
+    if (cf->prop->attributes != NULL) {
+        zend_attribute *attribute;
+        ZEND_HASH_PACKED_FOREACH_PTR(cf->prop->attributes, attribute)
+        {
+            if (lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\sequence", sizeof("attributes\\strictify\\fields\\sequence") - 1) ||
+                lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1)) {
+                if (!cf->untyped && (cf->contains_code & MAY_BE_ARRAY) == 0) {
+                    zend_throw_exception_ex(
+                        zend_ce_value_error, 0, "Sequence/Dict can only be declared on array-like properties (array, a union containing array, mixed or untyped); property %s::$%s is not array-like.",
+                        ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name)
+                    );
+                    if (resolved != cf->prop->name) {
+                        zend_string_release(resolved);
+                    }
+                    return false;
+                }
+                cf->has_array_attr = true;
+            } else if (lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\union", sizeof("attributes\\strictify\\fields\\union") - 1)) {
+                const uint32_t non_null = cf->contains_code & ~(uint32_t)MAY_BE_NULL;
+                if (!cf->untyped && non_null == MAY_BE_ARRAY) {
+                    zend_throw_exception_ex(
+                        zend_ce_value_error, 0, "Union cannot be declared directly on an array property %s::$%s; use Sequence(of: new Union(...)) or Dict(of: ...) instead.", ZSTR_VAL(cf->declaring_ce->name),
+                        ZSTR_VAL(cf->prop->name)
+                    );
+                    if (resolved != cf->prop->name) {
+                        zend_string_release(resolved);
+                    }
+                    return false;
+                }
+            }
+        }
+        ZEND_HASH_FOREACH_END();
     }
 
     /*

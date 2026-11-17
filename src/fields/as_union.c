@@ -1,11 +1,16 @@
 #include "as_union.h"
 #include "as_field.h"
 #include "../as_type.h"
+#include "../helpers/as_error_messages.h"
+#include "../helpers/as_wrappers.h"
 #include "as_dict.h"
 #include "as_intersection.h"
 #include "as_sequence.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
+#include "Zend/zend_enum.h"
+#include "Zend/zend_exceptions.h"
+#include <string.h>
 
 zend_class_entry *AS_Fields_Union_ce;
 
@@ -83,6 +88,246 @@ ZEND_METHOD(AS_Fields_Union, __construct)
 
     zend_update_property(AS_Fields_Union_ce, Z_OBJ_P(getThis()), "of", sizeof("of") - 1, &of);
     zval_ptr_dtor(&of);
+}
+
+/*
+ * Scalar path (Union declared directly on a non-array property): exact
+ * type match per arm, never a coercion — the constraint runs after the
+ * native type check, so the value is already of the declared type.
+ */
+static const struct {
+    uint32_t mask;
+    const char *name;
+    size_t length;
+} union_scalar_type_names[] = {
+    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
+    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
+};
+
+#define UNION_SCALAR_TYPE_NAMES_SIZE (sizeof(union_scalar_type_names) / sizeof(union_scalar_type_names[0]))
+
+static uint32_t union_normalize_mask(zend_long type_value);
+static bool union_arm_matches_scalar(zval *arm, zval *value);
+static zend_string *union_scalar_arms_to_expected_string(zval *arms);
+
+static uint32_t union_normalize_mask(zend_long type_value)
+{
+    uint32_t mask = (uint32_t)type_value;
+    if ((mask & (uint32_t)AS_TYPE_DICT) != 0) {
+        mask = (mask & ~(uint32_t)AS_TYPE_DICT) | MAY_BE_ARRAY;
+    }
+    return mask;
+}
+
+static bool union_arm_matches_scalar(zval *arm, zval *value)
+{
+    switch (Z_TYPE_P(arm)) {
+        case IS_LONG:
+            return (union_normalize_mask(Z_LVAL_P(arm)) & (1u << Z_TYPE_P(value))) != 0;
+
+        case IS_STRING: {
+            if (Z_TYPE_P(value) != IS_OBJECT) {
+                return false;
+            }
+            zend_class_entry *ce = zend_lookup_class(Z_STR_P(arm));
+            if (ce == NULL) {
+                if (EG(exception) == NULL) {
+                    zend_throw_exception_ex(zend_ce_value_error, 0, "Unsupported class name \"%s\" in a Union constraint.", ZSTR_VAL(Z_STR_P(arm)));
+                }
+                return false;
+            }
+            return instanceof_function(Z_OBJCE_P(value), ce);
+        }
+
+        case IS_OBJECT: {
+            zend_class_entry *arm_ce = Z_OBJCE_P(arm);
+
+            if (arm_ce == AS_Type_ce) {
+                zval *case_value = zend_enum_fetch_case_value(Z_OBJ_P(arm));
+                if (Z_TYPE_P(case_value) != IS_LONG) {
+                    ZEND_ASSERT(false);
+                    return false;
+                }
+                return (union_normalize_mask(Z_LVAL_P(case_value)) & (1u << Z_TYPE_P(value))) != 0;
+            }
+
+            if (arm_ce == AS_Fields_Intersection_ce) {
+                // An intersection arm matches when the value is an object
+                // that is an instance of every declared class
+                if (Z_TYPE_P(value) != IS_OBJECT) {
+                    return false;
+                }
+                zval *of = zend_read_property(arm_ce, Z_OBJ_P(arm), "of", sizeof("of") - 1, false, NULL);
+                zval *entry;
+                ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(of), entry)
+                {
+                    if (Z_TYPE_P(entry) != IS_STRING) {
+                        continue;
+                    }
+                    zend_class_entry *ce = zend_lookup_class(Z_STR_P(entry));
+                    if (ce == NULL || !instanceof_function(Z_OBJCE_P(value), ce)) {
+                        return false;
+                    }
+                }
+                ZEND_HASH_FOREACH_END();
+                return true;
+            }
+
+            // Sequence/Union/Dict arms describe nested arrays: they can
+            // never match here because array values are rejected up front
+            return false;
+        }
+
+        default:
+            return false;
+    }
+}
+
+/*
+ * Renders the arm list like a union type: mask arms expand to their basic
+ * type names, class arms render as written, intersection arms join their
+ * class names with " and ", array-shape arms render as "array"; parts are
+ * joined with ", " and a trailing " or ".
+ */
+static zend_string *union_scalar_arms_to_expected_string(zval *arms)
+{
+    uint32_t count = zend_hash_num_elements(Z_ARRVAL_P(arms));
+    if (count == 0) {
+        return zend_string_init("mixed", sizeof("mixed") - 1, 0);
+    }
+
+    zend_string *result = NULL;
+    uint32_t index = 0;
+
+    zval *arm;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(arms), arm)
+    {
+        zend_string *part = NULL;
+
+        switch (Z_TYPE_P(arm)) {
+            case IS_STRING:
+                part = zend_string_copy(Z_STR_P(arm));
+                break;
+
+            case IS_OBJECT: {
+                zend_class_entry *arm_ce = Z_OBJCE_P(arm);
+                if (arm_ce == AS_Fields_Intersection_ce) {
+                    zval *of = zend_read_property(arm_ce, Z_OBJ_P(arm), "of", sizeof("of") - 1, false, NULL);
+                    zval *entry;
+                    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(of), entry)
+                    {
+                        if (Z_TYPE_P(entry) != IS_STRING) {
+                            continue;
+                        }
+                        if (part == NULL) {
+                            part = zend_string_copy(Z_STR_P(entry));
+                        } else {
+                            zend_string *joined = as_string_concat3(ZSTR_VAL(part), ZSTR_LEN(part), " and ", 5, ZSTR_VAL(Z_STR_P(entry)), ZSTR_LEN(Z_STR_P(entry)));
+                            zend_string_release(part);
+                            part = joined;
+                        }
+                    }
+                    ZEND_HASH_FOREACH_END();
+                    if (part == NULL) {
+                        part = zend_string_init("mixed", sizeof("mixed") - 1, 0);
+                    }
+                } else if (arm_ce == AS_Type_ce) {
+                    zval *case_value = zend_enum_fetch_case_value(Z_OBJ_P(arm));
+                    zend_long mask_value = Z_TYPE_P(case_value) == IS_LONG ? Z_LVAL_P(case_value) : 0;
+                    part = NULL;
+                    uint32_t mask = union_normalize_mask(mask_value);
+                    for (size_t i = 0; i < UNION_SCALAR_TYPE_NAMES_SIZE; i++) {
+                        if ((mask & union_scalar_type_names[i].mask) != union_scalar_type_names[i].mask) {
+                            continue;
+                        }
+                        if (part == NULL) {
+                            part = zend_string_init(union_scalar_type_names[i].name, union_scalar_type_names[i].length, 0);
+                        } else {
+                            zend_string *joined = as_string_concat3(ZSTR_VAL(part), ZSTR_LEN(part), ", ", 2, union_scalar_type_names[i].name, union_scalar_type_names[i].length);
+                            zend_string_release(part);
+                            part = joined;
+                        }
+                    }
+                    if (part == NULL) {
+                        part = zend_string_init("mixed", sizeof("mixed") - 1, 0);
+                    }
+                } else {
+                    // Sequence/Union/Dict nested-shape arm
+                    part = zend_string_init("array", sizeof("array") - 1, 0);
+                }
+                break;
+            }
+
+            default: {
+                uint32_t mask = union_normalize_mask(Z_LVAL_P(arm));
+                for (size_t i = 0; i < UNION_SCALAR_TYPE_NAMES_SIZE; i++) {
+                    if ((mask & union_scalar_type_names[i].mask) != union_scalar_type_names[i].mask) {
+                        continue;
+                    }
+                    if (part == NULL) {
+                        part = zend_string_init(union_scalar_type_names[i].name, union_scalar_type_names[i].length, 0);
+                    } else {
+                        zend_string *joined = as_string_concat3(ZSTR_VAL(part), ZSTR_LEN(part), ", ", 2, union_scalar_type_names[i].name, union_scalar_type_names[i].length);
+                        zend_string_release(part);
+                        part = joined;
+                    }
+                }
+                if (part == NULL) {
+                    part = zend_string_init("mixed", sizeof("mixed") - 1, 0);
+                }
+                break;
+            }
+        }
+
+        index++;
+        const char *separator = index == count ? " or " : ", ";
+        if (result == NULL) {
+            result = part;
+        } else {
+            zend_string *joined = as_string_concat3(ZSTR_VAL(result), ZSTR_LEN(result), separator, strlen(separator), ZSTR_VAL(part), ZSTR_LEN(part));
+            zend_string_release(result);
+            zend_string_release(part);
+            result = joined;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+
+    return result;
+}
+
+/*
+ * #[Union(...)] declared directly on a property: the whole value must
+ * match at least one arm exactly. Array values are a usage error —
+ * element specs belong inside Sequence(of: new Union(...)) or
+ * Dict(of: ...) — and throw a ValueError.
+ */
+bool as_validate_Union_scalar(zval *constraint, as_field *field, as_property_info *property, zval *errors)
+{
+    zval *value = field->value;
+
+    if (Z_TYPE_P(value) == IS_ARRAY) {
+        zend_throw_exception_ex(zend_ce_value_error, 0, "Union cannot be applied directly to array values; use Sequence(of: new Union(...)) or Dict(of: ...) instead.");
+        return false;
+    }
+
+    zval *arms = zend_read_property(Z_OBJCE_P(constraint), Z_OBJ_P(constraint), "of", sizeof("of") - 1, false, NULL);
+
+    zval *arm;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(arms), arm)
+    {
+        if (union_arm_matches_scalar(arm, value)) {
+            return true;
+        }
+        if (UNEXPECTED(EG(exception) != NULL)) {
+            return false;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+
+    zend_string *expected = union_scalar_arms_to_expected_string(arms);
+    as_add_field_error_with_expected(AS_ERROR_UNION, field, property, errors, expected);
+    zend_string_release(expected);
+    return false;
 }
 
 void as_register_Union_class(void)

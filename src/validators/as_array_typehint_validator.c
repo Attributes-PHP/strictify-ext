@@ -87,14 +87,27 @@ static const struct {
 
 #define BASIC_TYPE_NAMES_SIZE (sizeof(basic_type_names) / sizeof(basic_type_names[0]))
 
+/*
+ * Attributes that may be declared directly on an array property.
+ * Union is deliberately absent: a Union on an array property is a usage
+ * error (compile-time ValueError for array-only hints, runtime ValueError
+ * otherwise) — element specs go inside Sequence(of: new Union(...)) or
+ * Dict(of: ...). Union objects remain valid nested arms via
+ * is_array_attribute_ce().
+ */
+enum {
+    AS_ARRAY_ATTR_SEQUENCE = 0,
+    AS_ARRAY_ATTR_INTERSECTION,
+    AS_ARRAY_ATTR_DICT,
+};
+
 static const struct {
     const char *lcname;
     size_t length;
 } array_attribute_names[] = {
-    {"attributes\\strictify\\fields\\sequence", sizeof("attributes\\strictify\\fields\\sequence") - 1},
-    {"attributes\\strictify\\fields\\union", sizeof("attributes\\strictify\\fields\\union") - 1},
-    {"attributes\\strictify\\fields\\intersection", sizeof("attributes\\strictify\\fields\\intersection") - 1},
-    {"attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1},
+    [AS_ARRAY_ATTR_SEQUENCE] = {"attributes\\strictify\\fields\\sequence", sizeof("attributes\\strictify\\fields\\sequence") - 1},
+    [AS_ARRAY_ATTR_INTERSECTION] = {"attributes\\strictify\\fields\\intersection", sizeof("attributes\\strictify\\fields\\intersection") - 1},
+    [AS_ARRAY_ATTR_DICT] = {"attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1},
 };
 
 #define ARRAY_ATTRIBUTE_NAMES_SIZE (sizeof(array_attribute_names) / sizeof(array_attribute_names[0]))
@@ -155,7 +168,7 @@ static bool lcname_equals(const zend_string *lcname, const char *name, size_t le
 }
 
 /*
- * Returns the first Sequence, Union, Intersection or Dict attribute declared on
+ * Returns the first Sequence, Intersection or Dict attribute declared on
  * the property, in declaration order, or NULL when the property declares
  * none of them.
  *
@@ -722,7 +735,7 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
     as_spec *spec = emalloc(sizeof(as_spec));
     memset(spec, 0, sizeof(as_spec));
 
-    if (lcname_equals(attribute->lcname, array_attribute_names[3].lcname, array_attribute_names[3].length)) {
+    if (lcname_equals(attribute->lcname, array_attribute_names[AS_ARRAY_ATTR_DICT].lcname, array_attribute_names[AS_ARRAY_ATTR_DICT].length)) {
         uint32_t key_index, of_index;
         if (!find_dict_arguments(attribute, prop_info, &key_index, &of_index)) {
             efree(spec);
@@ -757,7 +770,7 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
         return spec;
     }
 
-    spec->is_intersection = lcname_equals(attribute->lcname, array_attribute_names[2].lcname, array_attribute_names[2].length);
+    spec->is_intersection = lcname_equals(attribute->lcname, array_attribute_names[AS_ARRAY_ATTR_INTERSECTION].lcname, array_attribute_names[AS_ARRAY_ATTR_INTERSECTION].length);
 
     if (attribute->argc == 0) {
         zend_throw_exception_ex(
@@ -770,7 +783,7 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
 
     // Sequence declares one element type: Union and Intersection arguments
     // flatten into the element type list, like the Dict `of` position
-    if (lcname_equals(attribute->lcname, array_attribute_names[0].lcname, array_attribute_names[0].length)) {
+    if (lcname_equals(attribute->lcname, array_attribute_names[AS_ARRAY_ATTR_SEQUENCE].lcname, array_attribute_names[AS_ARRAY_ATTR_SEQUENCE].length)) {
         zval of_value;
         if (!evaluate_attribute_argument(&of_value, attribute, 0, scope)) {
             efree(spec);

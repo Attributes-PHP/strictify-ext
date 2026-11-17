@@ -61,6 +61,7 @@ typedef struct {
     uint32_t arms_count;
     bool untyped;
     bool is_intersection_group; // pure intersection hint: every class arm must match
+    bool has_array_attr;        // declares Sequence/Dict directly: only meaningful when the value can be an array
     bool has_default;
     bool sensitive; // carries #[Sensitive]: omitted from toDict() unless requested, redacted in error messages
 

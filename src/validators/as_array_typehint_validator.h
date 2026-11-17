@@ -5,9 +5,13 @@
  * declared on them:
  *
  *   #[Sequence(T)]                          every element matches T
- *   #[Union(a, b, ...)]               every element matches one arm, in order
  *   #[Intersection(A, B, ...)]       every element is an instance of all classes
  *   #[Dict(key: K, of: V)]            keys match K and values match V
+ *
+ * Union is not in this list: declared directly on an array property it is
+ * a usage error — element specs use #[Sequence(of: new Union(a, b, ...))]
+ * or #[Dict(key: K, of: new Union(...))]. Declared on a non-array property
+ * it acts as a whole-value type constraint instead (as_validate_Union_scalar).
  *
  * Arms accept the Type constants (bool, int, float, string, sequence, dict,
  * object) or Type enum cases, class name strings (User::class, resolved

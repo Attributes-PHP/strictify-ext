@@ -40,6 +40,8 @@ A `ValueError` is thrown when an attribute spec is malformed, for example:
 
 - an unresolvable class-name arm in `Union`/`Intersection`/`Dict`,
 - an unsupported `Type` value in an array attribute,
+- `Union` declared directly on an `array` property, or applied to an array value (use `Sequence(of: new Union(...))` / `Dict(of: ...)` instead),
+- `Sequence`/`Dict` declared on a property that is not array-like,
 - a `Dict` key type outside integer and string,
 - an invalid `ModelConfigs` option value (the message lists the valid options),
 - an invalid timezone name in a `DateTime` constraint (at construction).

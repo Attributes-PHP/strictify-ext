@@ -94,7 +94,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
                 #[Sequence(of: string)]
                 public array $tags;
 
-                #[Union(bool, int, sequence)]
+                #[Sequence(of: new Union(bool, int, sequence))]
                 public array $mixed;
             };
 
@@ -124,7 +124,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool | int | string)]
+                #[Sequence(of: new Union(bool | int | string))]
                 public array $values;
             };
 
@@ -146,13 +146,13 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $list = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, int, string)]
+                #[Sequence(of: new Union(bool, int, string))]
                 public array $values;
             };
         $bitmask = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool | int | string)]
+                #[Sequence(of: new Union(bool | int | string))]
                 public array $values;
             };
 
@@ -164,13 +164,13 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $list = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int, bool)] // int arm first: '1' coerces to int
+                #[Sequence(of: new Union(int, bool))] // int arm first: '1' coerces to int
                 public array $values;
             };
         $bitmask = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int | bool)] // fixed order: bool first
+                #[Sequence(of: new Union(int | bool))] // fixed order: bool first
                 public array $values;
             };
 
@@ -299,7 +299,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(string, int)]
+                #[Sequence(of: new Union(string, int))]
                 public array $mixed;
             };
 
@@ -311,7 +311,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, int, string)]
+                #[Sequence(of: new Union(bool, int, string))]
                 public array $mixed;
             };
 
@@ -329,7 +329,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int, string)]
+                #[Sequence(of: new Union(int, string))]
                 public array $mixed;
             };
 
@@ -341,13 +341,13 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $boolFirst = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, int)]
+                #[Sequence(of: new Union(bool, int))]
                 public array $values;
             };
         $intFirst = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int, bool)]
+                #[Sequence(of: new Union(int, bool))]
                 public array $values;
             };
 
@@ -434,7 +434,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(sequence, string)]
+                #[Sequence(of: new Union(sequence, string))]
                 public array $values;
             };
 
@@ -446,7 +446,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, new Sequence(Type::int))]
+                #[Sequence(of: new Union(bool, new Sequence(Type::int)))]
                 public array $matrix;
             };
 
@@ -467,7 +467,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, int, string)]
+                #[Sequence(of: new Union(bool, int, string))]
                 public array $values;
             };
 
@@ -486,7 +486,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(string, object)]
+                #[Sequence(of: new Union(string, object))]
                 public array $values;
             };
 
@@ -499,7 +499,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, Dict::class)]
+                #[Sequence(of: new Union(bool, Dict::class))]
                 #[Dict(key: int, of: string)]
                 public array $values;
             };
@@ -660,7 +660,7 @@ describe('type-hint array attribute error messages', function () {
     it('applies custom ErrorMessage templates to element errors', function () {
         $model = new class extends BaseModel {
             #[ErrorMessage(type: 'Ups wrong type {expected}')]
-            #[Union(bool, int, string)]
+            #[Sequence(of: new Union(bool, int, string))]
             public array $values;
         };
 
@@ -676,7 +676,7 @@ describe('type-hint array attribute error messages', function () {
 
     it('propagates a spec error instead of masking it with an empty ValidationException', function () {
         $model = new class extends BaseModel {
-            #[Union(Type::bool, new ArrayTypeHintMissingAttribute)]
+            #[Sequence(of: new Union(Type::bool, new ArrayTypeHintMissingAttribute))]
             public array $values;
         };
 
@@ -706,7 +706,7 @@ describe('type-hint array attribute error messages', function () {
 
     it('throws a ValueError when a Dict arm references a missing Dict attribute', function () {
         $model = new class extends BaseModel {
-            #[Union(bool, Dict::class)]
+            #[Sequence(of: new Union(bool, Dict::class))]
             public array $values;
         };
 
@@ -724,7 +724,7 @@ describe('type-hint array attribute error messages', function () {
 
     it('throws a ValueError when an arm type is unsupported', function () {
         $model = new class extends BaseModel {
-            #[Union(3.14)]
+            #[Sequence(of: 3.14)]
             public array $values;
         };
 

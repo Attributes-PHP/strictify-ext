@@ -14,6 +14,6 @@ class BenchUnionTree extends BaseModel
 {
     public string $name;
 
-    #[Union(int, string, BenchUnionTree::class)]
+    #[Sequence(of: new Union(int, string, BenchUnionTree::class))]
     public array $children;
 }

@@ -16,6 +16,7 @@ use Attributes\Strictify\Tests\Models\Interfaces\CountableInterface;
 use Attributes\Strictify\Tests\Models\Interfaces\IterableInterface;
 use Attributes\Strictify\Tests\Models\IterableCountableClass;
 use Attributes\Strictify\Type;
+use DateTimeImmutable;
 use DateTimeInterface;
 use stdClass;
 use TypeError;
@@ -24,6 +25,7 @@ use ValueError;
 use function Attributes\Strictify\validate;
 
 use const Attributes\Strictify\bool;
+use const Attributes\Strictify\float;
 use const Attributes\Strictify\int;
 use const Attributes\Strictify\string;
 
@@ -68,7 +70,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int, string)]
+                #[Sequence(of: new Union(int, string))]
                 public array $items;
             };
 
@@ -80,7 +82,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(UnionAddress::class, int)]
+                #[Sequence(of: new Union(UnionAddress::class, int))]
                 public array $items;
             };
 
@@ -94,7 +96,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(UnionAddress::class, int)]
+                #[Sequence(of: new Union(UnionAddress::class, int))]
                 public array $items;
             };
 
@@ -112,7 +114,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(EnumStrTwoValues::class, int)]
+                #[Sequence(of: new Union(EnumStrTwoValues::class, int))]
                 public array $items;
             };
 
@@ -133,7 +135,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(bool, new Intersection(CountableInterface::class, IterableInterface::class))]
+                #[Sequence(of: new Union(bool, new Intersection(CountableInterface::class, IterableInterface::class)))]
                 public array $items;
             };
 
@@ -158,7 +160,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: true)]
             class extends BaseModel {
-                #[Union(bool, int)]
+                #[Sequence(of: new Union(bool, int))]
                 public array $items;
             };
 
@@ -179,11 +181,216 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(int, string)]
+                #[Sequence(of: new Union(int, string))]
                 public array $items;
             };
 
         $result = validate(['items' => []], $model);
         expect($result->items)->toBeEmpty();
+    });
+});
+
+describe('Union declared directly on a non-array property', function () {
+    it('checks the whole value against the arms on an int|float property', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int, Type::float)]
+            public int|float $example;
+        };
+
+        expect(validate(['example' => 1], $model)->example)->toBe(1)
+            ->and(validate(['example' => 1.5], $model)->example)
+            ->toBe(1.5);
+    });
+
+    it('narrows the native union to a subset of arms', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int)]
+            public int|float $example;
+        };
+
+        expect(validate(['example' => 42], $model)->example)->toBe(42);
+
+        try {
+            validate(['example' => 1.5], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['example' => ['Must be integer']]);
+        }
+    });
+
+    it('accepts a bitmask arm combining several types', function () {
+        $model = new class extends BaseModel {
+            #[Union(int | float)]
+            public int|float $example;
+        };
+
+        expect(validate(['example' => 1], $model)->example)->toBe(1)
+            ->and(validate(['example' => 1.5], $model)->example)
+            ->toBe(1.5);
+    });
+
+    it('sees the coerced value in loose mode', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Union(Type::int)]
+                public int|float $example;
+            };
+
+        expect(validate(['example' => '1'], $model)->example)->toBe(1);
+
+        try {
+            validate(['example' => '1.5'], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['example' => ['Must be integer']]);
+        }
+    });
+
+    it('works on an untyped property', function () {
+        $model = new class extends BaseModel {
+            #[Union(int, string)]
+            public $example;
+        };
+
+        expect(validate(['example' => 'a'], $model)->example)->toBe('a');
+
+        try {
+            validate(['example' => 1.5], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['example' => ['Must be integer or string']]);
+        }
+    });
+
+    it('works on a mixed property with a scalar value', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int)]
+            public mixed $example;
+        };
+
+        expect(validate(['example' => 1], $model)->example)->toBe(1);
+
+        try {
+            validate(['example' => 'a'], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['example' => ['Must be integer']]);
+        }
+    });
+
+    it('matches class arms with instanceof', function () {
+        $model = new class extends BaseModel {
+            #[Union(stdClass::class)]
+            public stdClass|DateTimeImmutable $example;
+        };
+
+        expect(validate(['example' => new stdClass], $model)->example)->toBeInstanceOf(stdClass::class);
+
+        try {
+            validate(['example' => new DateTimeImmutable], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['example' => ['Must be stdClass']]);
+        }
+    });
+
+    it('joins the arm names in the error message', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int, Type::string, DateTimeInterface::class)]
+            public mixed $value;
+        };
+
+        try {
+            validate(['value' => 1.5], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['value' => ['Must be integer, string or DateTimeInterface']]);
+        }
+    });
+
+    it('throws a ValueError for an array value instead of treating the arms as an element spec', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int)]
+            public mixed $example;
+        };
+
+        validate(['example' => [1]], $model);
+    })->throws(
+        ValueError::class,
+        'Union cannot be applied directly to array values; use Sequence(of: new Union(...)) or Dict(of: ...) instead.',
+    );
+
+    it('throws a ValueError when declared directly on an array property', function () {
+        $model = new class extends BaseModel {
+            #[Union(Type::int)]
+            public array $values;
+        };
+
+        validate(['values' => [1]], $model);
+    })->throws(ValueError::class, 'Union cannot be declared directly on an array property');
+});
+
+describe('array attribute placement rules', function () {
+    it('throws a ValueError for Sequence on a non-array-like property', function () {
+        $model = new class extends BaseModel {
+            #[Sequence(Type::int)]
+            public int $count;
+        };
+
+        validate(['count' => 5], $model);
+    })->throws(ValueError::class, 'Sequence/Dict can only be declared on array-like properties');
+
+    it('throws a ValueError for Dict on a union property without an array arm', function () {
+        $model = new class extends BaseModel {
+            #[Dict(key: int, of: string)]
+            public int|float $ratio;
+        };
+
+        validate(['ratio' => 1.5], $model);
+    })->throws(ValueError::class, 'Sequence/Dict can only be declared on array-like properties');
+
+    it('reports Must be array for a non-array value on a mixed property with Sequence', function () {
+        $model = new class extends BaseModel {
+            #[Sequence(Type::int)]
+            public mixed $values;
+        };
+
+        try {
+            validate(['values' => 5], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values' => ['Must be array']]);
+        }
+    });
+
+    it('enforces Sequence on an untyped property when the value is an array', function () {
+        $model = new class extends BaseModel {
+            #[Sequence(Type::int)]
+            public $values;
+        };
+
+        expect(validate(['values' => [1, 2]], $model)->values)->toBe([1, 2]);
+
+        try {
+            validate(['values' => [1, 'a']], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values.1' => ['Must be integer']]);
+        }
+    });
+
+    it('reports Must be array for a non-array value on an untyped property with Sequence', function () {
+        $model = new class extends BaseModel {
+            #[Sequence(Type::int)]
+            public $values;
+        };
+
+        try {
+            validate(['values' => 5], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values' => ['Must be array']]);
+        }
     });
 });
