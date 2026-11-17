@@ -515,15 +515,16 @@ static zend_always_inline bool attribute_argument_name_equals(const zend_string 
 /*
  * Resolves the raw error message template for the given error type from
  * the #[ErrorMessage] attribute, or NULL when the property declares no
- * template for it (the caller falls back to the default). Throws when
- * an argument value cannot be evaluated or is not a string.
+ * template for it (the caller falls back to the default). The attribute
+ * declares one argument per catalog key, named after the stable key and
+ * positionally in enum order. The extra key is discarded: extra inputs
+ * have no owning property, so the extra error never uses a per-property
+ * override. Throws when an argument value cannot be evaluated or is not
+ * a string.
  */
 static zend_string *resolve_error_template(as_error_type type, as_property_info *property)
 {
-    /* The ErrorMessage attribute only declares the required and type
-     * arguments: constraint error types always use their default
-     * template. */
-    if (type != AS_ERROR_REQUIRED && type != AS_ERROR_TYPE) {
+    if (type == AS_ERROR_EXTRA) {
         return NULL;
     }
 
@@ -532,25 +533,9 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
         return NULL;
     }
 
-    const char *argument_name;
-    size_t argument_length;
-    uint32_t argument_position;
-
-    switch (type) {
-        case AS_ERROR_REQUIRED:
-            argument_name = "required";
-            argument_position = 0;
-            argument_length = sizeof("required") - 1;
-            break;
-        case AS_ERROR_TYPE:
-            argument_name = "type";
-            argument_position = 1;
-            argument_length = sizeof("type") - 1;
-            break;
-        default:
-            as_throw_value_error("Unsupported error type");
-            return NULL;
-    }
+    const char *argument_name = as_error_type_names[type];
+    size_t argument_length = strlen(argument_name);
+    uint32_t argument_position = (uint32_t)type;
 
     uint32_t position = 0;
 

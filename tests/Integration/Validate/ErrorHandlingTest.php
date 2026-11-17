@@ -6,7 +6,11 @@ namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Exceptions\ValidationException;
+use Attributes\Strictify\Fields\Constraints\Min;
 use Attributes\Strictify\Fields\ErrorMessage;
+use Attributes\Strictify\Fields\Sequence;
+use Attributes\Strictify\Fields\Union;
+use Attributes\Strictify\ModelConfigs;
 use Attributes\Strictify\Tests\Models\Enums\EnumBasicOneValue;
 use Attributes\Strictify\Tests\Models\Enums\EnumBasicThreeValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumBasicTwentyValues;
@@ -19,6 +23,7 @@ use Attributes\Strictify\Tests\Models\Enums\EnumStrOneValue;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwentyValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
+use Attributes\Strictify\Type;
 use ValueError;
 
 use function Attributes\Strictify\validate;
@@ -599,6 +604,85 @@ describe('custom ErrorMessage attribute messages', function () {
             ],
         ],
     ]);
+
+    it('overrides a constraint template by its catalog key', function () {
+        $model = new class extends BaseModel {
+            #[ErrorMessage(min: 'Too small, at least {expected}')]
+            #[Min(18)]
+            public int $age;
+        };
+
+        try {
+            validate(['age' => 5], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['age' => ['Too small, at least 18']]);
+        }
+    });
+
+    it('overrides the sequence_keys template', function () {
+        $model = new class extends BaseModel {
+            #[ErrorMessage(sequence_keys: 'Keys must be 0, 1, 2, ...')]
+            #[Sequence(Type::int)]
+            public array $values;
+        };
+
+        try {
+            validate(['values' => [5 => 1]], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values.5' => ['Keys must be 0, 1, 2, ...']]);
+        }
+    });
+
+    it('overrides the union template', function () {
+        $model = new class extends BaseModel {
+            #[ErrorMessage(union: 'Pick {expected}')]
+            #[Union(Type::int, Type::string)]
+            public $field;
+        };
+
+        try {
+            validate(['field' => 1.5], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['field' => ['Pick integer or string']]);
+        }
+    });
+
+    it('keeps the catalog default for keys that are not overridden', function () {
+        $model = new class extends BaseModel {
+            #[ErrorMessage(min: 'Too small, at least {expected}')]
+            #[Min(18)]
+            public int $age;
+
+            public int $count;
+        };
+
+        try {
+            validate([], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe([
+                'age' => ['Field is required'],
+                'count' => ['Field is required'],
+            ]);
+        }
+    });
+
+    it('discards the extra key from ErrorMessage', function () {
+        $model = new #[ModelConfigs(extra: 'forbid')] class extends BaseModel {
+            #[ErrorMessage(extra: 'NOPE')]
+            public string $name;
+        };
+
+        try {
+            validate(['name' => 'x', 'junk' => 1], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['junk' => ['Extra inputs are not permitted']]);
+        }
+    });
 
     it('invalid ErrorMessage arguments', function (BaseModel $model, array $input) {
         validate($input, $model);

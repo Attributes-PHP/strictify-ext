@@ -10,9 +10,8 @@ typedef enum {
     AS_ERROR_REQUIRED,
     AS_ERROR_TYPE,
     /* Constraint error types: one per constraint, each with its own
-     * default template. The #[ErrorMessage] attribute only declares
-     * the required and type arguments, so constraint errors always use
-     * their default template. */
+     * default template. #[ErrorMessage] declares one argument per catalog
+     * key (see AS_ERROR_MESSAGE_KEYS in fields/as_error_message.h). */
     AS_ERROR_ALPHA_DASH,
     /* Non-string value under #[AlphaDash]: reported with its own template
      * because it is a type failure, not a character-content failure */
@@ -42,7 +41,8 @@ typedef enum {
      * true): the key must be the next integer 0, 1, 2, ... in order */
     AS_ERROR_SEQUENCE_KEYS,
     /* Unknown input key under ModelConfigs(extra: 'forbid'); reported
-     * without a property context, so it bypasses the per-property cache */
+     * without a property context, so it bypasses the per-property cache
+     * and is discarded from the #[ErrorMessage] keys */
     AS_ERROR_EXTRA,
     AS_ERROR_TYPE_COUNT
 } as_error_type;
