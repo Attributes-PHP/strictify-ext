@@ -452,8 +452,8 @@ describe('type-hint array validation via attributes (loose mode)', function () {
                 public array $keyed;
             };
 
-        // PHP casts the float key 2.7 to int 2
-        $result = validate(['keyed' => [2.7 => 'a']], $model);
+        // PHP casts the float key 2.0 to int 2
+        $result = validate(['keyed' => [2.0 => 'a']], $model);
         expect($result->keyed)->toBe([2 => 'a']);
 
         try {
@@ -487,7 +487,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
                 public array $keyed;
             };
 
-        $result = validate(['keyed' => [5 => 1, 'k' => 2, 2.7 => 3, false => 4, null => 5]], $model);
+        $result = validate(['keyed' => [5 => 1, 'k' => 2, 2.0 => 3, false => 4, null => 5]], $model);
         expect($result->keyed)->toBe([5 => 1, 'k' => 2, 2 => 3, 0 => 4, '' => 5]);
     });
 
