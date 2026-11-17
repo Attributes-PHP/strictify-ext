@@ -65,6 +65,7 @@ Default messages follow the `Must be <type>` pattern, joined for unions (`Must b
 | `size` | `Must have a size {expected}` |
 | `starts_with` | `Must start with one of: {expected}` |
 | `ulid` / `uuid` | `Must be a valid ULID/UUID` |
+| `union` | `Must be {expected}` |
 | `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
 
 Placeholders: `{field}` (resolved field name), `{value}` (the rejected value — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties), `{expected}` (constraint parameters / expected types).

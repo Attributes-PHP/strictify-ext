@@ -18,6 +18,7 @@
 #include "fields/constraints/as_size.h"
 #include "fields/constraints/as_starts_with.h"
 #include "fields/constraints/as_ulid.h"
+#include "fields/constraints/as_union.h"
 #include "fields/constraints/as_uuid.h"
 #include "helpers/as_error_messages.h"
 #include "helpers/as_string.h"
@@ -69,6 +70,7 @@ static const as_constraint_dispatch_entry constraint_dispatch_table[] = {
     AS_CONSTRAINT_ENTRY("size", Size),
     AS_CONSTRAINT_ENTRY("startswith", StartsWith),
     AS_CONSTRAINT_ENTRY("ulid", Ulid),
+    AS_CONSTRAINT_ENTRY("union", Union),
     AS_CONSTRAINT_ENTRY("uuid", Uuid),
 };
 

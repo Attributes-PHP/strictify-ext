@@ -35,6 +35,7 @@ const char *as_default_error_type_messages[] = {
     [AS_ERROR_STARTS_WITH] = "Must start with one of: {expected}",
     [AS_ERROR_ULID] = "Must be a valid ULID",
     [AS_ERROR_UUID] = "Must be a valid UUID",
+    [AS_ERROR_UNION] = "Must be {expected}",
     [AS_ERROR_EXTRA] = "Extra inputs are not permitted",
 };
 
@@ -65,6 +66,7 @@ const char *as_error_type_names[] = {
     [AS_ERROR_STARTS_WITH] = "starts_with",
     [AS_ERROR_ULID] = "ulid",
     [AS_ERROR_UUID] = "uuid",
+    [AS_ERROR_UNION] = "union",
     [AS_ERROR_EXTRA] = "extra",
 };
 

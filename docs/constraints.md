@@ -48,6 +48,7 @@ All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be decla
 | [`Contains`](#contains) | membership | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
 | [`Size`](#size) | size | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
 | [`DateTime`](#datetime) | date/time | `(string $format = 'X-m-d\\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
+| [`Union`](#union) | type | `(int\|string\|Type ...$of)` | the value's type matches none of the declared arms |
 
 Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only the lower bound, `#[DateTime(timezone: 'Europe/London')]` parses in that timezone.
 
@@ -329,6 +330,29 @@ class Event extends BaseModel
 
 Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
 
+## Type constraints
+
+### `Union`
+
+The value's type must match at least one declared arm. Arms are the `Type` constants (`int`, `float`, ...), `Type` enum cases or class name strings — the same vocabulary as the [`Union` array attribute](/guides/nested-models/#union), minus the nested array shapes.
+
+```php
+<?php
+class Measurement extends BaseModel
+{
+    #[Union(Type::int, Type::float)] // 1 and 1.5 pass
+    public int|float $value;
+
+    #[Union(Type::int)] // narrows int|float to integers only: 1 passes, 1.5 fails
+    public int|float $count;
+
+    #[Union(\DateTimeInterface::class)] // only DateTime instances pass
+    public stdClass|DateTimeInterface $payload;
+}
+```
+
+Fails: a value whose type matches none of the arms. The constraint runs after the native type check, so matching is exact — never coerced; on `int|float` the value is already `int` or `float`, and the constraint decides which of those arms is acceptable. In loose mode it sees the coerced value (`'1'` on `int|float` is `int(1)` and passes `#[Union(Type::int)]`).
+
 ## Value semantics
 
 - **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
@@ -336,6 +360,7 @@ Fails: a string that does not parse in the declared format, and any value that i
 - **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring.
 - **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, and an invalid timezone name throws a `ValueError` at construction.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.
+- **`Union`** matches the value's type against the declared arms exactly (class arms via `instanceof`); it never coerces. Use it to narrow a native union hint such as `int|float` to a subset of its arms.
 
 ## Error messages
 

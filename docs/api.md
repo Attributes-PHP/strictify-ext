@@ -439,6 +439,22 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 - Attribute: yes
 
+### `Attributes\Strictify\Fields\Constraints\Union` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public array $of` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(int|string|\Attributes\Strictify\Type ...$of)` |
+
 ### `Attributes\Strictify\Fields\Constraints\Uuid` — final readonly class implements Field
 
 - Attribute: yes

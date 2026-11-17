@@ -40,6 +40,7 @@
 #include "src/fields/constraints/as_size.h"
 #include "src/fields/constraints/as_starts_with.h"
 #include "src/fields/constraints/as_ulid.h"
+#include "src/fields/constraints/as_union.h"
 #include "src/fields/constraints/as_uuid.h"
 #include "src/validators/as_typehint_validator.h"
 #include "src/helpers/as_error_messages.h"
@@ -119,6 +120,8 @@ PHP_MINIT_FUNCTION(strictify)
     as_register_MultipleOf_class();
     // Date-specific
     as_register_DateTime_class();
+    // Type-union
+    as_register_Constraints_Union_class();
     return SUCCESS;
 }
 

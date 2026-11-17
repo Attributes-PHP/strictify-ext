@@ -37,6 +37,7 @@ typedef enum {
     AS_ERROR_STARTS_WITH,
     AS_ERROR_ULID,
     AS_ERROR_UUID,
+    AS_ERROR_UNION,
     /* Unknown input key under ModelConfigs(extra: 'forbid'); reported
      * without a property context, so it bypasses the per-property cache */
     AS_ERROR_EXTRA,
