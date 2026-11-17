@@ -31,7 +31,19 @@ Each default message has a stable translation key passed to the translator regis
 | `union` | `Must be {expected}` |
 | `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
 
-Placeholders: `{field}` (resolved field name), `{value}` (the rejected value — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties), `{expected}` (constraint parameters / expected types).
+See [Placeholders](#placeholders) for the `{field}`, `{value}` and `{expected}` substitutions available in every template.
+
+## Placeholders
+
+Every template — the defaults, translated messages and `ErrorMessage` overrides — supports the same three placeholders, substituted after translation:
+
+| Placeholder | Renders |
+| --- | --- |
+| `{field}` | The resolved field name — the dot-notation path for nested fields, the [alias](/guides/aliases/) when one is declared |
+| `{value}` | The rejected value: strings are quoted (`'abc'`), `null`/`true`/`false` render literally, numbers as-is, arrays as `array`, stringable objects via `__toString()` — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties |
+| `{expected}` | For `type`/`union` errors the expected type list (`Must be integer, float or string`); for constraint errors the constraint parameters (`18`, a regex pattern, ...) |
+
+`{expected}` renders as an empty string for the `extra` error (unknown key under `extra: 'forbid'`), which has no owning property. Userland constraint `message()` output goes through the same substitution, so `{field}` and `{value}` work there too — see [Constraints](/constraints/).
 
 ## Per-property overrides: ErrorMessage
 
@@ -153,7 +165,6 @@ try {
 
 Notes:
 
-- `{field}`, `{value}` and `{expected}` placeholders are substituted after translation, so translated templates use them exactly like the defaults.
 - `ErrorMessage` attribute values are also passed to the translator as keys. Since attribute arguments must be constant expressions (no callables), use a key string or a class constant there; when the translator returns `null`, the literal attribute string is used as-is, so existing attributes keep working unchanged:
 
 ```php
