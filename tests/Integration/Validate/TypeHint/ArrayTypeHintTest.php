@@ -418,11 +418,27 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         }
     });
 
-    it('does not check keys for the list form', function () {
+    it('rejects non-sequential keys for the list form by default', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
                 #[Sequence(Type::string)]
+                public array $tags;
+            };
+
+        try {
+            validate(['tags' => ['any' => 'a']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['tags.any' => ['Must be a sequential list (keys 0, 1, 2, ...)']]);
+        }
+    });
+
+    it('accepts any keys for the list form with sequential: false', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Sequence(Type::string, sequential: false)]
                 public array $tags;
             };
 

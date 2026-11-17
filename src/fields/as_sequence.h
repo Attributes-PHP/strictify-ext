@@ -8,6 +8,8 @@ extern zend_class_entry *AS_Fields_Sequence_ce;
 
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_AS_Fields_Sequence___construct, 0, 0, 1)
 ZEND_ARG_INFO(0, of)
+ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, uniqueValues, _IS_BOOL, 0, "false")
+ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, sequential, _IS_BOOL, 0, "true")
 ZEND_END_ARG_INFO()
 
 ZEND_METHOD(AS_Fields_Sequence, __construct);

@@ -77,7 +77,7 @@ $blog = validate([
 ], new Blog());
 ```
 
-- `Sequence` validates every element against one element type.
+- `Sequence` validates every element against one element type. By default the array must be a **list** — keys `0, 1, 2, ...` in order; a string key or a gap reports a `sequence_keys` error under that key's path (e.g. `tags.x`). Pass `sequential: false` to allow any keys.
 - `Union` accepts an element matching any declared arm — but only nested inside `Sequence(of: new Union(...))` or `Dict(of: new Union(...))`. Declared directly on an `array` property it throws an `InvalidBaseModelException`; on a non-array property it checks the whole value instead (below).
 - `Intersection` requires an element to match every declared class or interface. Its arms must name classes or interfaces only — enums are rejected, mirroring PHP intersection type hints.
 - `Dict` validates keys against `$key` (integer and string types only) and values against `$of`.
@@ -146,6 +146,28 @@ validate([
 (Masks are built from the `T_*` constants — enum cases don't support `|`, so `Type::int | Type::string` is not valid PHP; write `T_INT | T_STRING`.)
 
 The bitmask form loses the declaration order that a `new Union(...)` argument list keeps: values that already match an arm are still accepted as-is, but in loose mode coercions then run in a fixed order (bool, integer, float, string) instead of declaration order — see [Strict and loose mode](/guides/validating-payloads/#strict-and-loose-mode).
+
+```php
+<?php
+// doctest: run
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Fields\Sequence;
+use function Attributes\Strictify\validate;
+
+use const Attributes\Strictify\T_STRING;
+
+class Tags extends BaseModel
+{
+    #[Sequence(T_STRING)]                    // list only: keys 0, 1, 2, ...
+    public array $list;
+
+    #[Sequence(T_STRING, sequential: false)] // any keys allowed
+    public array $map;
+}
+
+$model = validate(['list' => ['a', 'b'], 'map' => ['first' => 'a']], new Tags());
+echo count($model->list), ' ', count($model->map), "\n"; // 2 1
+```
 
 The same attributes compose with `new` expressions to describe nested arrays:
 

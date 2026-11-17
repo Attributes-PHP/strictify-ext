@@ -38,6 +38,9 @@ typedef enum {
     AS_ERROR_ULID,
     AS_ERROR_UUID,
     AS_ERROR_UNION,
+    /* Non-sequential key in a #[Sequence] array (sequential defaults to
+     * true): the key must be the next integer 0, 1, 2, ... in order */
+    AS_ERROR_SEQUENCE_KEYS,
     /* Unknown input key under ModelConfigs(extra: 'forbid'); reported
      * without a property context, so it bypasses the per-property cache */
     AS_ERROR_EXTRA,

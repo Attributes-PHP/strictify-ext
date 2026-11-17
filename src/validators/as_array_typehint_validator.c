@@ -40,6 +40,9 @@ struct as_spec {
     as_arm *key_arms; // Dict key arms, NULL for the list form
     uint32_t key_arms_count;
     bool is_intersection;
+    // Sequence only: keys must be the sequential integers 0, 1, 2, ...
+    // (the default; #[Sequence(sequential: false)] opts out)
+    bool require_sequential;
     // Whether validating an element can read its name (a key or element
     // error, a class-arm hydration or a nested array validation): pure
     // basic-type specs never build per-element path strings
@@ -664,6 +667,10 @@ static as_spec *build_spec_from_object(zval *object, as_spec_context *ctx)
             return NULL;
         }
 
+        // sequential defaults to true unless explicitly set to false
+        zval *sequential = read_object_property(object, "sequential", sizeof("sequential") - 1);
+        spec->require_sequential = sequential == NULL || Z_TYPE_P(sequential) != IS_FALSE;
+
         return spec;
     }
 
@@ -796,6 +803,25 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
         if (!result) {
             free_spec(spec);
             return NULL;
+        }
+
+        // sequential defaults to true; it can be passed as a named argument
+        // (sequential: false) or as the third positional argument
+        spec->require_sequential = true;
+        for (uint32_t i = 1; i < attribute->argc; i++) {
+            bool is_sequential = attribute->args[i].name != NULL ? zend_string_equals_literal_ci(attribute->args[i].name, "sequential") : i == 2;
+            if (!is_sequential) {
+                continue;
+            }
+
+            zval sequential_value;
+            if (!evaluate_attribute_argument(&sequential_value, attribute, i, scope)) {
+                free_spec(spec);
+                return NULL;
+            }
+            spec->require_sequential = zend_is_true(&sequential_value);
+            zval_ptr_dtor(&sequential_value);
+            break;
         }
 
         return spec;
@@ -1165,6 +1191,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
     zend_string *base_path = NULL;
     zend_string *str_key;
     zend_ulong num_key;
+    zend_ulong sequential_index = 0;
     zval *element;
 
     // The full path of the array property and the per-element names are
@@ -1205,6 +1232,27 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
                 break;
             }
             continue;
+        }
+
+        // A Sequence with sequential: true (the default) must be a list:
+        // keys are the integers 0, 1, 2, ... in iteration order
+        if (spec->require_sequential) {
+            if (str_key == NULL && num_key == sequential_index) {
+                sequential_index++;
+            } else {
+                element_name = str_key != NULL ? zend_string_copy(str_key) : zend_long_to_str(num_key);
+                base_path = ensure_base_path(field, base_path);
+                element_field.parent = base_path;
+                element_field.name = element_name;
+
+                as_add_field_error_with_prefix(AS_ERROR_SEQUENCE_KEYS, &element_field, prop_info, errors);
+                zend_string_release(element_name);
+                all_valid = false;
+                if (properties->stop_first_error) {
+                    break;
+                }
+                continue;
+            }
         }
 
         // An array element under a class or nested arm validates (and

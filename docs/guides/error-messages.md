@@ -29,6 +29,7 @@ Each default message has a stable translation key passed to the translator regis
 | `starts_with` | `Must start with one of: {expected}` |
 | `ulid` / `uuid` | `Must be a valid ULID/UUID` |
 | `union` | `Must be {expected}` |
+| `sequence_keys` | `Must be a sequential list (keys 0, 1, 2, ...)` (non-sequential key in a `#[Sequence]` array) |
 | `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
 
 See [Placeholders](#placeholders) for the `{field}`, `{value}` and `{expected}` substitutions available in every template.
