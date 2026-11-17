@@ -371,7 +371,9 @@ static void free_arms(as_arm *arms, uint32_t arms_count)
  * Builds a single basic arm from a Type case value, which may combine
  * several engine masks with the bitwise OR operator. The value is the
  * mask; the private dict bit folds into MAY_BE_ARRAY. Key-position masks
- * are restricted to the integer, string and null types.
+ * are restricted to the PHP-castable key types (integer, string, float,
+ * boolean, null): the engine casts float and bool keys to int and null to
+ * "", so those bits fold into the post-cast key kind.
  */
 static bool build_basic_arm(zend_long type_value, bool is_key, as_arm *arm)
 {
@@ -385,9 +387,16 @@ static bool build_basic_arm(zend_long type_value, bool is_key, as_arm *arm)
         mask = (mask & ~(uint32_t)AS_TYPE_DICT) | MAY_BE_ARRAY;
     }
 
-    if (is_key && (mask & ~(MAY_BE_LONG | MAY_BE_STRING | MAY_BE_NULL)) != 0) {
-        zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null, " ZEND_LONG_FMT " given.", type_value);
-        return false;
+    if (is_key) {
+        if ((mask & ~(MAY_BE_LONG | MAY_BE_STRING | MAY_BE_DOUBLE | MAY_BE_BOOL | MAY_BE_NULL)) != 0) {
+            zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string, float, boolean or null, " ZEND_LONG_FMT " given.", type_value);
+            return false;
+        }
+        /* PHP casts float and bool array keys to int: fold those bits into
+         * MAY_BE_LONG so the arm matches the post-cast key */
+        if ((mask & (MAY_BE_DOUBLE | MAY_BE_BOOL)) != 0) {
+            mask = (mask | MAY_BE_LONG) & ~(MAY_BE_DOUBLE | MAY_BE_BOOL);
+        }
     }
 
     arm->basic_mask = mask;
@@ -475,7 +484,7 @@ static bool build_reference_arm(zend_string *name, bool is_key, as_spec_context 
 /*
  * Builds one arm. In arm position (is_key false) attribute objects and
  * class-name references become nested array specs; in key position only
- * the integer, string and null basic types are accepted.
+ * the PHP-castable key types (integer, string, float, boolean, null) are accepted.
  */
 static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm *arm)
 {
@@ -502,7 +511,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
                 // Only the top-level key position flattens a Union
                 // (build_key_arms); nested attribute objects cannot
                 // describe a key type
-                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null.");
+                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string, float, boolean or null.");
                 return false;
             }
 
@@ -519,7 +528,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
             }
 
             if (is_key) {
-                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null, \"%s\" given.", ZSTR_VAL(Z_STR_P(arm_value)));
+                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string, float, boolean or null, \"%s\" given.", ZSTR_VAL(Z_STR_P(arm_value)));
                 return false;
             }
 
@@ -543,7 +552,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
 
 /*
  * Builds an arm list from a zval holding a single arm or an array of arms.
- * Arms in key position are restricted to the integer, string and null basic
+ * Arms in key position are restricted to the PHP-castable key types (integer, string, float, boolean, null) basic
  * types by build_arm().
  */
 static bool build_arms_from_zval(zval *arms_value, bool is_key, as_spec_context *ctx, as_arm **arms_out, uint32_t *arms_count_out)

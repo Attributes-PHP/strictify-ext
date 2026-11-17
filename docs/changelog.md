@@ -11,7 +11,7 @@ All notable changes to Strictify are documented here, newest first. Install a re
 
 ### Added
 
-- New `Type::null` case / `T_NULL` constant (`MAY_BE_NULL`), valid as a `Dict` key type: `#[Dict(key: T_INT | T_NULL, of: ...)]`. Since PHP normalizes a null array key to `""`, a null key arm accepts the empty-string key (`[null => $v]`).
+- New `Type::null` case / `T_NULL` constant (`MAY_BE_NULL`), and `Dict` key specs now accept every PHP-castable key type (integer, string, float, boolean, null): `#[Dict(key: T_INT | T_STRING | T_NULL, of: ...)]`. Per [language.types.array](https://www.php.net/manual/en/language.types.array.php) the engine casts float/bool keys to int and null to `""`, so those arms match the post-cast key (`[2.7 => $v]` passes a `T_FLOAT` key spec as key `2`, `[null => $v]` passes a `T_NULL` spec as key `""`).
 - `BaseModel::toDict()` gains a `useAlias` parameter: `toDict(bool $includeSensitive = false, bool $useAlias = false): array`. The output is keyed by the raw PHP property names by default; pass `useAlias: true` to key it by the resolved field names (`#[Alias]` / `aliasGenerator`, including each nested model's own generator), which round-trips through `validate()`.
 - `#[ErrorMessage]` now accepts every key from the default error catalog as a named argument — `required`, `type`, `alpha_dash`, `between`, `min`, `max`, `sequence_keys`, ... — each defaulting to that key's default message, so any per-property template (constraint errors included) can be overridden. The `extra` key is discarded: extra inputs have no owning property and keep using the translator or the default message.
 
