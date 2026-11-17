@@ -103,7 +103,7 @@ describe('Sequence sequential key validation', function () {
             validate(['values' => [1, 'x' => 2]], $model);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['values.x' => ['Must be a sequential list (keys 0, 1, 2, ...)']]);
+            expect($e->getErrors())->toBe(['values.x' => ['Must be integer']]);
         }
     });
 
@@ -121,13 +121,27 @@ describe('Sequence sequential key validation', function () {
         }
     });
 
-    it('accepts any keys with sequential: false', function () {
+    it('accepts gapped integer keys with sequential: false', function () {
         $model = new class extends BaseModel {
             #[Sequence(Type::int, sequential: false)]
             public array $values;
         };
 
-        expect(validate(['values' => ['a' => 1, 5 => 2]], $model)->values)->toBe(['a' => 1, 5 => 2]);
+        expect(validate(['values' => [0 => 123, 2 => 654]], $model)->values)->toBe([0 => 123, 2 => 654]);
+    });
+
+    it('rejects string keys with sequential: false', function () {
+        $model = new class extends BaseModel {
+            #[Sequence(Type::int, sequential: false)]
+            public array $values;
+        };
+
+        try {
+            validate(['values' => ['a' => 1, 5 => 2]], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values.a' => ['Must be integer']]);
+        }
     });
 
     it('applies the sequential rule to nested Sequence specs', function () {
@@ -142,7 +156,7 @@ describe('Sequence sequential key validation', function () {
             validate(['matrix' => [['a' => 1]]], $model);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['matrix.0.a' => ['Must be a sequential list (keys 0, 1, 2, ...)']]);
+            expect($e->getErrors())->toBe(['matrix.0.a' => ['Must be integer']]);
         }
     });
 
@@ -155,10 +169,10 @@ describe('Sequence sequential key validation', function () {
         };
 
         try {
-            validate(['values' => ['x' => 1]], $model);
+            validate(['values' => [5 => 1]], $model);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['values.x' => ['Deve ser uma lista sequencial']]);
+            expect($e->getErrors())->toBe(['values.5' => ['Deve ser uma lista sequencial']]);
         }
     });
 });

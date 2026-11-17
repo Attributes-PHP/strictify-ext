@@ -77,7 +77,7 @@ $blog = validate([
 ], new Blog());
 ```
 
-- `Sequence` validates every element against one element type. By default the array must be a **list** — keys `0, 1, 2, ...` in order; a string key or a gap reports a `sequence_keys` error under that key's path (e.g. `tags.x`). Pass `sequential: false` to allow any keys.
+- `Sequence` validates every element against one element type. Keys must always be integers — a string key reports `Must be integer` under that key's path (e.g. `tags.x`). By default the array must additionally be a **list** with keys `0, 1, 2, ...` in order; a gap or out-of-order key reports a `sequence_keys` error. Pass `sequential: false` to allow any integer keys.
 - `Union` accepts an element matching any declared arm — but only nested inside `Sequence(of: new Union(...))` or `Dict(of: new Union(...))`. Declared directly on an `array` property it throws an `InvalidBaseModelException`; on a non-array property it checks the whole value instead (below).
 - `Intersection` requires an element to match every declared class or interface. Its arms must name classes or interfaces only — enums are rejected, mirroring PHP intersection type hints.
 - `Dict` validates keys against `$key` (integer and string types only) and values against `$of`.
@@ -161,11 +161,11 @@ class Tags extends BaseModel
     #[Sequence(T_STRING)]                    // list only: keys 0, 1, 2, ...
     public array $list;
 
-    #[Sequence(T_STRING, sequential: false)] // any keys allowed
+    #[Sequence(T_STRING, sequential: false)] // any integer keys allowed
     public array $map;
 }
 
-$model = validate(['list' => ['a', 'b'], 'map' => ['first' => 'a']], new Tags());
+$model = validate(['list' => ['a', 'b'], 'map' => [7 => 'a']], new Tags());
 echo count($model->list), ' ', count($model->map), "\n"; // 2 1
 ```
 

@@ -19,7 +19,7 @@ All notable changes to Strictify are documented here, newest first. Install a re
 - **BC note:** the default error-message translator moved off `ModelConfigs` onto the new final class `Attributes\Strictify\ErrorTranslator`: `ErrorTranslator::set(callable $translator): void` and `ErrorTranslator::get(): ?callable`. `ModelConfigs::setDefaultErrorMessages()` / `ModelConfigs::getDefaultErrorMessages()` and the static `$defaultErrorMessages` property were removed.
 - **BC note:** plain `toDict()` on models that use `#[Alias]` or `aliasGenerator` now returns property-name keys instead of alias keys. Pass `useAlias: true` for the previous behavior.
 - **BC note:** `#[ModelConfigs]` is now inherited **only via the class hierarchy** (parent classes). A nested model (a `BaseModel` property of another model) no longer inherits the enclosing model's configs — `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` each resolve per model class. This changes the expected input keys of nested models (raw property names unless the nested class declares its own generator) and the nested keys in `toDict(useAlias: true)` output.
-- **BC note:** `#[Sequence]` is now **sequential by default**: the array must be a list with keys `0, 1, 2, ...` in order. Non-sequential keys report a `sequence_keys` error. Pass `sequential: false` to allow arbitrary keys (the previous behavior).
+- **BC note:** `#[Sequence]` arrays now require **integer keys** — a string key reports `Must be integer` under that key's path — and are **sequential by default**: keys must be `0, 1, 2, ...` in order, otherwise a `sequence_keys` error is reported. Pass `sequential: false` to allow any integer keys (gaps included); string keys stay rejected.
 
 ## Recent history
 

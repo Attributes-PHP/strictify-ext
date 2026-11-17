@@ -427,14 +427,14 @@ describe('type-hint array validation via attributes (loose mode)', function () {
             };
 
         try {
-            validate(['tags' => ['any' => 'a']], $model);
+            validate(['tags' => [2 => 'a']], $model);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['tags.any' => ['Must be a sequential list (keys 0, 1, 2, ...)']]);
+            expect($e->getErrors())->toBe(['tags.2' => ['Must be a sequential list (keys 0, 1, 2, ...)']]);
         }
     });
 
-    it('accepts any keys for the list form with sequential: false', function () {
+    it('accepts gapped integer keys for the list form with sequential: false', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
@@ -442,8 +442,24 @@ describe('type-hint array validation via attributes (loose mode)', function () {
                 public array $tags;
             };
 
-        $result = validate(['tags' => ['any' => 'a']], $model);
-        expect($result->tags)->toBe(['any' => 'a']);
+        $result = validate(['tags' => [3 => 'a']], $model);
+        expect($result->tags)->toBe([3 => 'a']);
+    });
+
+    it('rejects string keys for the list form with sequential: false', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Sequence(Type::string, sequential: false)]
+                public array $tags;
+            };
+
+        try {
+            validate(['tags' => ['any' => 'a']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['tags.any' => ['Must be integer']]);
+        }
     });
 
     it('accepts nested arrays via a sequence arm', function () {
