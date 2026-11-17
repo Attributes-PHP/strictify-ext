@@ -37,6 +37,12 @@ class UnionAddress extends BaseModel
     public string $street;
 }
 
+class UnionHintMismatch extends BaseModel
+{
+    #[Union(T_INT)]
+    public int|float $example;
+}
+
 describe('Union constructor argument validation', function () {
     it('accepts every supported arm type', function ($arm) {
         expect(new Union($arm))->toBeInstanceOf(Union::class);
@@ -216,7 +222,7 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 42], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint'
+        'must contain the same type-hints as the native union hint (integer or float); got (integer).'
     );
 
     it('throws InvalidBaseModelException when the arms add a type the hint does not have', function () {
@@ -228,7 +234,7 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 42], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint'
+        'must contain the same type-hints as the native union hint (integer or float); got (integer, float or string).'
     );
 
     it('requires T_NULL in the arms of a nullable hint', function () {
@@ -240,8 +246,17 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 'a'], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint'
+        'must contain the same type-hints as the native union hint (string or null); got (string).'
     );
+
+    it('reports the hint and arm union types in the full error message', function () {
+        try {
+            validate(['example' => 1], new UnionHintMismatch());
+            expect(false)->toBeTrue();
+        } catch (InvalidBaseModelException $e) {
+            expect($e->getMessage())->toBe('Union attribute on property Attributes\\Strictify\\Tests\\Integration\\Fields\\UnionHintMismatch::$example must contain the same type-hints as the native union hint (integer or float); got (integer).');
+        }
+    });
 
     it('accepts T_NULL as an arm of a nullable hint', function () {
         $model = new class extends BaseModel {
@@ -341,7 +356,7 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => new stdClass()], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint'
+        'must contain the same type-hints as the native union hint (stdClass or DateTimeImmutable); got (stdClass).'
     );
 
     it('joins the arm names in the error message', function () {
