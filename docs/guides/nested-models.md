@@ -52,18 +52,21 @@ use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Fields\Dict;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Fields\Union;
-use Attributes\Strictify\Type;
 use function Attributes\Strictify\validate;
+
+use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_SEQUENCE;
+use const Attributes\Strictify\T_STRING;
 
 class Blog extends BaseModel
 {
-    #[Sequence(Type::string)]
+    #[Sequence(T_STRING)]
     public array $tags;
 
-    #[Sequence(of: new Union(Type::int, Type::string, Type::sequence))]
+    #[Sequence(of: new Union(T_INT, T_STRING, T_SEQUENCE))]
     public array $mixed;
 
-    #[Dict(key: Type::int, of: stdClass::class)]
+    #[Dict(key: T_INT, of: stdClass::class)]
     public array $lookup;
 }
 
@@ -90,15 +93,17 @@ Declared directly on a property whose value is not an array — `int|float`, `st
 // doctest: run
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Fields\Union;
-use Attributes\Strictify\Type;
 use function Attributes\Strictify\validate;
+
+use const Attributes\Strictify\T_FLOAT;
+use const Attributes\Strictify\T_INT;
 
 class Measurement extends BaseModel
 {
-    #[Union(Type::int, Type::float)] // 1 and 1.5 pass
+    #[Union(T_INT, T_FLOAT)] // 1 and 1.5 pass
     public int|float $value;
 
-    #[Union(Type::int)] // narrows int|float to integers only: 1.5 fails
+    #[Union(T_INT)] // narrows int|float to integers only: 1.5 fails
     public int|float $count;
 }
 
@@ -107,7 +112,7 @@ $m = validate(['value' => 1.5, 'count' => 3], new Measurement());
 
 An array value under a directly declared `Union` throws an `InvalidBaseModelException` — wrap the array in `Sequence(of: new Union(...))` instead.
 
-Element types come from the `Attributes\Strictify\Type` enum (`Type::int`, `Type::string`, `Type::bool`, `Type::float`, `Type::sequence`, `Type::object`, `Type::dict`) or the matching namespace constants (`T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_SEQUENCE`, `T_OBJECT`) — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — and may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
+Element types are named by the namespace constants `T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_SEQUENCE`, `T_OBJECT`, `T_DICT` — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — which hold the same values as the `Attributes\Strictify\Type` enum cases (`Type::int`, `Type::string`, ...). Constants may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
 
 When the declaration order of the arms is irrelevant, the `Union` wrapper can be dropped and the combined type mask passed directly to `of:` — or to `key:`, which accepts only integer and string masks:
 
