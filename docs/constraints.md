@@ -354,7 +354,7 @@ Each constraint has a default message following the `Must be ...` pattern, with 
 
 The `ErrorMessage` attribute only declares `required` and `type` templates, so constraint errors always use their default messages. Constraints applied through userland classes can return any message they want (see below).
 
-Every default message has a stable translation key (`between`, `min`, `regex`, ...) — see the [error catalog](/exceptions/#default-error-messages) and [translating error messages](/guides/error-messages/). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
+Every default message has a stable translation key (`between`, `min`, `regex`, ...) — see the [error catalog](/guides/error-messages/#default-error-messages) and [translating error messages](/guides/error-messages/). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
 
 ## Custom constraints
 

@@ -5,7 +5,45 @@ description: "Customize validation error messages per property with ErrorMessage
 
 # Error messages
 
-Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Every message has a stable translation key — the full catalog is in [Exceptions](/exceptions/#default-error-messages).
+Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Every message has a stable translation key — the full catalog is [below](#default-error-messages).
+
+## Default error messages
+
+Each default message has a stable translation key passed to the translator registered with `ErrorTranslator::set()`:
+
+| Key | Default message |
+| --- | --- |
+| `required` | `Field is required` |
+| `type` | `Must be {expected}` |
+| `alpha_dash` / `alpha_dash_type` | `Must only contain letters, numbers, dashes and underscores` |
+| `ascii` / `ascii_type` | `Must only contain ASCII characters` |
+| `between` / `between_type` | `Must be between {expected}` |
+| `contains` | `Must contain {expected}` |
+| `datetime` | `Must be a datetime in the format {expected}` |
+| `ends_with` | `Must end with one of: {expected}` |
+| `in` | `Must be one of: {expected}` |
+| `max` / `min` | `Must be at most/least {expected}` |
+| `multiple_of` | `Must be a multiple of {expected}` |
+| `regex` | `Must match the pattern {expected}` |
+| `size` | `Must have a size {expected}` |
+| `starts_with` | `Must start with one of: {expected}` |
+| `ulid` / `uuid` | `Must be a valid ULID/UUID` |
+| `union` | `Must be {expected}` |
+| `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
+
+See [Placeholders](#placeholders) for the `{field}`, `{value}` and `{expected}` substitutions available in every template.
+
+## Placeholders
+
+Every template — the defaults, translated messages and `ErrorMessage` overrides — supports the same three placeholders, substituted after translation:
+
+| Placeholder | Renders |
+| --- | --- |
+| `{field}` | The resolved field name — the dot-notation path for nested fields, the [alias](/guides/aliases/) when one is declared |
+| `{value}` | The rejected value: strings are quoted (`'abc'`), `null`/`true`/`false` render literally, numbers as-is, arrays as `array`, stringable objects via `__toString()` — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties |
+| `{expected}` | For `type`/`union` errors the expected type list (`Must be integer, float or string`); for constraint errors the constraint parameters (`18`, a regex pattern, ...) |
+
+`{expected}` renders as an empty string for the `extra` error (unknown key under `extra: 'forbid'`), which has no owning property. Userland constraint `message()` output goes through the same substitution, so `{field}` and `{value}` work there too — see [Constraints](/constraints/).
 
 ## Per-property overrides: ErrorMessage
 
@@ -127,7 +165,6 @@ try {
 
 Notes:
 
-- `{field}`, `{value}` and `{expected}` placeholders are substituted after translation, so translated templates use them exactly like the defaults.
 - `ErrorMessage` attribute values are also passed to the translator as keys. Since attribute arguments must be constant expressions (no callables), use a key string or a class constant there; when the translator returns `null`, the literal attribute string is used as-is, so existing attributes keep working unchanged:
 
 ```php
@@ -151,6 +188,6 @@ class User extends BaseModel
 
 ## See also
 
-- [Exceptions and the default error catalog](/exceptions/)
+- [Exceptions](/exceptions/) — exception types and the `getErrors()` structure
 - [Constraints](/constraints/) — constraint error messages and their keys
 - [Sensitive data](/guides/sensitive-data/) — `{value}` redaction for sensitive fields
