@@ -228,15 +228,22 @@ describe('Union declared directly on a non-array property', function () {
         'must contain the same type-hints as the native union hint'
     );
 
-    it('ignores nullability when comparing the arms against the hint', function () {
+    it('does not apply the rule to a nullable single-type hint', function () {
         $model = new class extends BaseModel {
             #[Union(T_INT)]
             public ?int $example;
         };
 
-        expect(validate(['example' => null], $model)->example)->toBeNull()
-            ->and(validate(['example' => 5], $model)->example)
-            ->toBe(5);
+        expect(validate(['example' => 5], $model)->example)->toBe(5);
+    });
+
+    it('ignores nullability when comparing the arms against a union hint', function () {
+        $model = new class extends BaseModel {
+            #[Union(T_INT | T_FLOAT)]
+            public int|float|null $example;
+        };
+
+        expect(validate(['example' => 1.5], $model)->example)->toBe(1.5);
     });
 
     it('accepts a bitmask arm combining several types', function () {

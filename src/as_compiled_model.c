@@ -560,6 +560,26 @@ static as_compiled_model *compile_plan_skeleton(zend_class_entry *model_ce, char
 }
 
 /*
+ * A "union" native hint: a type list (class unions, DNF) or a pure mask
+ * with more than one non-null bit (int|float). Nullable single types
+ * (?int) and mixed are not unions.
+ */
+static bool hint_is_union_type(zend_type type)
+{
+    if (ZEND_TYPE_IS_INTERSECTION(type)) {
+        return false;
+    }
+    if (ZEND_TYPE_HAS_LIST(type)) {
+        return true;
+    }
+    if (ZEND_TYPE_PURE_MASK(type) == MAY_BE_ANY) {
+        return false;
+    }
+    uint32_t mask = ZEND_TYPE_PURE_MASK(type) & ~(uint32_t)MAY_BE_NULL;
+    return mask != 0 && (mask & (mask - 1)) != 0;
+}
+
+/*
  * Compiles one field slot on first use: resolves the field name,
  * flattens the native type hint and precomputes the default-value
  * presence. A failure (pending exception from a bad Alias attribute)
@@ -697,7 +717,7 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
      * a mismatch is a malformed model and throws InvalidBaseModelException
      * once per field compile.
      */
-    if (!cf->untyped && ZEND_TYPE_IS_UNION(type) && !cf->is_intersection_group && cf->constraints != NULL) {
+    if (!cf->untyped && hint_is_union_type(type) && cf->constraints != NULL) {
         for (uint32_t i = 0; i < cf->constraints_count; i++) {
             if (cf->constraints[i].validate == as_validate_Union_scalar && !as_check_union_matches_hint(&cf->constraints[i].instance, type, cf->declaring_ce, cf->prop->name)) {
                 if (resolved != cf->prop->name) {
