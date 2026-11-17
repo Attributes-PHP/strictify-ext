@@ -15,13 +15,23 @@ use stdClass;
 use TypeError;
 use ValueError;
 
+use const Attributes\Strictify\T_FLOAT;
+use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_NULL;
+
 describe('Dict constructor argument validation', function () {
     it('accepts every supported $key type', function ($key) {
         expect(new Dict(key: $key, of: Type::string))->toBeInstanceOf(Dict::class);
     })->with([
         Type::int->value & Type::float->value,
         Type::int,
+        Type::string,
+        Type::float,
+        Type::bool,
+        Type::null,
         new Union(Type::int, Type::string),
+        new Union(Type::int, Type::null),
+        new Union(T_INT, T_FLOAT, T_NULL),
     ]);
 
     it('accepts every supported $of type', function ($of) {

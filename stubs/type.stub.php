@@ -13,6 +13,7 @@ namespace Attributes\Strictify {
         case int = 16;       // MAY_BE_LONG
         case float = 32;     // MAY_BE_DOUBLE
         case string = 64;    // MAY_BE_STRING
+        case null = 2;       // MAY_BE_NULL
         case sequence = 128; // MAY_BE_ARRAY
         case dict = 268435456; // private dict bit
         case object = 256;   // MAY_BE_OBJECT

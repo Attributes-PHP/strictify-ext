@@ -22,6 +22,7 @@ use function Attributes\Strictify\validate;
 use const Attributes\Strictify\T_BOOL;
 use const Attributes\Strictify\T_FLOAT;
 use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_NULL;
 use const Attributes\Strictify\T_OBJECT;
 use const Attributes\Strictify\T_SEQUENCE;
 use const Attributes\Strictify\T_STRING;
@@ -208,9 +209,9 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         }
     });
 
-    it('rejects bitmask key types outside integer and string', function () {
+    it('rejects bitmask key types outside the PHP-castable key types', function () {
         $model = new class extends BaseModel {
-            #[Dict(key: T_BOOL | T_INT, of: T_STRING)]
+            #[Dict(key: T_OBJECT | T_INT, of: T_STRING)]
             public array $keyed;
         };
 
@@ -398,6 +399,96 @@ describe('type-hint array validation via attributes (loose mode)', function () {
 
         $result = validate(['keyed' => ['a' => 'b', 3 => 'c']], $model);
         expect($result->keyed)->toBe(['a' => 'b', 3 => 'c']);
+    });
+
+    it('accepts a null (empty-string) key when the key spec includes T_NULL', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_NULL, of: T_INT)]
+                public array $keyed;
+            };
+
+        // PHP normalizes a null array key to ""
+        $result = validate(['keyed' => [null => 1]], $model);
+        expect($result->keyed)->toBe(['' => 1]);
+    });
+
+    it('accepts integer and null keys for a T_INT | T_NULL key spec', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_INT | T_NULL, of: T_STRING)]
+                public array $keyed;
+            };
+
+        $result = validate(['keyed' => [7 => 'a', null => 'b']], $model);
+        expect($result->keyed)->toBe([7 => 'a', '' => 'b']);
+    });
+
+    it('rejects non-empty string keys when the key spec is T_NULL only', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_NULL, of: T_INT)]
+                public array $keyed;
+            };
+
+        try {
+            validate(['keyed' => ['a' => 1]], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe([
+                'keyed.a' => ['Must be null'],
+            ]);
+        }
+    });
+
+    it('accepts integer keys cast from float keys for a T_FLOAT key spec', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_FLOAT, of: T_STRING)]
+                public array $keyed;
+            };
+
+        // PHP casts the float key 2.0 to int 2
+        $result = validate(['keyed' => [2.0 => 'a']], $model);
+        expect($result->keyed)->toBe([2 => 'a']);
+
+        try {
+            validate(['keyed' => ['a' => 'b']], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe([
+                'keyed.a' => ['Must be integer'],
+            ]);
+        }
+    });
+
+    it('accepts integer keys cast from bool keys for a T_BOOL key spec', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_BOOL, of: T_STRING)]
+                public array $keyed;
+            };
+
+        // PHP casts bool keys to int: true -> 1, false -> 0
+        $result = validate(['keyed' => [true => 'a', false => 'b']], $model);
+        expect($result->keyed)->toBe([1 => 'a', 0 => 'b']);
+    });
+
+    it('accepts every PHP-castable key type in one key spec', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_INT | T_STRING | T_FLOAT | T_BOOL | T_NULL, of: T_INT)]
+                public array $keyed;
+            };
+
+        $result = validate(['keyed' => [5 => 1, 'k' => 2, 2.0 => 3, false => 4, null => 5]], $model);
+        expect($result->keyed)->toBe([5 => 1, 'k' => 2, 2 => 3, 0 => 4, '' => 5]);
     });
 
     it('rejects dict values not matching the value spec', function () {

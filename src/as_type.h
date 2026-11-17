@@ -35,6 +35,7 @@ extern zend_class_entry *AS_Type_ce;
 #define AS_TYPE_INT      MAY_BE_LONG
 #define AS_TYPE_FLOAT    MAY_BE_DOUBLE
 #define AS_TYPE_STRING   MAY_BE_STRING
+#define AS_TYPE_NULL     MAY_BE_NULL
 #define AS_TYPE_SEQUENCE MAY_BE_ARRAY
 #define AS_TYPE_OBJECT   MAY_BE_OBJECT
 
@@ -42,7 +43,7 @@ extern zend_class_entry *AS_Type_ce;
 #define AS_TYPE_DICT ((zend_long)(1 << 28))
 
 /* Every mask a Type case value may carry */
-#define AS_TYPE_ALL_BITS (MAY_BE_BOOL | MAY_BE_LONG | MAY_BE_DOUBLE | MAY_BE_STRING | MAY_BE_ARRAY | MAY_BE_OBJECT | ((uint32_t)AS_TYPE_DICT))
+#define AS_TYPE_ALL_BITS (MAY_BE_BOOL | MAY_BE_LONG | MAY_BE_DOUBLE | MAY_BE_STRING | MAY_BE_NULL | MAY_BE_ARRAY | MAY_BE_OBJECT | ((uint32_t)AS_TYPE_DICT))
 
 /* Registration functions */
 void as_register_Type_enum(void);
