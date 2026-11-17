@@ -9,7 +9,7 @@ description: "How validate() checks raw data: required fields, strict vs loose m
 
 ## Required fields
 
-Every typed, non-nullable property is required. A missing key produces a `Field is required` error. Nullable properties accept a missing key or an explicit `null`, and properties with a declared default value keep it when the key is missing:
+Every property without a default value is required — typed or not, nullable or not. A missing key produces a `Field is required` error. A property with a declared default value is optional and keeps the default when the key is missing; a nullable property also accepts an explicit `null`:
 
 ```php
 <?php
@@ -20,8 +20,8 @@ use function Attributes\Strictify\validate;
 
 class Profile extends BaseModel
 {
-    public string $name;          // required
-    public ?string $nickname = null; // optional (nullable + default)
+    public string $name;             // required (no default)
+    public ?string $nickname = null; // optional (has a default)
 }
 
 try {
