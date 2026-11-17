@@ -1,6 +1,7 @@
 #include "as_sequence.h"
 #include "as_field.h"
 #include "../as_type.h"
+#include "../helpers/as_wrappers.h"
 #include "as_dict.h"
 #include "as_intersection.h"
 #include "as_union.h"
@@ -81,16 +82,6 @@ ZEND_METHOD(AS_Fields_Sequence, __construct)
     zend_update_property_bool(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "sequential", sizeof("sequential") - 1, sequential);
 }
 
-static zend_always_inline void declare_bool_property(zend_class_entry *ce, const char *name, size_t length, bool value)
-{
-    zval default_value;
-    ZVAL_BOOL(&default_value, value);
-    zend_type type = (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL);
-    zend_string *prop_name = zend_string_init(name, length, 1);
-    zend_declare_typed_property(ce, prop_name, &default_value, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, NULL, type);
-    zend_string_release(prop_name);
-}
-
 void as_register_Sequence_class(void)
 {
     zend_class_entry ce;
@@ -106,9 +97,11 @@ void as_register_Sequence_class(void)
     /* Register $of property */
     zend_declare_property_null(AS_Fields_Sequence_ce, "of", sizeof("of") - 1, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY);
 
-    /* Register the $uniqueValues and $sequential flags */
-    declare_bool_property(AS_Fields_Sequence_ce, "uniqueValues", sizeof("uniqueValues") - 1, false);
-    declare_bool_property(AS_Fields_Sequence_ce, "sequential", sizeof("sequential") - 1, true);
+    /* Register the $uniqueValues and $sequential flags. No default value:
+     * on a readonly class a default would initialize the property, making
+     * the constructor's single write fail; the constructor always sets them. */
+    as_declare_typed_property(AS_Fields_Sequence_ce, "uniqueValues", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL));
+    as_declare_typed_property(AS_Fields_Sequence_ce, "sequential", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL));
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AS_Fields_Sequence_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
