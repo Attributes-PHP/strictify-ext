@@ -40,6 +40,12 @@ struct as_spec {
     as_arm *key_arms; // Dict key arms, NULL for the list form
     uint32_t key_arms_count;
     bool is_intersection;
+    // Sequence only: the list form has no key spec, but its keys must be
+    // integers (a string key is a key type error)
+    bool is_sequence;
+    // Sequence only: keys must be the sequential integers 0, 1, 2, ...
+    // (the default; #[Sequence(sequential: false)] opts out)
+    bool require_sequential;
     // Whether validating an element can read its name (a key or element
     // error, a class-arm hydration or a nested array validation): pure
     // basic-type specs never build per-element path strings
@@ -664,6 +670,12 @@ static as_spec *build_spec_from_object(zval *object, as_spec_context *ctx)
             return NULL;
         }
 
+        spec->is_sequence = true;
+
+        // sequential defaults to true unless explicitly set to false
+        zval *sequential = read_object_property(object, "sequential", sizeof("sequential") - 1);
+        spec->require_sequential = sequential == NULL || Z_TYPE_P(sequential) != IS_FALSE;
+
         return spec;
     }
 
@@ -796,6 +808,27 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
         if (!result) {
             free_spec(spec);
             return NULL;
+        }
+
+        spec->is_sequence = true;
+
+        // sequential defaults to true; it can be passed as a named argument
+        // (sequential: false) or as the third positional argument
+        spec->require_sequential = true;
+        for (uint32_t i = 1; i < attribute->argc; i++) {
+            bool is_sequential = attribute->args[i].name != NULL ? zend_string_equals_literal_ci(attribute->args[i].name, "sequential") : i == 2;
+            if (!is_sequential) {
+                continue;
+            }
+
+            zval sequential_value;
+            if (!evaluate_attribute_argument(&sequential_value, attribute, i, scope)) {
+                free_spec(spec);
+                return NULL;
+            }
+            spec->require_sequential = zend_is_true(&sequential_value);
+            zval_ptr_dtor(&sequential_value);
+            break;
         }
 
         return spec;
@@ -963,12 +996,13 @@ static void coerce_scalar_element(uint32_t mask, zval *value)
 
 /*
  * Checks the key kind of an element against the Dict key spec. The list
- * form has no key spec and accepts any key.
+ * form (Sequence) has no key spec, but its keys must still be integers;
+ * the intersection form accepts any key.
  */
 static bool key_matches_arms(const zend_string *str_key, const as_spec *spec)
 {
     if (spec->key_arms == NULL) {
-        return true;
+        return !spec->is_sequence || str_key == NULL;
     }
 
     uint32_t needed = str_key != NULL ? MAY_BE_STRING : MAY_BE_LONG;
@@ -1165,6 +1199,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
     zend_string *base_path = NULL;
     zend_string *str_key;
     zend_ulong num_key;
+    zend_ulong sequential_index = 0;
     zval *element;
 
     // The full path of the array property and the per-element names are
@@ -1196,7 +1231,8 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
             element_field.name = element_name;
 
             if (key_expected == NULL) {
-                key_expected = arms_to_expected_string(spec->key_arms, spec->key_arms_count, false);
+                // The list form has an implicit integer key spec
+                key_expected = spec->key_arms != NULL ? arms_to_expected_string(spec->key_arms, spec->key_arms_count, false) : zend_string_init("integer", sizeof("integer") - 1, 0);
             }
             as_add_field_error_with_expected(AS_ERROR_TYPE, &element_field, prop_info, errors, key_expected);
             zend_string_release(element_name);
@@ -1205,6 +1241,28 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
                 break;
             }
             continue;
+        }
+
+        // A Sequence with sequential: true (the default) must be a list:
+        // string keys were already rejected above, so only an integer key
+        // out of order (a gap or a repeat) lands here
+        if (spec->require_sequential) {
+            if (str_key == NULL && num_key == sequential_index) {
+                sequential_index++;
+            } else {
+                element_name = str_key != NULL ? zend_string_copy(str_key) : zend_long_to_str(num_key);
+                base_path = ensure_base_path(field, base_path);
+                element_field.parent = base_path;
+                element_field.name = element_name;
+
+                as_add_field_error_with_prefix(AS_ERROR_SEQUENCE_KEYS, &element_field, prop_info, errors);
+                zend_string_release(element_name);
+                all_valid = false;
+                if (properties->stop_first_error) {
+                    break;
+                }
+                continue;
+            }
         }
 
         // An array element under a class or nested arm validates (and

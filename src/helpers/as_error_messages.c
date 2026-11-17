@@ -36,6 +36,7 @@ const char *as_default_error_type_messages[] = {
     [AS_ERROR_ULID] = "Must be a valid ULID",
     [AS_ERROR_UUID] = "Must be a valid UUID",
     [AS_ERROR_UNION] = "Must be {expected}",
+    [AS_ERROR_SEQUENCE_KEYS] = "Must be a sequential list (keys 0, 1, 2, ...)",
     [AS_ERROR_EXTRA] = "Extra inputs are not permitted",
 };
 
@@ -67,6 +68,7 @@ const char *as_error_type_names[] = {
     [AS_ERROR_ULID] = "ulid",
     [AS_ERROR_UUID] = "uuid",
     [AS_ERROR_UNION] = "union",
+    [AS_ERROR_SEQUENCE_KEYS] = "sequence_keys",
     [AS_ERROR_EXTRA] = "extra",
 };
 
