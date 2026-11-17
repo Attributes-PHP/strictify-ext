@@ -18,7 +18,8 @@ static const struct {
     const char *const_name;
     zend_long value;
 } type_cases[] = {
-    {"bool", "T_BOOL", AS_TYPE_BOOL}, {"int", "T_INT", AS_TYPE_INT}, {"float", "T_FLOAT", AS_TYPE_FLOAT}, {"string", "T_STRING", AS_TYPE_STRING}, {"sequence", "T_SEQUENCE", AS_TYPE_SEQUENCE}, {"dict", "T_DICT", AS_TYPE_DICT}, {"object", "T_OBJECT", AS_TYPE_OBJECT},
+    {"bool", "T_BOOL", AS_TYPE_BOOL}, {"int", "T_INT", AS_TYPE_INT},          {"float", "T_FLOAT", AS_TYPE_FLOAT}, {"string", "T_STRING", AS_TYPE_STRING}, {"sequence", "T_SEQUENCE", AS_TYPE_SEQUENCE},
+    {"dict", "T_DICT", AS_TYPE_DICT}, {"object", "T_OBJECT", AS_TYPE_OBJECT},
 };
 
 #define TYPE_CASES_COUNT (sizeof(type_cases) / sizeof(type_cases[0]))
