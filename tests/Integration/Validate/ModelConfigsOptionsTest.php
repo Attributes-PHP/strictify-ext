@@ -175,20 +175,23 @@ describe('ModelConfigs extra option', function () {
             ->toBe('1');
     });
 
-    it('resolves null extra to ignore in a nested model without #[AllowDynamicProperties], even when the root allows dynamic properties', function () {
-        $model = new
-            #[\AllowDynamicProperties]
-            class extends BaseModel {
-                public string $name;
+    it(
+        'resolves null extra to ignore in a nested model without #[AllowDynamicProperties], even when the root allows dynamic properties',
+        function () {
+            $model = new
+                #[\AllowDynamicProperties]
+                class extends BaseModel {
+                    public string $name;
 
-                public OptionsInnerModel $addr;
-            };
+                    public OptionsInnerModel $addr;
+                };
 
-        $result = validate(['name' => 'J', 'junk' => 1, 'addr' => ['street' => 's', 'zip' => '1']], $model);
-        expect($result->junk)->toBe(1)
-            ->and(isset($result->addr->zip))
-            ->toBeFalse();
-    });
+            $result = validate(['name' => 'J', 'junk' => 1, 'addr' => ['street' => 's', 'zip' => '1']], $model);
+            expect($result->junk)->toBe(1)
+                ->and(isset($result->addr->zip))
+                ->toBeFalse();
+        },
+    );
 
     it('reports every unknown key with extra=forbid', function () {
         $model = new
@@ -489,19 +492,21 @@ describe('ModelConfigs string normalization options', function () {
 describe('ModelConfigs inheritance', function () {
     it('inherits ModelConfigs from a parent class', function () {
         // strict: false, strToLower and aliasGenerator: 'snake' come from the parent class
-        $result = validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John'], new OptionsConfigChildModel());
+        $result = validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John'], new OptionsConfigChildModel);
         expect($result->count)->toBe(5)
-            ->and($result->label)->toBe('abc')
-            ->and($result->firstName)->toBe('john'); // strToLower is inherited too
+            ->and($result->label)
+            ->toBe('abc')
+            ->and($result->firstName)
+            ->toBe('john'); // strToLower is inherited too
     });
 
     it('lets a child class override the parent ModelConfigs entirely', function () {
         // the child's own attribute wins: strict mode back on, no generator, no strToLower
-        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel());
+        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel);
         expect($result->label)->toBe('ABC');
 
         try {
-            validate(['count' => '5', 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel());
+            validate(['count' => '5', 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe(['count' => ['Must be integer']]);
@@ -523,8 +528,7 @@ describe('ModelConfigs inheritance', function () {
             'title' => 'HELLO',
             'inner' => ['count' => 5, 'label' => 'ABC', 'firstName' => 'John'],
         ], $model);
-        expect($result->title)->toBe('hello')
-            ->and($result->inner->label)->toBe('ABC');
+        expect($result->title)->toBe('hello')->and($result->inner->label)->toBe('ABC');
 
         // the nested model is strict: a numeric string is rejected there
         // while the root would coerce it

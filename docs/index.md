@@ -1,13 +1,13 @@
 ---
 title: "Overview"
-description: "Pydantic-inspired PHP extension that validates data via type hints at native speed."
+description: "Strictify-ext is PHP extension that brings data validation via type-hinting at native speed."
 ---
 
 # Strictify
 
 ![Strictify](assets/images/strictify-wallpaper.png)
 
-**Strictify** is a Pydantic-inspired PHP extension for validating data via type hints at lightning speed. The validation logic is implemented in C and compiled into the PHP engine, so your model types are the schema: no configuration files, no YAML.
+**Strictify** is a C extension that brings data validation via type-hinting at lightning speed to PHP. So your model types are the schema: no configuration files, no YAML.
 
 ```php
 <?php
@@ -59,13 +59,3 @@ New here? The [Quickstart](/quickstart/) takes under a minute.
 - **Guides** — task-oriented: [validating payloads](/guides/validating-payloads/), [nested models and arrays](/guides/nested-models/), [aliases](/guides/aliases/), [error messages](/guides/error-messages/), [sensitive data](/guides/sensitive-data/), [calling functions](/guides/calling-functions/), [serializing models](/guides/serializing-models/).
 - **Reference** — [validate()](/validate/), [toDict()](/toDict/), [call()](/call/), [ModelConfigs](/model-configs/), [Constraints](/constraints/), [Exceptions](/exceptions/), [API](/api/).
 - [FAQ](/faq/) and [Changelog](/changelog/).
-
-## Running this documentation locally
-
-```bash
-pip install zensical
-python tools/generate_api_docs.py   # regenerate docs/api.md from the stubs
-zensical serve
-```
-
-The site serves at `http://localhost:8000` and reloads as you edit the Markdown under `docs/`.

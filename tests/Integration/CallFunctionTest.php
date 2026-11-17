@@ -457,7 +457,11 @@ describe('call function sensitive parameters', function () {
         SensitiveCallRecorder::$backtrace = null;
 
         try {
-            call('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws', [], ['user' => 'andre', 'password' => $secret]);
+            call(
+                'Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_throws',
+                [],
+                ['user' => 'andre', 'password' => $secret],
+            );
             expect(false)->toBeTrue('Error expected');
         } catch (Error $e) {
             expect($e->getMessage())->toBe('sensitive failure');
@@ -475,10 +479,16 @@ describe('call function sensitive parameters', function () {
 
     it('reports a missing sensitive dependency positionally, without the parameter name', function () {
         try {
-            call('Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required', [], ['user' => 'andre']);
+            call(
+                'Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required',
+                [],
+                ['user' => 'andre'],
+            );
             expect(false)->toBeTrue('Error expected');
         } catch (Error $e) {
-            expect($e->getMessage())->toBe('No value provided for parameter 2 of Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required().');
+            expect($e->getMessage())->toBe(
+                'No value provided for parameter 2 of Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required().',
+            );
             expect($e->getMessage())->not->toContain('password');
         }
     });

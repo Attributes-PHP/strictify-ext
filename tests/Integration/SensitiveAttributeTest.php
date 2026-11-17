@@ -77,7 +77,7 @@ it('omits aliased sensitive fields from toDict() unless includeSensitive is set'
 it('omits sensitive values inside nested models unless includeSensitive is set', function () {
     $token = str_repeat('t', 8);
     $secret = str_repeat('x', 8);
-    $model = new SensitiveOuterModel();
+    $model = new SensitiveOuterModel;
 
     validate(['inner' => ['token' => $token, 'label' => 'x'], 'password' => $secret], $model);
 
@@ -121,7 +121,7 @@ it('does not redact values of non-sensitive properties in error messages', funct
 describe('sensitive properties of every type', function () {
     it('omits sensitive scalar/array properties and includes them with includeSensitive', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveScalarTypesModel();
+        $model = new SensitiveScalarTypesModel;
 
         validate([
             'label' => 'visible',
@@ -153,7 +153,7 @@ describe('sensitive properties of every type', function () {
     });
 
     it('omits sensitive object-typed properties and includes them with includeSensitive', function () {
-        $model = new SensitiveObjectTypesModel();
+        $model = new SensitiveObjectTypesModel;
 
         validate([
             'label' => 'visible',
@@ -237,7 +237,7 @@ describe('sensitive properties of every type', function () {
 describe('sensitive properties in debug output', function () {
     it('masks sensitive properties in print_r output but keeps the real value on the model', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveDebugModel();
+        $model = new SensitiveDebugModel;
 
         validate(['name' => 'andre', 'password' => $secret], $model);
 
@@ -251,7 +251,7 @@ describe('sensitive properties in debug output', function () {
 
     it('masks sensitive properties in var_dump output', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveDebugModel();
+        $model = new SensitiveDebugModel;
 
         validate(['name' => 'andre', 'password' => $secret], $model);
 
@@ -267,7 +267,7 @@ describe('sensitive properties in debug output', function () {
     it('masks sensitive properties of nested models in dumps', function () {
         $token = str_repeat('t', 8);
         $secret = str_repeat('x', 8);
-        $model = new SensitiveOuterModel();
+        $model = new SensitiveOuterModel;
 
         validate(['inner' => ['token' => $token, 'label' => 'visible'], 'password' => $secret], $model);
 
@@ -283,7 +283,7 @@ describe('sensitive properties in debug output', function () {
 
     it('masks sensitive properties of every type in dumps', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveScalarTypesModel();
+        $model = new SensitiveScalarTypesModel;
 
         validate([
             'label' => 'visible',
@@ -305,7 +305,7 @@ describe('sensitive properties in debug output', function () {
     });
 
     it('masks sensitive object-typed and BaseModel-typed properties in dumps', function () {
-        $model = new SensitiveObjectTypesModel();
+        $model = new SensitiveObjectTypesModel;
 
         validate([
             'label' => 'visible',
@@ -339,11 +339,11 @@ describe('sensitive properties in debug output', function () {
 
     it('keeps real values for json_encode, array cast, get_object_vars and serialize', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveDebugModel();
+        $model = new SensitiveDebugModel;
 
         validate(['name' => 'andre', 'password' => $secret], $model);
 
-        expect(json_encode($model))->toBe('{"name":"andre","password":"' . $secret . '"}');
+        expect(json_encode($model))->toBe('{"name":"andre","password":"'.$secret.'"}');
         expect((array) $model)->toBe(['name' => 'andre', 'password' => $secret]);
         expect(get_object_vars($model))->toBe(['name' => 'andre', 'password' => $secret]);
         expect(unserialize(serialize($model))->password)->toBe($secret);
@@ -351,7 +351,7 @@ describe('sensitive properties in debug output', function () {
 
     it('masks sensitive properties dumped inside backtrace arguments', function () {
         $secret = str_repeat('x', 8);
-        $model = new SensitiveDebugModel();
+        $model = new SensitiveDebugModel;
 
         validate(['name' => 'andre', 'password' => $secret], $model);
 
