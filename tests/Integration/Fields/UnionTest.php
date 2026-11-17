@@ -29,6 +29,7 @@ use function Attributes\Strictify\validate;
 use const Attributes\Strictify\T_BOOL;
 use const Attributes\Strictify\T_FLOAT;
 use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_NULL;
 use const Attributes\Strictify\T_STRING;
 
 class UnionAddress extends BaseModel
@@ -41,6 +42,8 @@ describe('Union constructor argument validation', function () {
         expect(new Union($arm))->toBeInstanceOf(Union::class);
     })->with([
         Type::int->value,
+        Type::null->value,
+        T_NULL,
         stdClass::class,
         DateTimeInterface::class,
         Type::class,
@@ -228,22 +231,38 @@ describe('Union declared directly on a non-array property', function () {
         'must contain the same type-hints as the native union hint'
     );
 
-    it('does not apply the rule to a nullable single-type hint', function () {
+    it('requires T_NULL in the arms of a nullable hint', function () {
         $model = new class extends BaseModel {
-            #[Union(T_INT)]
-            public ?int $example;
+            #[Union(T_STRING)]
+            public ?string $example;
         };
 
-        expect(validate(['example' => 5], $model)->example)->toBe(5);
+        validate(['example' => 'a'], $model);
+    })->throws(
+        InvalidBaseModelException::class,
+        'must contain the same type-hints as the native union hint'
+    );
+
+    it('accepts T_NULL as an arm of a nullable hint', function () {
+        $model = new class extends BaseModel {
+            #[Union(T_STRING, T_NULL)]
+            public ?string $example;
+        };
+
+        expect(validate(['example' => null], $model)->example)->toBeNull()
+            ->and(validate(['example' => 'a'], $model)->example)
+            ->toBe('a');
     });
 
-    it('ignores nullability when comparing the arms against a union hint', function () {
+    it('includes T_NULL for a nullable union hint', function () {
         $model = new class extends BaseModel {
-            #[Union(T_INT | T_FLOAT)]
+            #[Union(T_INT | T_FLOAT | T_NULL)]
             public int|float|null $example;
         };
 
-        expect(validate(['example' => 1.5], $model)->example)->toBe(1.5);
+        expect(validate(['example' => null], $model)->example)->toBeNull()
+            ->and(validate(['example' => 1.5], $model)->example)
+            ->toBe(1.5);
     });
 
     it('accepts a bitmask arm combining several types', function () {

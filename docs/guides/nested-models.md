@@ -107,7 +107,7 @@ class Measurement extends BaseModel
 $m = validate(['value' => 1.5], new Measurement());
 ```
 
-On a **union-typed** property the arms must repeat the native hint's type-hints exactly — order-insensitive, nullability ignored, class names matched case-insensitively. A subset or an extra type is a malformed model and throws an `InvalidBaseModelException` at validation:
+On a **union-typed** property the arms must repeat the native hint's type-hints exactly — order-insensitive, class names matched case-insensitively. A subset or an extra type is a malformed model and throws an `InvalidBaseModelException` at validation. A **nullable** hint (`?string`) counts `null` as one of its type-hints, so the arms must include `T_NULL`:
 
 ```php
 <?php
@@ -116,13 +116,19 @@ class Bad extends BaseModel
     #[Union(T_INT)] // missing float: InvalidBaseModelException
     public int|float $value;
 }
+
+class AlsoBad extends BaseModel
+{
+    #[Union(T_STRING)] // missing T_NULL on a ?string hint: InvalidBaseModelException
+    public ?string $name;
+}
 ```
 
 An array value under a directly declared `Union` throws an `InvalidBaseModelException` — wrap the array in `Sequence(of: new Union(...))` instead.
 
-Element types are named by the namespace constants `T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_NULL`, `T_SEQUENCE`, `T_OBJECT`, `T_DICT` — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — which hold the same values as the `Attributes\Strictify\Type` enum cases (`Type::int`, `Type::string`, ...). Constants may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
+Element types are named by the namespace constants `T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_NULL`, `T_SEQUENCE`, `T_OBJECT`, `T_DICT` — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — which hold the same values as the `Attributes\Strictify\Type` enum cases (`Type::int`, `Type::string`, ..., `Type::null`). Constants may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
 
-When the declaration order of the arms is irrelevant, the `Union` wrapper can be dropped and the combined type mask passed directly to `of:` — or to `key:`, which accepts only integer and string masks:
+When the declaration order of the arms is irrelevant, the `Union` wrapper can be dropped and the combined type mask passed directly to `of:` — or to `key:`, which accepts any PHP-castable key-type mask (integer, string, float, boolean, null):
 
 ```php
 <?php

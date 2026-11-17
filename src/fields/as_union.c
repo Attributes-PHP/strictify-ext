@@ -322,45 +322,73 @@ bool as_validate_Union_scalar(zval *constraint, as_field *field, as_property_inf
 /*
  * Compile-time consistency rule: a Union attribute declared directly on a
  * property whose native hint is a union must contain the same type-hints as
- * the hint (order-insensitive, nullability ignored; class names compared
+ * the hint (order-insensitive; a nullable hint requires the T_NULL arm,
+ * since nullability is part of the hint; class names compared
  * case-insensitively). Hints with an intersection (DNF) arm are not
  * comparable and skip the rule. On mismatch throws InvalidBaseModelException.
  */
+
+/* The Union's class-name arms must equal the hint list's named arms (case-insensitive) */
+static bool union_class_arms_match_hint(zval *arms, const zend_type_list *list)
+{
+    uint32_t hint_count = 0;
+    for (uint32_t i = 0; i < list->num_types; i++) {
+        if (ZEND_TYPE_HAS_NAME(list->types[i])) {
+            hint_count++;
+        }
+    }
+
+    uint32_t union_count = 0;
+    zval *arm;
+    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(arms), arm)
+    {
+        if (Z_TYPE_P(arm) != IS_STRING) {
+            continue;
+        }
+        union_count++;
+        bool found = false;
+        for (uint32_t i = 0; i < list->num_types; i++) {
+            if (ZEND_TYPE_HAS_NAME(list->types[i]) && zend_string_equals_ci(ZEND_TYPE_NAME(list->types[i]), Z_STR_P(arm))) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            return false;
+        }
+    }
+    ZEND_HASH_FOREACH_END();
+
+    return union_count == hint_count;
+}
+
 bool as_check_union_matches_hint(zval *union_instance, zend_type hint, zend_class_entry *declaring_ce, zend_string *prop_name)
 {
     zval *arms = zend_read_property(AS_Fields_Union_ce, Z_OBJ_P(union_instance), "of", sizeof("of") - 1, false, NULL);
     ZEND_ASSERT(Z_TYPE_P(arms) == IS_ARRAY);
 
-    uint32_t hint_mask = ZEND_TYPE_PURE_MASK(hint) & ~(uint32_t)MAY_BE_NULL;
+    uint32_t hint_mask = ZEND_TYPE_PURE_MASK(hint);
     uint32_t union_mask = 0;
-    uint32_t union_class_count = 0;
     bool union_has_shape_arm = false;
 
     zval *arm;
     ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(arms), arm)
     {
-        switch (Z_TYPE_P(arm)) {
-            case IS_LONG:
-                union_mask |= union_normalize_mask(Z_LVAL_P(arm));
-                break;
-            case IS_STRING:
-                union_class_count++;
-                break;
-            case IS_OBJECT: {
-                zend_class_entry *arm_ce = Z_OBJCE_P(arm);
-                if (arm_ce == AS_Type_ce) {
-                    zval *case_value = zend_enum_fetch_case_value(Z_OBJ_P(arm));
-                    union_mask |= union_normalize_mask(Z_TYPE_P(case_value) == IS_LONG ? Z_LVAL_P(case_value) : 0);
-                } else {
-                    // Intersection/Sequence/Union/Dict shape arm: cannot
-                    // correspond to a native hint arm on a union property
-                    union_has_shape_arm = true;
-                }
-                break;
-            }
-            default:
-                break;
+        if (Z_TYPE_P(arm) == IS_STRING) {
+            continue; // class-name arms are compared separately below
         }
+        if (Z_TYPE_P(arm) == IS_LONG) {
+            union_mask |= union_normalize_mask(Z_LVAL_P(arm));
+            continue;
+        }
+        if (Z_TYPE_P(arm) == IS_OBJECT && Z_OBJCE_P(arm) == AS_Type_ce) {
+            zval *case_value = zend_enum_fetch_case_value(Z_OBJ_P(arm));
+            union_mask |= union_normalize_mask(Z_TYPE_P(case_value) == IS_LONG ? Z_LVAL_P(case_value) : 0);
+            continue;
+        }
+        // Intersection/Sequence/Union/Dict shape arm: cannot correspond to
+        // a native hint arm on a union property
+        union_has_shape_arm = true;
     }
     ZEND_HASH_FOREACH_END();
 
@@ -368,38 +396,12 @@ bool as_check_union_matches_hint(zval *union_instance, zend_type hint, zend_clas
 
     if (matches && ZEND_TYPE_HAS_LIST(hint)) {
         const zend_type_list *list = ZEND_TYPE_LIST(hint);
-        uint32_t hint_class_count = 0;
         for (uint32_t i = 0; i < list->num_types; i++) {
             if (ZEND_TYPE_IS_INTERSECTION(list->types[i])) {
                 return true; // DNF arm: rule not applicable
             }
-            if (ZEND_TYPE_HAS_NAME(list->types[i])) {
-                hint_class_count++;
-            }
         }
-
-        if (union_class_count != hint_class_count) {
-            matches = false;
-        } else {
-            ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(arms), arm)
-            {
-                if (Z_TYPE_P(arm) != IS_STRING) {
-                    continue;
-                }
-                bool found = false;
-                for (uint32_t i = 0; i < list->num_types; i++) {
-                    if (ZEND_TYPE_HAS_NAME(list->types[i]) && zend_string_equals_ci(ZEND_TYPE_NAME(list->types[i]), Z_STR_P(arm))) {
-                        found = true;
-                        break;
-                    }
-                }
-                if (!found) {
-                    matches = false;
-                    break;
-                }
-            }
-            ZEND_HASH_FOREACH_END();
-        }
+        matches = union_class_arms_match_hint(arms, list);
     }
 
     if (!matches) {

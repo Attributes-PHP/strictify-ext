@@ -580,6 +580,20 @@ static bool hint_is_union_type(zend_type type)
 }
 
 /*
+ * Hints the Union-consistency rule applies to: union hints and nullable
+ * hints (a ?string property with #[Union(...)] must list T_NULL among the
+ * arms). mixed and untyped properties are excluded.
+ */
+static bool hint_requires_union_match(zend_type type)
+{
+    uint32_t pure = ZEND_TYPE_PURE_MASK(type);
+    if (pure == MAY_BE_ANY) {
+        return false;
+    }
+    return hint_is_union_type(type) || (pure & (uint32_t)MAY_BE_NULL) != 0;
+}
+
+/*
  * Compiles one field slot on first use: resolves the field name,
  * flattens the native type hint and precomputes the default-value
  * presence. A failure (pending exception from a bad Alias attribute)
@@ -717,7 +731,7 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
      * a mismatch is a malformed model and throws InvalidBaseModelException
      * once per field compile.
      */
-    if (!cf->untyped && hint_is_union_type(type) && cf->constraints != NULL) {
+    if (!cf->untyped && hint_requires_union_match(type) && cf->constraints != NULL) {
         for (uint32_t i = 0; i < cf->constraints_count; i++) {
             if (cf->constraints[i].validate == as_validate_Union_scalar && !as_check_union_matches_hint(&cf->constraints[i].instance, type, cf->declaring_ce, cf->prop->name)) {
                 if (resolved != cf->prop->name) {
