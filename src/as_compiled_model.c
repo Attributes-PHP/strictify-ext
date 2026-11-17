@@ -651,8 +651,9 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
                 lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1)) {
                 if (!cf->untyped && (cf->contains_code & MAY_BE_ARRAY) == 0) {
                     zend_throw_exception_ex(
-                        zend_ce_value_error, 0, "Sequence/Dict can only be declared on array-like properties (array, a union containing array, mixed or untyped); property %s::$%s is not array-like.",
-                        ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name)
+                        class_AS_Exceptions_InvalidBaseModelException, 0,
+                        "Sequence/Dict can only be declared on array-like properties (array, a union containing array, mixed or untyped); property %s::$%s is not array-like.", ZSTR_VAL(cf->declaring_ce->name),
+                        ZSTR_VAL(cf->prop->name)
                     );
                     if (resolved != cf->prop->name) {
                         zend_string_release(resolved);
@@ -664,8 +665,8 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
                 const uint32_t non_null = cf->contains_code & ~(uint32_t)MAY_BE_NULL;
                 if (!cf->untyped && non_null == MAY_BE_ARRAY) {
                     zend_throw_exception_ex(
-                        zend_ce_value_error, 0, "Union cannot be declared directly on an array property %s::$%s; use Sequence(of: new Union(...)) or Dict(of: ...) instead.", ZSTR_VAL(cf->declaring_ce->name),
-                        ZSTR_VAL(cf->prop->name)
+                        class_AS_Exceptions_InvalidBaseModelException, 0, "Union cannot be declared directly on an array property %s::$%s; use Sequence(of: new Union(...)) or Dict(of: ...) instead.",
+                        ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name)
                     );
                     if (resolved != cf->prop->name) {
                         zend_string_release(resolved);

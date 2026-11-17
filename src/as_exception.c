@@ -6,15 +6,18 @@
 
 zend_class_entry *class_AS_Exceptions_BaseException;
 zend_class_entry *class_AS_Exceptions_ValidationException;
+zend_class_entry *class_AS_Exceptions_InvalidBaseModelException;
 
 static void register_BaseException_class(void);
 static void register_ValidationException_class(void);
+static void register_InvalidBaseModelException_class(void);
 
 void as_register_all_exception_classes(void)
 {
     register_BaseException_class();
     register_ValidationException_class();
-    ZEND_ASSERT(class_AS_Exceptions_BaseException != NULL && class_AS_Exceptions_ValidationException != NULL);
+    register_InvalidBaseModelException_class();
+    ZEND_ASSERT(class_AS_Exceptions_BaseException != NULL && class_AS_Exceptions_ValidationException != NULL && class_AS_Exceptions_InvalidBaseModelException != NULL);
 }
 
 void as_throw_validation_exception(zval *errors)
@@ -31,6 +34,13 @@ static void register_BaseException_class(void)
     zend_class_entry ce;
     INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Exceptions", "BaseException", class_AS_Exceptions_BaseException_methods);
     class_AS_Exceptions_BaseException = zend_register_internal_class_ex(&ce, zend_ce_exception);
+}
+
+static void register_InvalidBaseModelException_class(void)
+{
+    zend_class_entry ce;
+    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Exceptions", "InvalidBaseModelException", class_AS_Exceptions_InvalidBaseModelException_methods);
+    class_AS_Exceptions_InvalidBaseModelException = zend_register_internal_class_ex(&ce, class_AS_Exceptions_BaseException);
 }
 
 static void register_ValidationException_class(void)

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Fields;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\BaseException;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;
 use Attributes\Strictify\Fields\Intersection;
@@ -317,7 +319,7 @@ describe('Union declared directly on a non-array property', function () {
 
         validate(['example' => [1]], $model);
     })->throws(
-        ValueError::class,
+        InvalidBaseModelException::class,
         'Union cannot be applied directly to array values; use Sequence(of: new Union(...)) or Dict(of: ...) instead.',
     );
 
@@ -328,7 +330,7 @@ describe('Union declared directly on a non-array property', function () {
         };
 
         validate(['values' => [1]], $model);
-    })->throws(ValueError::class, 'Union cannot be declared directly on an array property');
+    })->throws(InvalidBaseModelException::class, 'Union cannot be declared directly on an array property');
 });
 
 describe('array attribute placement rules', function () {
@@ -339,7 +341,7 @@ describe('array attribute placement rules', function () {
         };
 
         validate(['count' => 5], $model);
-    })->throws(ValueError::class, 'Sequence/Dict can only be declared on array-like properties');
+    })->throws(InvalidBaseModelException::class, 'Sequence/Dict can only be declared on array-like properties');
 
     it('throws a ValueError for Dict on a union property without an array arm', function () {
         $model = new class extends BaseModel {
@@ -348,7 +350,7 @@ describe('array attribute placement rules', function () {
         };
 
         validate(['ratio' => 1.5], $model);
-    })->throws(ValueError::class, 'Sequence/Dict can only be declared on array-like properties');
+    })->throws(InvalidBaseModelException::class, 'Sequence/Dict can only be declared on array-like properties');
 
     it('reports Must be array for a non-array value on a mixed property with Sequence', function () {
         $model = new class extends BaseModel {

@@ -1,6 +1,6 @@
 ---
 title: "Exceptions"
-description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, ValueError cases, and the default error message catalog with translation keys."
+description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException and ValueError cases, and the default error message catalog with translation keys."
 ---
 
 # Exceptions
@@ -34,14 +34,19 @@ try {
 
 Field paths use the resolved field names — the [alias](/guides/aliases/) when one is declared.
 
+## InvalidBaseModelException
+
+`Attributes\Strictify\Exceptions\InvalidBaseModelException` extends `BaseException` and is thrown when a model declares an attribute on an invalid property type — a malformed model definition, not a data error:
+
+- `Union` declared directly on an `array` property, or receiving an array value on `mixed`/untyped (use `Sequence(of: new Union(...))` / `Dict(of: ...)` instead),
+- `Sequence`/`Dict` declared on a property that is not array-like (not `array`, a union containing `array`, `mixed` or untyped).
+
 ## ValueError
 
 A `ValueError` is thrown when an attribute spec is malformed, for example:
 
 - an unresolvable class-name arm in `Union`/`Intersection`/`Dict`,
 - an unsupported `Type` value in an array attribute,
-- `Union` declared directly on an `array` property, or applied to an array value (use `Sequence(of: new Union(...))` / `Dict(of: ...)` instead),
-- `Sequence`/`Dict` declared on a property that is not array-like,
 - a `Dict` key type outside integer and string,
 - an invalid `ModelConfigs` option value (the message lists the valid options),
 - an invalid timezone name in a `DateTime` constraint (at construction).

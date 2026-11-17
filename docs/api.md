@@ -113,6 +113,10 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public function __construct(array $allErrors)` |
 | `public function getErrors(): array` |
 
+### `Attributes\Strictify\Exceptions\InvalidBaseModelException` — class extends `BaseException`
+
+- Attribute: no
+
 ## `Attributes\Strictify\Fields`
 
 ### `Attributes\Strictify\Fields\Alias` — readonly class implements Field

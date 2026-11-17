@@ -8,4 +8,6 @@ namespace Attributes\Strictify\Exceptions {
        public function __construct(array $allErrors) {}
        public function getErrors(): array {}
     }
+
+    class InvalidBaseModelException extends BaseException {}
 }

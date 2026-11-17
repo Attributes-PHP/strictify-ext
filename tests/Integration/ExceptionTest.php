@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration;
 
 use Attributes\Strictify\Exceptions\BaseException;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 
 it('BaseException exists and can be thrown', function () {
@@ -32,4 +33,18 @@ it('ValidationException exists, can be thrown and has all necessary methods and 
     expect($exception)->not->toBeNull();
     expect($exception)->toBeInstanceOf(ValidationException::class);
     expect($exception->getErrors())->toBe(['number' => 'Invalid number']);
+});
+
+it('InvalidBaseModelException exists, extends BaseException and can be thrown', function () {
+    $exception = null;
+
+    try {
+        throw new InvalidBaseModelException('Testing');
+    } catch (BaseException $e) {
+        $exception = $e;
+    }
+
+    expect($exception)->not->toBeNull();
+    expect($exception)->toBeInstanceOf(InvalidBaseModelException::class);
+    expect($exception->getMessage())->toBe('Testing');
 });
