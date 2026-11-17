@@ -182,14 +182,28 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 | Property | Default |
 | -------- | ------- |
-| `public string $required` | — |
-| `public string $type` | — |
-
-**Methods**
-
-| Method |
-| ------ |
-| `public function __construct(string $required, string $type)` |
+| `public string $required` | `'Field is required'` |
+| `public string $type` | `'Must be {expected}'` |
+| `public string $alpha_dash` | `'Must only contain letters, numbers, dashes and underscores'` |
+| `public string $alpha_dash_type` | `'Must be a string containing only letters, numbers, dashes and underscores'` |
+| `public string $ascii` | `'Must only contain ASCII characters'` |
+| `public string $ascii_type` | `'Must be a string containing only ASCII characters'` |
+| `public string $between` | `'Must be between {expected}'` |
+| `public string $between_type` | `'Must be a number between {expected}'` |
+| `public string $contains` | `'Must contain {expected}'` |
+| `public string $datetime` | `'Must be a datetime in the format {expected}'` |
+| `public string $ends_with` | `'Must end with one of: {expected}'` |
+| `public string $in` | `'Must be one of: {expected}'` |
+| `public string $max` | `'Must be at most {expected}'` |
+| `public string $min` | `'Must be at least {expected}'` |
+| `public string $multiple_of` | `'Must be a multiple of {expected}'` |
+| `public string $regex` | `'Must match the pattern {expected}'` |
+| `public string $size` | `'Must have a size {expected}'` |
+| `public string $starts_with` | `'Must start with one of: {expected}'` |
+| `public string $ulid` | `'Must be a valid ULID'` |
+| `public string $uuid` | `'Must be a valid UUID'` |
+| `public string $union` | `'Must be {expected}'` |
+| `public string $sequence_keys` | `'Must be a sequential list (keys 0, 1, 2, ...)'` |
 
 ### `Attributes\Strictify\Fields\Field` — interface
 

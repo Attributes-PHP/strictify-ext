@@ -48,7 +48,13 @@ Every template — the defaults, translated messages and `ErrorMessage` override
 
 ## Per-property overrides: ErrorMessage
 
-Override the `required` and `type` templates of one property with the `ErrorMessage` attribute:
+Override any of a property's templates with the `ErrorMessage` attribute — one named argument per key from the [default catalog](#default-error-messages) above (`required`, `type`, `min`, `max`, `sequence_keys`, ...), each defaulting to that key's default message:
+
+```php
+#[ErrorMessage(required: 'Name is mandatory', min: 'Too small, at least {expected}')]
+```
+
+The `extra` key is discarded: extra inputs have no owning property, so that error always uses the translator or its default.
 
 ```php
 <?php

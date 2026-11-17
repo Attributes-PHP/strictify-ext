@@ -352,7 +352,7 @@ Each constraint has a default message following the `Must be ...` pattern, with 
 // ['tag' => ["Must be one of: 'a', 'b', true"]]
 ```
 
-The `ErrorMessage` attribute only declares `required` and `type` templates, so constraint errors always use their default messages. Constraints applied through userland classes can return any message they want (see below).
+A constraint error of one property can be overridden with `#[ErrorMessage]` under its catalog key — e.g. `#[ErrorMessage(min: 'At least {expected}')]` — see [per-property overrides](/guides/error-messages/#per-property-overrides-errormessage). Constraints applied through userland classes can return any message they want (see below).
 
 Every default message has a stable translation key (`between`, `min`, `regex`, ...) — see the [error catalog](/guides/error-messages/#default-error-messages) and [translating error messages](/guides/error-messages/). Userland `message()` output is used verbatim and is not passed through the translator; translate inside `message()` yourself.
 

@@ -12,6 +12,7 @@ All notable changes to Strictify are documented here, newest first. Install a re
 ### Added
 
 - `BaseModel::toDict()` gains a `useAlias` parameter: `toDict(bool $includeSensitive = false, bool $useAlias = false): array`. The output is keyed by the raw PHP property names by default; pass `useAlias: true` to key it by the resolved field names (`#[Alias]` / `aliasGenerator`, including each nested model's own generator), which round-trips through `validate()`.
+- `#[ErrorMessage]` now accepts every key from the default error catalog as a named argument — `required`, `type`, `alpha_dash`, `between`, `min`, `max`, `sequence_keys`, ... — each defaulting to that key's default message, so any per-property template (constraint errors included) can be overridden. The `extra` key is discarded: extra inputs have no owning property and keep using the translator or the default message.
 
 ### Changed
 
