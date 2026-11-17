@@ -107,13 +107,13 @@ $m = validate(['value' => 1.5, 'count' => 3], new Measurement());
 
 An array value under a directly declared `Union` throws an `InvalidBaseModelException` — wrap the array in `Sequence(of: new Union(...))` instead.
 
-Element types come from the `Attributes\Strictify\Type` enum (`Type::int`, `Type::string`, `Type::bool`, `Type::float`, `Type::sequence`, `Type::object`, `Type::dict`) or the matching namespace constants (`int`, `string`, `bool`, `float`, `sequence`, `object`), and may combine with the bitwise OR operator (`bool | int`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
+Element types come from the `Attributes\Strictify\Type` enum (`Type::int`, `Type::string`, `Type::bool`, `Type::float`, `Type::sequence`, `Type::object`, `Type::dict`) or the matching namespace constants (`T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_SEQUENCE`, `T_OBJECT`) — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — and may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
 
 The same attributes compose with `new` expressions to describe nested arrays:
 
 ```php
 <?php
-#[Sequence(of: new Union(string, int, float))]
+#[Sequence(of: new Union(T_STRING, T_INT, T_FLOAT))]
 public array $values;
 ```
 

@@ -3,14 +3,15 @@
  *
  * Registers the Attributes\\Strictify\Type int-backed enum that names the
  * element types accepted by the array type-hint attributes (Sequence,
- * Union, Intersection and Dict), plus the sugar constants of the same
- * names in the Strictify namespace so attribute arguments read
- * #[Union(bool, int, string)].
+ * Union, Intersection and Dict), plus T_-prefixed sugar constants in the
+ * Strictify namespace (T_BOOL, T_INT, ...) so attribute arguments read
+ * #[Union(T_BOOL, T_INT, T_STRING)] without colliding with the reserved
+ * type-hint keywords of the same names.
  *
  * The backing values are the Zend engine's MAY_BE_* type masks, so C code
  * can compare Type case values against engine masks directly, without a
  * translation table. Attribute arguments may combine them with the
- * bitwise OR operator (#[Union(bool | int | string)]); the bitmask form
+ * bitwise OR operator (#[Union(T_BOOL | T_INT | T_STRING)]); the bitmask form
  * loses the declaration order that plain argument lists keep, so
  * coercions apply in a fixed order instead.
  *
