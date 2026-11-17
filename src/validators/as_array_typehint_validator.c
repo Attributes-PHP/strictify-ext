@@ -87,8 +87,8 @@ static const struct {
     const char *name;
     size_t length;
 } basic_type_names[] = {
-    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1},
-    {MAY_BE_STRING, "string", sizeof("string") - 1}, {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1},
+    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
+    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
 };
 
 #define BASIC_TYPE_NAMES_SIZE (sizeof(basic_type_names) / sizeof(basic_type_names[0]))
@@ -371,7 +371,7 @@ static void free_arms(as_arm *arms, uint32_t arms_count)
  * Builds a single basic arm from a Type case value, which may combine
  * several engine masks with the bitwise OR operator. The value is the
  * mask; the private dict bit folds into MAY_BE_ARRAY. Key-position masks
- * are restricted to the integer and string types.
+ * are restricted to the integer, string and null types.
  */
 static bool build_basic_arm(zend_long type_value, bool is_key, as_arm *arm)
 {
@@ -385,8 +385,8 @@ static bool build_basic_arm(zend_long type_value, bool is_key, as_arm *arm)
         mask = (mask & ~(uint32_t)AS_TYPE_DICT) | MAY_BE_ARRAY;
     }
 
-    if (is_key && (mask & ~(MAY_BE_LONG | MAY_BE_STRING)) != 0) {
-        zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer or string, " ZEND_LONG_FMT " given.", type_value);
+    if (is_key && (mask & ~(MAY_BE_LONG | MAY_BE_STRING | MAY_BE_NULL)) != 0) {
+        zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null, " ZEND_LONG_FMT " given.", type_value);
         return false;
     }
 
@@ -475,7 +475,7 @@ static bool build_reference_arm(zend_string *name, bool is_key, as_spec_context 
 /*
  * Builds one arm. In arm position (is_key false) attribute objects and
  * class-name references become nested array specs; in key position only
- * the integer and string basic types are accepted.
+ * the integer, string and null basic types are accepted.
  */
 static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm *arm)
 {
@@ -502,7 +502,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
                 // Only the top-level key position flattens a Union
                 // (build_key_arms); nested attribute objects cannot
                 // describe a key type
-                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer or string.");
+                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null.");
                 return false;
             }
 
@@ -519,7 +519,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
             }
 
             if (is_key) {
-                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer or string, \"%s\" given.", ZSTR_VAL(Z_STR_P(arm_value)));
+                zend_throw_exception_ex(zend_ce_value_error, 0, "Dict key types must be integer, string or null, \"%s\" given.", ZSTR_VAL(Z_STR_P(arm_value)));
                 return false;
             }
 
@@ -543,7 +543,7 @@ static bool build_arm(zval *arm_value, bool is_key, as_spec_context *ctx, as_arm
 
 /*
  * Builds an arm list from a zval holding a single arm or an array of arms.
- * Arms in key position are restricted to the integer and string basic
+ * Arms in key position are restricted to the integer, string and null basic
  * types by build_arm().
  */
 static bool build_arms_from_zval(zval *arms_value, bool is_key, as_spec_context *ctx, as_arm **arms_out, uint32_t *arms_count_out)
@@ -1006,6 +1006,11 @@ static bool key_matches_arms(const zend_string *str_key, const as_spec *spec)
     }
 
     uint32_t needed = str_key != NULL ? MAY_BE_STRING : MAY_BE_LONG;
+    if (str_key != NULL && ZSTR_LEN(str_key) == 0) {
+        /* PHP normalizes a null array key to the empty string, so a null
+         * key arm matches the "" key */
+        needed |= MAY_BE_NULL;
+    }
     for (uint32_t i = 0; i < spec->key_arms_count; i++) {
         if (spec->key_arms[i].basic_mask & needed) {
             return true;

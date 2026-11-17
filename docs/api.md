@@ -92,6 +92,7 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `int` | `16` |
 | `float` | `32` |
 | `string` | `64` |
+| `null` | `2` |
 | `sequence` | `128` |
 | `dict` | `268435456` |
 | `object` | `256` |

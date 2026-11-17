@@ -80,7 +80,7 @@ $blog = validate([
 - `Sequence` validates every element against one element type. Keys must always be integers — a string key reports `Must be integer` under that key's path (e.g. `tags.x`). By default the array must additionally be a **list** with keys `0, 1, 2, ...` in order; a gap or out-of-order key reports a `sequence_keys` error. Pass `sequential: false` to allow any integer keys.
 - `Union` accepts an element matching any declared arm — but only nested inside `Sequence(of: new Union(...))` or `Dict(of: new Union(...))`. Declared directly on an `array` property it throws an `InvalidBaseModelException`; on a non-array property it checks the whole value instead (below).
 - `Intersection` requires an element to match every declared class or interface. Its arms must name classes or interfaces only — enums are rejected, mirroring PHP intersection type hints.
-- `Dict` validates keys against `$key` (integer and string types only) and values against `$of`.
+- `Dict` validates keys against `$key` (integer, string and null types) and values against `$of`. PHP normalizes a null array key to the empty string, so a `T_NULL` key arm accepts the `""` key: `#[Dict(key: T_INT | T_NULL, of: ...)]` accepts both integer keys and `[null => ...]`.
 
 `Sequence` and `Dict` may only be declared on array-like properties (an `array` hint, a union containing `array`, `mixed` or untyped); anywhere else they throw an `InvalidBaseModelException`. On `mixed` or untyped properties a non-array value fails with `Must be array`.
 
@@ -112,7 +112,7 @@ $m = validate(['value' => 1.5, 'count' => 3], new Measurement());
 
 An array value under a directly declared `Union` throws an `InvalidBaseModelException` — wrap the array in `Sequence(of: new Union(...))` instead.
 
-Element types are named by the namespace constants `T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_SEQUENCE`, `T_OBJECT`, `T_DICT` — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — which hold the same values as the `Attributes\Strictify\Type` enum cases (`Type::int`, `Type::string`, ...). Constants may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
+Element types are named by the namespace constants `T_INT`, `T_STRING`, `T_BOOL`, `T_FLOAT`, `T_NULL`, `T_SEQUENCE`, `T_OBJECT`, `T_DICT` — the `T_` prefix keeps them clear of PHP's reserved type-hint keywords — which hold the same values as the `Attributes\Strictify\Type` enum cases (`Type::int`, `Type::string`, ...). Constants may combine with the bitwise OR operator (`T_BOOL | T_INT`). Class, interface and enum names are accepted as strings (`DateTime::class`) and autoload on use.
 
 When the declaration order of the arms is irrelevant, the `Union` wrapper can be dropped and the combined type mask passed directly to `of:` — or to `key:`, which accepts only integer and string masks:
 

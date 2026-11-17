@@ -13,7 +13,7 @@ zend_class_entry *AS_Fields_Dict_ce;
  * Accepted shapes of the __construct arguments, checked eagerly so a
  * malformed Dict fails at construction instead of at validation time.
  * The validator still applies the semantic rules (key arms restricted to
- * the integer and string types, valid masks, resolvable class names).
+ * the integer, string and null types, valid masks, resolvable class names).
  */
 
 static bool is_valid_dict_key(zval *value);

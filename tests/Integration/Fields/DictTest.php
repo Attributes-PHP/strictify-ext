@@ -21,7 +21,9 @@ describe('Dict constructor argument validation', function () {
     })->with([
         Type::int->value & Type::float->value,
         Type::int,
+        Type::null,
         new Union(Type::int, Type::string),
+        new Union(Type::int, Type::null),
     ]);
 
     it('accepts every supported $of type', function ($of) {

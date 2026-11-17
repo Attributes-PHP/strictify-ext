@@ -18,8 +18,9 @@ static const struct {
     const char *const_name;
     zend_long value;
 } type_cases[] = {
-    {"bool", "T_BOOL", AS_TYPE_BOOL}, {"int", "T_INT", AS_TYPE_INT},          {"float", "T_FLOAT", AS_TYPE_FLOAT}, {"string", "T_STRING", AS_TYPE_STRING}, {"sequence", "T_SEQUENCE", AS_TYPE_SEQUENCE},
-    {"dict", "T_DICT", AS_TYPE_DICT}, {"object", "T_OBJECT", AS_TYPE_OBJECT},
+    {"bool", "T_BOOL", AS_TYPE_BOOL},       {"int", "T_INT", AS_TYPE_INT},          {"float", "T_FLOAT", AS_TYPE_FLOAT},
+    {"string", "T_STRING", AS_TYPE_STRING}, {"null", "T_NULL", AS_TYPE_NULL},       {"sequence", "T_SEQUENCE", AS_TYPE_SEQUENCE},
+    {"dict", "T_DICT", AS_TYPE_DICT},       {"object", "T_OBJECT", AS_TYPE_OBJECT},
 };
 
 #define TYPE_CASES_COUNT (sizeof(type_cases) / sizeof(type_cases[0]))
@@ -37,7 +38,7 @@ void as_register_Type_enum(void)
 }
 
 /*
- * Registers the Attributes\\Strictify\{T_BOOL,T_INT,T_FLOAT,T_STRING,T_SEQUENCE,T_DICT,T_OBJECT}
+ * Registers the Attributes\\Strictify\{T_BOOL,T_INT,T_FLOAT,T_STRING,T_NULL,T_SEQUENCE,T_DICT,T_OBJECT}
  * constants holding the matching Type case values, so attribute arguments
  * can use them (#[Union(T_BOOL, T_INT, T_STRING)]) and combine them with
  * the bitwise OR operator (#[Union(T_BOOL | T_INT | T_STRING)]) through

@@ -22,6 +22,7 @@ use function Attributes\Strictify\validate;
 use const Attributes\Strictify\T_BOOL;
 use const Attributes\Strictify\T_FLOAT;
 use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_NULL;
 use const Attributes\Strictify\T_OBJECT;
 use const Attributes\Strictify\T_SEQUENCE;
 use const Attributes\Strictify\T_STRING;
@@ -398,6 +399,49 @@ describe('type-hint array validation via attributes (loose mode)', function () {
 
         $result = validate(['keyed' => ['a' => 'b', 3 => 'c']], $model);
         expect($result->keyed)->toBe(['a' => 'b', 3 => 'c']);
+    });
+
+    it('accepts a null (empty-string) key when the key spec includes T_NULL', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_NULL, of: T_INT)]
+                public array $keyed;
+            };
+
+        // PHP normalizes a null array key to ""
+        $result = validate(['keyed' => [null => 1]], $model);
+        expect($result->keyed)->toBe(['' => 1]);
+    });
+
+    it('accepts integer and null keys for a T_INT | T_NULL key spec', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_INT | T_NULL, of: T_STRING)]
+                public array $keyed;
+            };
+
+        $result = validate(['keyed' => [7 => 'a', null => 'b']], $model);
+        expect($result->keyed)->toBe([7 => 'a', '' => 'b']);
+    });
+
+    it('rejects non-empty string keys when the key spec is T_NULL only', function () {
+        $model = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Dict(key: T_NULL, of: T_INT)]
+                public array $keyed;
+            };
+
+        try {
+            validate(['keyed' => ['a' => 1]], $model);
+            expect(false)->toBeTrue();
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe([
+                'keyed.a' => ['Must be null'],
+            ]);
+        }
     });
 
     it('rejects dict values not matching the value spec', function () {
