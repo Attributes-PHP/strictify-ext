@@ -37,7 +37,7 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 - Scalars are coerced to the declared type in [loose mode](/guides/validating-payloads/#strict-and-loose-mode).
 - `DateTimeInterface`-typed properties hydrate from date strings such as `1994-01-01T09:00:00+00:00`.
 - Properties typed with a `BaseModel` class hydrate recursively from nested arrays.
-- Union-typed properties keep the raw value's type when it already matches one of the arms; otherwise the first arm that can coerce it wins.
+- Union-typed properties keep the raw value's type when it already matches one of the arms; otherwise the engine coerces them in its fixed order (`int` → `float` → `string` → `bool`), never in declaration order — see [Strict and loose mode](/guides/validating-payloads/#strict-and-loose-mode).
 
 ## Exceptions
 

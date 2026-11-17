@@ -57,7 +57,7 @@ var_dump($user->name); // string(3) "123"
 In loose mode:
 
 - Exact type matches always win over coercion, regardless of declaration order.
-- When coercion is needed on a union property, arms are tried in declaration order: `int|bool` coerces `'1'` to `int(1)`, while `bool|int` coerces it to `bool(true)`.
+- When coercion is needed on a union of basic types, the declaration order is lost — the engine stores the union as a bitmask and tries the arms in the fixed order `int` → `float` → `string` → `bool`. Both `int|bool` and `bool|int` coerce `'1'` to `int(1)`; only values no earlier arm can take fall through to `bool`, so `'abc'` becomes `bool(true)`. One exception: for an `int|float` union, a numeric string keeps its natural type — `'1'` becomes `int(1)`, `'1.5'` becomes `float(1.5)`.
 
 `DateTimeInterface` properties coerce from date strings in both modes.
 
@@ -71,7 +71,7 @@ In loose mode:
 - Scalars are coerced to the declared type in loose mode.
 - `DateTimeInterface`-typed properties hydrate from date strings such as `1994-01-01T09:00:00+00:00`.
 - Properties typed with a `BaseModel` class hydrate recursively from nested arrays — see [Nested models and arrays](/guides/nested-models/).
-- Union-typed properties keep the raw value's type when it already matches one of the arms; otherwise the first arm that can coerce it wins.
+- Union-typed properties keep the raw value's type when it already matches one of the arms; otherwise coercion follows the fixed arm order described above.
 
 ## Hooks
 
