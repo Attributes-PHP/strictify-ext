@@ -9,7 +9,7 @@ Default messages follow the `Must be <type>` pattern, joined for unions (`Must b
 
 ## Default error messages
 
-Each default message has a stable translation key passed to the translator registered with `ErrorTranslator::set()`:
+Each default message has a stable translation key passed as the first argument to the translator registered with `ErrorTranslator::set()` (the default message itself is the second argument):
 
 | Key | Default message |
 | --- | --- |
@@ -81,7 +81,7 @@ The `{expected}` placeholder renders the expected type list. `{field}` and `{val
 
 ## Translating error messages
 
-Register a translator once per request with `ErrorTranslator::set()`. The callable receives a message key and returns the translated template, or `null` to keep the default:
+Register a translator once per request with `ErrorTranslator::set()`. The callable receives the stable message key as `?string $key` (`null` for custom `#[ErrorMessage]` values, which have no key) and the default message template as `string $message`, and returns the translated template — or `null` to keep the default:
 
 ```php
 <?php
@@ -92,7 +92,7 @@ use Attributes\Strictify\Fields\Constraints\Min;
 use Attributes\Strictify\ErrorTranslator;
 use function Attributes\Strictify\validate;
 
-ErrorTranslator::set(fn (string $key): ?string => match ($key) {
+ErrorTranslator::set(fn (?string $key, string $message): ?string => match ($key) {
     'required' => 'Campo obrigatório',
     'type' => 'Deve ser {expected}',
     'min' => 'Deve ser no mínimo {expected}',
@@ -145,7 +145,7 @@ final class Catalog
     public static function useLocale(string $locale): void
     {
         ErrorTranslator::set(
-            fn (string $key): ?string => self::MESSAGES[$locale][$key] ?? null
+            fn (?string $key, string $message): ?string => $key === null ? null : (self::MESSAGES[$locale][$key] ?? null)
         );
     }
 }
@@ -166,7 +166,7 @@ try {
 
 Notes:
 
-- `ErrorMessage` attribute values are also passed to the translator as keys. Since attribute arguments must be constant expressions (no callables), use a key string or a class constant there; when the translator returns `null`, the literal attribute string is used as-is, so existing attributes keep working unchanged:
+- `ErrorMessage` attribute values have no stable key: the translator receives `null` as `$key` and the attribute value as `$message`. Since attribute arguments must be constant expressions (no callables), use a key string or a class constant there; when the translator returns `null`, the literal attribute string is used as-is, so existing attributes keep working unchanged:
 
 ```php
 <?php
@@ -184,7 +184,7 @@ class User extends BaseModel
 ```
 
 - Re-registering the translator (e.g. switching locale) takes effect immediately: resolved templates are cached per property per request, and the setter clears that cache.
-- The translator must return `?string`; any other type throws a `ValueError`, and exceptions thrown inside it propagate to the caller of `validate()`.
+- The translator must return `?string`; any other type throws a `ValueError`, and exceptions thrown inside it propagate to the caller of `validate()`. Declare the first parameter as `?string $key` — it is `null` for custom `#[ErrorMessage]` values.
 - Userland constraints (`Attributes\Strictify\Fields\Constraint`) produce their `message()` in PHP, so the engine does not translate it — call your catalog from `message()` directly.
 
 ## See also

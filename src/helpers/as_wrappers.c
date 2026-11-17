@@ -186,7 +186,7 @@ void as_declare_typed_property(zend_class_entry *ce, const char *name, int flags
     zend_string_release(name_str);
 }
 
-zend_string *as_translate_error_key(const char *key, size_t key_len)
+zend_string *as_translate_error(const char *key, size_t key_len, const char *message, size_t message_len)
 {
     zval *translator = zend_read_static_property(AS_ErrorTranslator_ce, "translator", sizeof("translator") - 1, true);
     if (translator == NULL || Z_TYPE_P(translator) == IS_NULL || !zend_is_callable(translator, 0, NULL)) {
@@ -204,8 +204,13 @@ zend_string *as_translate_error_key(const char *key, size_t key_len)
         return NULL;
     }
 
-    zval key_zv;
-    ZVAL_STRINGL(&key_zv, key, key_len);
+    zval params[2];
+    if (key != NULL) {
+        ZVAL_STRINGL(&params[0], key, key_len);
+    } else {
+        ZVAL_NULL(&params[0]);
+    }
+    ZVAL_STRINGL(&params[1], message, message_len);
 
     zval retval;
     ZVAL_UNDEF(&retval);
@@ -213,12 +218,13 @@ zend_string *as_translate_error_key(const char *key, size_t key_len)
     fci.size = sizeof(fci);
     fci.object = fcc.object;
     fci.retval = &retval;
-    fci.param_count = 1;
-    fci.params = &key_zv;
+    fci.param_count = 2;
+    fci.params = params;
     fci.named_params = NULL;
 
     zend_result call_result = zend_call_function(&fci, &fcc);
-    zval_ptr_dtor(&key_zv);
+    zval_ptr_dtor(&params[0]);
+    zval_ptr_dtor(&params[1]);
 
     if (call_result != SUCCESS || UNEXPECTED(EG(exception) != NULL)) {
         if (Z_TYPE(retval) != IS_UNDEF) {

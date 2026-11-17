@@ -72,7 +72,7 @@ describe('Sequence constructor flags', function () {
 
 describe('Sequence sequential key validation', function () {
     afterEach(function () {
-        ErrorTranslator::set(fn (string $key): ?string => null);
+        ErrorTranslator::set(fn (?string $key, string $message): ?string => null);
     });
 
     it('accepts a list by default', function () {
@@ -161,7 +161,7 @@ describe('Sequence sequential key validation', function () {
     });
 
     it('translates the sequence_keys error key', function () {
-        ErrorTranslator::set(fn (string $key): ?string => $key === 'sequence_keys' ? 'Deve ser uma lista sequencial' : null);
+        ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequence_keys' ? 'Deve ser uma lista sequencial' : null);
 
         $model = new class extends BaseModel {
             #[Sequence(Type::int)]

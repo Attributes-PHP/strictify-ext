@@ -42,9 +42,9 @@ const char *as_default_error_type_messages[] = {
 
 /*
  * Stable message keys, one per error type, handed to the translator registered
- * via ErrorTranslator::set(). An #[ErrorMessage] attribute
- * value is also passed as a key, so custom per-property messages can be
- * translated the same way.
+ * via ErrorTranslator::set() as its first argument. A custom #[ErrorMessage]
+ * value has no key: the translator then receives null as key and the
+ * attribute value as the message.
  */
 const char *as_error_type_names[] = {
     [AS_ERROR_REQUIRED] = "required",
@@ -617,10 +617,10 @@ static zend_string *get_custom_error_template(as_error_type type, as_property_in
     }
 
     if (template != NULL) {
-        /* An #[ErrorMessage] value is a translation key first: when the
-         * registered translator knows it, the localized template wins;
-         * otherwise the literal attribute string is used as-is. */
-        zend_string *translated = as_translate_error_key(ZSTR_VAL(template), ZSTR_LEN(template));
+        /* An #[ErrorMessage] value has no stable key: the translator receives
+         * null as key and the attribute string as the message; when it
+         * returns null, the literal attribute string is used as-is. */
+        zend_string *translated = as_translate_error(NULL, 0, ZSTR_VAL(template), ZSTR_LEN(template));
         if (UNEXPECTED(as_has_exception())) {
             zend_string_release(template);
             return NULL;
@@ -630,9 +630,9 @@ static zend_string *get_custom_error_template(as_error_type type, as_property_in
             template = translated;
         }
     } else {
-        /* Built-in error type: the key is the stable type name; untranslated
-         * keys fall back to the default English template. */
-        zend_string *translated = as_translate_error_key(as_error_type_names[type], strlen(as_error_type_names[type]));
+        /* Built-in error type: the key is the stable type name and the message
+         * is the default English template; untranslated keys fall back to it. */
+        zend_string *translated = as_translate_error(as_error_type_names[type], strlen(as_error_type_names[type]), as_default_error_type_messages[type], strlen(as_default_error_type_messages[type]));
         if (UNEXPECTED(as_has_exception())) {
             return NULL;
         }
@@ -690,8 +690,8 @@ void as_add_field_message(zend_string *message, as_field *field, zval *errors)
 /*
  * Reports an unknown input key (ModelConfigs extra: 'forbid'). Unlike
  * property errors there is no owning property, so the template is not read
- * from the per-property cache: the translator is asked for the "extra" key
- * and the built-in default is the fallback. {expected} is substituted with
+ * from the per-property cache: the translator is asked with the "extra" key
+ * and the built-in default as message. {expected} is substituted with
  * an empty string because a raw input key has no native type hint.
  */
 void as_add_extra_field_error(zend_string *name, zval *value, zend_string *parent_path, zval *errors)
@@ -700,7 +700,8 @@ void as_add_extra_field_error(zend_string *name, zval *value, zend_string *paren
 
     as_field field = {.parent = parent_path, .name = name, .value = value};
 
-    zend_string *template = as_translate_error_key(as_error_type_names[AS_ERROR_EXTRA], strlen(as_error_type_names[AS_ERROR_EXTRA]));
+    zend_string *template =
+        as_translate_error(as_error_type_names[AS_ERROR_EXTRA], strlen(as_error_type_names[AS_ERROR_EXTRA]), as_default_error_type_messages[AS_ERROR_EXTRA], strlen(as_default_error_type_messages[AS_ERROR_EXTRA]));
     if (UNEXPECTED(as_has_exception())) {
         if (template != NULL) {
             zend_string_release(template);

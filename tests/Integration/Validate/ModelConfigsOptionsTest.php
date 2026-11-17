@@ -52,7 +52,7 @@ class OptionsDynamicInnerModel extends BaseModel
 }
 
 afterEach(function () {
-    ErrorTranslator::set(fn (string $key): ?string => null);
+    ErrorTranslator::set(fn (?string $key, string $message): ?string => null);
 });
 
 describe('ModelConfigs extra option', function () {
@@ -351,7 +351,7 @@ describe('ModelConfigs extra option', function () {
 
     it('translates the extra error with the "extra" key', function () {
         ErrorTranslator::set(
-            fn (string $key): ?string => $key === 'extra' ? 'Campo extra não permitido: {field}' : null,
+            fn (?string $key, string $message): ?string => $key === 'extra' ? 'Campo extra não permitido: {field}' : null,
         );
 
         $model = new
