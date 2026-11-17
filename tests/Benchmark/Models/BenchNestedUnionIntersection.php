@@ -9,10 +9,10 @@ use Attributes\Strictify\Fields\Intersection;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Fields\Union;
 
-use const Attributes\Strictify\int;
+use const Attributes\Strictify\T_INT;
 
 class BenchNestedUnionIntersection extends BaseModel
 {
-    #[Sequence(of: new Union(int, new Intersection(BenchServiceInterface::class, BenchBootableInterface::class)))]
+    #[Sequence(of: new Union(T_INT, new Intersection(BenchServiceInterface::class, BenchBootableInterface::class)))]
     public array $payloads;
 }

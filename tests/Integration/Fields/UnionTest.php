@@ -26,10 +26,10 @@ use ValueError;
 
 use function Attributes\Strictify\validate;
 
-use const Attributes\Strictify\bool;
-use const Attributes\Strictify\float;
-use const Attributes\Strictify\int;
-use const Attributes\Strictify\string;
+use const Attributes\Strictify\T_BOOL;
+use const Attributes\Strictify\T_FLOAT;
+use const Attributes\Strictify\T_INT;
+use const Attributes\Strictify\T_STRING;
 
 class UnionAddress extends BaseModel
 {
@@ -72,7 +72,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(int, string))]
+                #[Sequence(of: new Union(T_INT, T_STRING))]
                 public array $items;
             };
 
@@ -84,7 +84,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(UnionAddress::class, int))]
+                #[Sequence(of: new Union(UnionAddress::class, T_INT))]
                 public array $items;
             };
 
@@ -98,7 +98,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(UnionAddress::class, int))]
+                #[Sequence(of: new Union(UnionAddress::class, T_INT))]
                 public array $items;
             };
 
@@ -116,7 +116,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(EnumStrTwoValues::class, int))]
+                #[Sequence(of: new Union(EnumStrTwoValues::class, T_INT))]
                 public array $items;
             };
 
@@ -137,7 +137,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(bool, new Intersection(CountableInterface::class, IterableInterface::class)))]
+                #[Sequence(of: new Union(T_BOOL, new Intersection(CountableInterface::class, IterableInterface::class)))]
                 public array $items;
             };
 
@@ -162,7 +162,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: true)]
             class extends BaseModel {
-                #[Sequence(of: new Union(bool, int))]
+                #[Sequence(of: new Union(T_BOOL, T_INT))]
                 public array $items;
             };
 
@@ -183,7 +183,7 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(int, string))]
+                #[Sequence(of: new Union(T_INT, T_STRING))]
                 public array $items;
             };
 
@@ -222,7 +222,7 @@ describe('Union declared directly on a non-array property', function () {
 
     it('accepts a bitmask arm combining several types', function () {
         $model = new class extends BaseModel {
-            #[Union(int | float)]
+            #[Union(T_INT | T_FLOAT)]
             public int|float $example;
         };
 
@@ -251,7 +251,7 @@ describe('Union declared directly on a non-array property', function () {
 
     it('works on an untyped property', function () {
         $model = new class extends BaseModel {
-            #[Union(int, string)]
+            #[Union(T_INT, T_STRING)]
             public $example;
         };
 
@@ -345,7 +345,7 @@ describe('array attribute placement rules', function () {
 
     it('throws a ValueError for Dict on a union property without an array arm', function () {
         $model = new class extends BaseModel {
-            #[Dict(key: int, of: string)]
+            #[Dict(key: T_INT, of: T_STRING)]
             public int|float $ratio;
         };
 
