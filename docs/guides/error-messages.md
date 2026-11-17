@@ -5,7 +5,33 @@ description: "Customize validation error messages per property with ErrorMessage
 
 # Error messages
 
-Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Every message has a stable translation key — the full catalog is in [Exceptions](/exceptions/#default-error-messages).
+Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Every message has a stable translation key — the full catalog is [below](#default-error-messages).
+
+## Default error messages
+
+Each default message has a stable translation key passed to the translator registered with `ErrorTranslator::set()`:
+
+| Key | Default message |
+| --- | --- |
+| `required` | `Field is required` |
+| `type` | `Must be {expected}` |
+| `alpha_dash` / `alpha_dash_type` | `Must only contain letters, numbers, dashes and underscores` |
+| `ascii` / `ascii_type` | `Must only contain ASCII characters` |
+| `between` / `between_type` | `Must be between {expected}` |
+| `contains` | `Must contain {expected}` |
+| `datetime` | `Must be a datetime in the format {expected}` |
+| `ends_with` | `Must end with one of: {expected}` |
+| `in` | `Must be one of: {expected}` |
+| `max` / `min` | `Must be at most/least {expected}` |
+| `multiple_of` | `Must be a multiple of {expected}` |
+| `regex` | `Must match the pattern {expected}` |
+| `size` | `Must have a size {expected}` |
+| `starts_with` | `Must start with one of: {expected}` |
+| `ulid` / `uuid` | `Must be a valid ULID/UUID` |
+| `union` | `Must be {expected}` |
+| `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
+
+Placeholders: `{field}` (resolved field name), `{value}` (the rejected value — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties), `{expected}` (constraint parameters / expected types).
 
 ## Per-property overrides: ErrorMessage
 
@@ -151,6 +177,6 @@ class User extends BaseModel
 
 ## See also
 
-- [Exceptions and the default error catalog](/exceptions/)
+- [Exceptions](/exceptions/) — exception types and the `getErrors()` structure
 - [Constraints](/constraints/) — constraint error messages and their keys
 - [Sensitive data](/guides/sensitive-data/) — `{value}` redaction for sensitive fields

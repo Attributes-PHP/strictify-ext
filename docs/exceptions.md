@@ -1,6 +1,6 @@
 ---
 title: "Exceptions"
-description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException and ValueError cases, and the default error message catalog with translation keys."
+description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException and ValueError cases."
 ---
 
 # Exceptions
@@ -51,33 +51,7 @@ A `ValueError` is thrown when an attribute spec is malformed, for example:
 - an invalid `ModelConfigs` option value (the message lists the valid options),
 - an invalid timezone name in a `DateTime` constraint (at construction).
 
-## Default error messages
-
-Default messages follow the `Must be <type>` pattern, joined for unions (`Must be boolean, integer or string`). Each has a stable translation key passed to the translator registered with `ErrorTranslator::set()` — see [Error messages](/guides/error-messages/):
-
-| Key | Default message |
-| --- | --- |
-| `required` | `Field is required` |
-| `type` | `Must be {expected}` |
-| `alpha_dash` / `alpha_dash_type` | `Must only contain letters, numbers, dashes and underscores` |
-| `ascii` / `ascii_type` | `Must only contain ASCII characters` |
-| `between` / `between_type` | `Must be between {expected}` |
-| `contains` | `Must contain {expected}` |
-| `datetime` | `Must be a datetime in the format {expected}` |
-| `ends_with` | `Must end with one of: {expected}` |
-| `in` | `Must be one of: {expected}` |
-| `max` / `min` | `Must be at most/least {expected}` |
-| `multiple_of` | `Must be a multiple of {expected}` |
-| `regex` | `Must match the pattern {expected}` |
-| `size` | `Must have a size {expected}` |
-| `starts_with` | `Must start with one of: {expected}` |
-| `ulid` / `uuid` | `Must be a valid ULID/UUID` |
-| `union` | `Must be {expected}` |
-| `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
-
-Placeholders: `{field}` (resolved field name), `{value}` (the rejected value — redacted to `***` for [`#[Sensitive]`](/guides/sensitive-data/) properties), `{expected}` (constraint parameters / expected types).
-
 ## See also
 
-- [Error messages guide](/guides/error-messages/) — `ErrorMessage` and translators
+- [Error messages guide](/guides/error-messages/) — `ErrorMessage`, translators and the default error catalog
 - [validate() reference](/validate/)
