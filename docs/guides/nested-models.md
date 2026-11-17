@@ -138,7 +138,7 @@ validate([
 ], new Shapes());
 ```
 
-(The mask is built from the `T_*` constants — or from `Type::int->value | Type::string->value | Type::sequence->value`; enum cases themselves don't support `|`.)
+(Masks are built from the `T_*` constants — enum cases don't support `|`, so `Type::int | Type::string` is not valid PHP; write `T_INT | T_STRING`.)
 
 The bitmask form loses the declaration order that a `new Union(...)` argument list keeps: values that already match an arm are still accepted as-is, but in loose mode coercions then run in a fixed order (bool, integer, float, string) instead of declaration order — see [Strict and loose mode](/guides/validating-payloads/#strict-and-loose-mode).
 
