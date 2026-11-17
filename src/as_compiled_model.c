@@ -692,6 +692,23 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
     }
 
     /*
+     * Consistency rule: a Union attribute declared directly on a property
+     * whose native hint is a union must repeat the hint's type-hints exactly;
+     * a mismatch is a malformed model and throws InvalidBaseModelException
+     * once per field compile.
+     */
+    if (!cf->untyped && ZEND_TYPE_IS_UNION(type) && !cf->is_intersection_group && cf->constraints != NULL) {
+        for (uint32_t i = 0; i < cf->constraints_count; i++) {
+            if (cf->constraints[i].validate == as_validate_Union_scalar && !as_check_union_matches_hint(&cf->constraints[i].instance, type, cf->declaring_ce, cf->prop->name)) {
+                if (resolved != cf->prop->name) {
+                    zend_string_release(resolved);
+                }
+                return false;
+            }
+        }
+    }
+
+    /*
      * #[Sensitive] marks the field: toDict() omits it unless includeSensitive
      * is passed, and the {value} error placeholder renders
      * AS_SENSITIVE_VALUE_MASK instead of the raw value. Presence-only

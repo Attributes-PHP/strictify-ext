@@ -330,7 +330,7 @@ class Event extends BaseModel
 Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
 
 !!! tip "Type-level rules on union-typed properties"
-    To narrow a union hint such as `int|float` to a subset of its arms, declare [`Union`](/guides/nested-models/#union-on-non-array-properties) directly on the property — it checks the whole value against its arms.
+    Declare [`Union`](/guides/nested-models/#union-on-non-array-properties) directly on the property to check the whole value against its arms — on a union hint such as `int|float` the arms must repeat the hint's type-hints exactly, otherwise an `InvalidBaseModelException` is thrown.
 
 ## Value semantics
 

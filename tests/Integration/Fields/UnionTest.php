@@ -204,20 +204,39 @@ describe('Union declared directly on a non-array property', function () {
             ->toBe(1.5);
     });
 
-    it('narrows the native union to a subset of arms', function () {
+    it('throws InvalidBaseModelException when the arms are a subset of the union hint', function () {
         $model = new class extends BaseModel {
-            #[Union(Type::int)]
+            #[Union(T_INT)]
             public int|float $example;
         };
 
-        expect(validate(['example' => 42], $model)->example)->toBe(42);
+        validate(['example' => 42], $model);
+    })->throws(
+        InvalidBaseModelException::class,
+        'must contain the same type-hints as the native union hint'
+    );
 
-        try {
-            validate(['example' => 1.5], $model);
-            expect(false)->toBeTrue();
-        } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['example' => ['Must be integer']]);
-        }
+    it('throws InvalidBaseModelException when the arms add a type the hint does not have', function () {
+        $model = new class extends BaseModel {
+            #[Union(T_INT, T_FLOAT, T_STRING)]
+            public int|float $example;
+        };
+
+        validate(['example' => 42], $model);
+    })->throws(
+        InvalidBaseModelException::class,
+        'must contain the same type-hints as the native union hint'
+    );
+
+    it('ignores nullability when comparing the arms against the hint', function () {
+        $model = new class extends BaseModel {
+            #[Union(T_INT)]
+            public ?int $example;
+        };
+
+        expect(validate(['example' => null], $model)->example)->toBeNull()
+            ->and(validate(['example' => 5], $model)->example)
+            ->toBe(5);
     });
 
     it('accepts a bitmask arm combining several types', function () {
@@ -235,18 +254,13 @@ describe('Union declared directly on a non-array property', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Union(Type::int)]
+                #[Union(T_INT | T_FLOAT)]
                 public int|float $example;
             };
 
-        expect(validate(['example' => '1'], $model)->example)->toBe(1);
-
-        try {
-            validate(['example' => '1.5'], $model);
-            expect(false)->toBeTrue();
-        } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['example' => ['Must be integer']]);
-        }
+        expect(validate(['example' => '1'], $model)->example)->toBe(1)
+            ->and(validate(['example' => '1.5'], $model)->example)
+            ->toBe(1.5);
     });
 
     it('works on an untyped property', function () {
@@ -283,19 +297,26 @@ describe('Union declared directly on a non-array property', function () {
 
     it('matches class arms with instanceof', function () {
         $model = new class extends BaseModel {
+            #[Union(stdClass::class, DateTimeImmutable::class)]
+            public stdClass|DateTimeImmutable $example;
+        };
+
+        expect(validate(['example' => new stdClass], $model)->example)->toBeInstanceOf(stdClass::class)
+            ->and(validate(['example' => new DateTimeImmutable()], $model)->example)
+            ->toBeInstanceOf(DateTimeImmutable::class);
+    });
+
+    it('throws InvalidBaseModelException when class arms do not match the union hint', function () {
+        $model = new class extends BaseModel {
             #[Union(stdClass::class)]
             public stdClass|DateTimeImmutable $example;
         };
 
-        expect(validate(['example' => new stdClass], $model)->example)->toBeInstanceOf(stdClass::class);
-
-        try {
-            validate(['example' => new DateTimeImmutable], $model);
-            expect(false)->toBeTrue();
-        } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['example' => ['Must be stdClass']]);
-        }
-    });
+        validate(['example' => new stdClass()], $model);
+    })->throws(
+        InvalidBaseModelException::class,
+        'must contain the same type-hints as the native union hint'
+    );
 
     it('joins the arm names in the error message', function () {
         $model = new class extends BaseModel {

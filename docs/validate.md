@@ -51,6 +51,7 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 | Rule | Behavior | Guide |
 | ---- | -------- | ----- |
 | Required fields | Every property without a default value is required (typed or nullable); defaulted properties are optional | [Validating payloads](/guides/validating-payloads/#required-fields) |
+| Union on union hints | `#[Union(...)]` on a union-typed property must repeat the hint's type-hints exactly, else `InvalidBaseModelException` | [Nested models and arrays](/guides/nested-models/#union-on-non-array-properties) |
 | Strict vs loose mode | Strict by default; `#[ModelConfigs(strict: false)]` enables scalar coercion | [Validating payloads](/guides/validating-payloads/#strict-and-loose-mode) |
 | Aliases | `#[Alias]` maps one input key; `aliasGenerator` transforms all keys; resolved names appear in error paths | [Aliases](/guides/aliases/) |
 | Nested models & arrays | `BaseModel` properties hydrate recursively; `Sequence`/`Union`/`Intersection`/`Dict` shape arrays | [Nested models and arrays](/guides/nested-models/) |

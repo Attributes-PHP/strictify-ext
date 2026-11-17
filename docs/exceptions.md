@@ -39,6 +39,7 @@ Field paths use the resolved field names — the [alias](/guides/aliases/) when 
 `Attributes\Strictify\Exceptions\InvalidBaseModelException` extends `BaseException` and is thrown when a model declares an attribute on an invalid property type — a malformed model definition, not a data error:
 
 - `Union` declared directly on an `array` property, or receiving an array value on `mixed`/untyped (use `Sequence(of: new Union(...))` / `Dict(of: ...)` instead),
+- `Union` declared directly on a union-typed property whose arms do not repeat the hint's type-hints exactly,
 - `Sequence`/`Dict` declared on a property that is not array-like (not `array`, a union containing `array`, `mixed` or untyped).
 
 ## ValueError

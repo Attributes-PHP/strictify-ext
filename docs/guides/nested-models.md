@@ -102,12 +102,20 @@ class Measurement extends BaseModel
 {
     #[Union(T_INT, T_FLOAT)] // 1 and 1.5 pass
     public int|float $value;
-
-    #[Union(T_INT)] // narrows int|float to integers only: 1.5 fails
-    public int|float $count;
 }
 
-$m = validate(['value' => 1.5, 'count' => 3], new Measurement());
+$m = validate(['value' => 1.5], new Measurement());
+```
+
+On a **union-typed** property the arms must repeat the native hint's type-hints exactly — order-insensitive, nullability ignored, class names matched case-insensitively. A subset or an extra type is a malformed model and throws an `InvalidBaseModelException` at validation:
+
+```php
+<?php
+class Bad extends BaseModel
+{
+    #[Union(T_INT)] // missing float: InvalidBaseModelException
+    public int|float $value;
+}
 ```
 
 An array value under a directly declared `Union` throws an `InvalidBaseModelException` — wrap the array in `Sequence(of: new Union(...))` instead.
