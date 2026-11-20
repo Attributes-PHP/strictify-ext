@@ -24,6 +24,14 @@ static const zend_function_entry class_AS_Fields_Union_methods[] = {ZEND_ME(AS_F
  */
 bool as_validate_Union_scalar(zval *constraint, as_field *field, as_property_info *property, zval *errors);
 
+/*
+ * Compile-time consistency rule: a Union attribute declared directly on a
+ * property whose native hint is a union must repeat the hint's type-hints
+ * exactly (order-insensitive, ignoring nullability). Throws
+ * InvalidBaseModelException and returns false on mismatch.
+ */
+bool as_check_union_matches_hint(zval *union_instance, zend_type hint, zend_class_entry *declaring_ce, zend_string *prop_name);
+
 /* Registration function */
 void as_register_Union_class(void);
 

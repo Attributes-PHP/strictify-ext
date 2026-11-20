@@ -560,6 +560,40 @@ static as_compiled_model *compile_plan_skeleton(zend_class_entry *model_ce, char
 }
 
 /*
+ * A "union" native hint: a type list (class unions, DNF) or a pure mask
+ * with more than one non-null bit (int|float). Nullable single types
+ * (?int) and mixed are not unions.
+ */
+static bool hint_is_union_type(zend_type type)
+{
+    if (ZEND_TYPE_IS_INTERSECTION(type)) {
+        return false;
+    }
+    if (ZEND_TYPE_HAS_LIST(type)) {
+        return true;
+    }
+    if (ZEND_TYPE_PURE_MASK(type) == MAY_BE_ANY) {
+        return false;
+    }
+    uint32_t mask = ZEND_TYPE_PURE_MASK(type) & ~(uint32_t)MAY_BE_NULL;
+    return mask != 0 && (mask & (mask - 1)) != 0;
+}
+
+/*
+ * Hints the Union-consistency rule applies to: union hints and nullable
+ * hints (a ?string property with #[Union(...)] must list T_NULL among the
+ * arms). mixed and untyped properties are excluded.
+ */
+static bool hint_requires_union_match(zend_type type)
+{
+    uint32_t pure = ZEND_TYPE_PURE_MASK(type);
+    if (pure == MAY_BE_ANY) {
+        return false;
+    }
+    return hint_is_union_type(type) || (pure & (uint32_t)MAY_BE_NULL) != 0;
+}
+
+/*
  * Compiles one field slot on first use: resolves the field name,
  * flattens the native type hint and precomputes the default-value
  * presence. A failure (pending exception from a bad Alias attribute)
@@ -689,6 +723,23 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
             zend_string_release(resolved);
         }
         return false;
+    }
+
+    /*
+     * Consistency rule: a Union attribute declared directly on a property
+     * whose native hint is a union must repeat the hint's type-hints exactly;
+     * a mismatch is a malformed model and throws InvalidBaseModelException
+     * once per field compile.
+     */
+    if (!cf->untyped && hint_requires_union_match(type) && cf->constraints != NULL) {
+        for (uint32_t i = 0; i < cf->constraints_count; i++) {
+            if (cf->constraints[i].validate == as_validate_Union_scalar && !as_check_union_matches_hint(&cf->constraints[i].instance, type, cf->declaring_ce, cf->prop->name)) {
+                if (resolved != cf->prop->name) {
+                    zend_string_release(resolved);
+                }
+                return false;
+            }
+        }
     }
 
     /*
