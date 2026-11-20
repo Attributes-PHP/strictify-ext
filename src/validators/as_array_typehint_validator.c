@@ -1222,6 +1222,14 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
      * and errors still fall through to the generic path below. */
     const uint32_t fast_mask = (!spec->is_intersection && spec->arms_count == 1 && spec->arms[0].ce == NULL && spec->arms[0].nested == NULL) ? spec->arms[0].basic_mask : 0;
 
+    /* A packed array has only integer keys, so a list-form key check
+     * passes on every element and can be skipped. A packed array without
+     * holes has the keys 0, 1, 2, ... in order by construction, so the
+     * sequential-keys check can be skipped entirely as well. */
+    const zend_array *ht = Z_ARRVAL_P(field->value);
+    const bool packed = HT_IS_PACKED(ht);
+    const bool check_sequential = spec->require_sequential && !(packed && HT_IS_WITHOUT_HOLES(ht));
+
     // The full path of the array property and the per-element names are
     // composed lazily, only when something reads them: an error report, a
     // class-arm hydration or a nested array validation. Specs of plain
@@ -1266,7 +1274,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
         // A Sequence with sequential: true (the default) must be a list:
         // string keys were already rejected above, so only an integer key
         // out of order (a gap or a repeat) lands here
-        if (spec->require_sequential) {
+        if (check_sequential) {
             if (str_key == NULL && num_key == sequential_index) {
                 sequential_index++;
             } else {
