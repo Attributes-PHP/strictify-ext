@@ -50,6 +50,9 @@ struct as_spec {
     // error, a class-arm hydration or a nested array validation): pure
     // basic-type specs never build per-element path strings
     bool needs_element_names;
+    // Whether keys must be checked per element at all: only Dict key specs
+    // and the Sequence list form (integer keys) need it
+    bool needs_key_check;
 };
 
 /*
@@ -1183,6 +1186,7 @@ static zend_string *ensure_base_path(as_field *field, zend_string *base_path)
 static void compute_needs_element_names(as_spec *spec)
 {
     spec->needs_element_names = spec->key_arms != NULL;
+    spec->needs_key_check = spec->key_arms != NULL || spec->is_sequence;
 
     for (uint32_t i = 0; i < spec->arms_count; i++) {
         if (spec->arms[i].ce != NULL || spec->arms[i].nested != NULL) {
@@ -1252,7 +1256,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
             .value = element,
         };
 
-        if (!key_matches_arms(str_key, spec)) {
+        if (spec->needs_key_check && !(packed && spec->key_arms == NULL) && !key_matches_arms(str_key, spec)) {
             element_name = str_key != NULL ? zend_string_copy(str_key) : zend_long_to_str(num_key);
             base_path = ensure_base_path(field, base_path);
             element_field.parent = base_path;
