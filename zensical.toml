@@ -38,6 +38,7 @@ features = [
   "navigation.footer",
   "navigation.sections",
   "content.code.copy",
+  "content.action.copy",
 ]
 
 # Light mode, following the system preference
@@ -55,3 +56,48 @@ scheme = "slate"
 primary = "pink"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to light mode"
+
+# LLM-friendly exports (https://llmstxt.org): every build emits llms.txt (an
+# index of the pages below), llms-full.txt (all pages in one file) and a
+# Markdown copy of each listed page at <page>/index.md.
+[project.plugins.llmstxt]
+full_output = "llms-full.txt"
+markdown_description = """
+Strictify-ext is a C extension for PHP 8.2+ that validates raw data against class type
+hints at native speed: a model's public property types are the schema, with no YAML and
+no config files. Install with `pie install attributes-php/strictify`. Core entry points:
+`Attributes\\Strictify\\validate()` hydrates a `BaseModel` from an array and throws
+`ValidationException` on invalid data, `BaseModel::toDict()` serializes a model back to
+an array, and `Attributes\\Strictify\\call()` invokes any callable with validated model
+parameters. Models are configured with `#[ModelConfigs]`, values are constrained with the
+constraint attributes, and failures are reported per field path via
+`ValidationException::getErrors()`. Source code: https://github.com/Attributes-PHP/strictify-ext
+"""
+
+[project.plugins.llmstxt.sections]
+"Getting started" = [
+  { "index.md" = "Overview: what Strictify is, how validation works, requirements and installation" },
+  { "quickstart.md" = "Install Strictify, define a first model and validate data in under a minute" },
+]
+"Guides" = [
+  { "guides/validating-payloads.md" = "How validate() checks raw data: required fields, strict vs loose mode, return semantics, validation hooks" },
+  { "guides/nested-models.md" = "Nested BaseModel properties and typed arrays with Sequence, Union, Intersection and Dict" },
+  { "guides/aliases.md" = "Accept differently-named input keys with #[Alias] and the ModelConfigs aliasGenerator" },
+  { "guides/error-messages.md" = "Customize error messages per property with ErrorMessage, or translate them all with ErrorTranslator" },
+  { "guides/sensitive-data.md" = "Keep secrets out of toDict() output, error messages and dumps with #[Sensitive]" },
+  { "guides/calling-functions.md" = "Invoke any callable with validated model parameters and injected dependencies using call()" },
+  { "guides/serializing-models.md" = "Turn a hydrated model back into a plain array with toDict()" },
+]
+"Reference" = [
+  { "validate.md" = "validate(): signature, parameters, return value, exceptions and the validation rules" },
+  { "toDict.md" = "BaseModel::toDict(): array serialization, field names, useAlias, DateTime formatting, nesting" },
+  { "call.md" = "call(): model hydration, dependency injection and lazy containers" },
+  { "model-configs.md" = "#[ModelConfigs]: every option, its default, inheritance rules and resolved-config getters" },
+  { "constraints.md" = "Built-in constraint attributes grouped by category, and how to write custom constraints" },
+  { "exceptions.md" = "Exceptions Strictify throws: ValidationException and getErrors(), plus error cases" },
+  { "api.md" = "Generated API reference: functions, classes, attributes and enums, built from stubs/*.stub.php" },
+]
+"Optional" = [
+  { "faq.md" = "Frequently asked questions: strict vs loose mode, extra keys, error paths, hooks, performance" },
+  { "changelog.md" = "Release notes, newest first" },
+]

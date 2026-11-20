@@ -38,7 +38,8 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Install Zensical
-        run: pip install zensical
+        # >= 0.0.70 ships the native llmstxt plugin and the <link> tags it emits
+        run: pip install "zensical>=0.0.70"
 
       - name: Generate API reference from stubs
         run: python tools/generate_api_docs.py
