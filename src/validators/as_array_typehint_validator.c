@@ -1216,6 +1216,12 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
     zend_ulong sequential_index = 0;
     zval *element;
 
+    /* Fast path: a spec with a single basic-type arm (a Sequence/Dict of
+     * plain scalars) accepts an element on the exact type match alone, so
+     * the happy path skips the per-element arm walk entirely. Coercions
+     * and errors still fall through to the generic path below. */
+    const uint32_t fast_mask = (!spec->is_intersection && spec->arms_count == 1 && spec->arms[0].ce == NULL && spec->arms[0].nested == NULL) ? spec->arms[0].basic_mask : 0;
+
     // The full path of the array property and the per-element names are
     // composed lazily, only when something reads them: an error report, a
     // class-arm hydration or a nested array validation. Specs of plain
@@ -1277,6 +1283,10 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
                 }
                 continue;
             }
+        }
+
+        if (fast_mask != 0 && (fast_mask & (1u << Z_TYPE_P(element))) != 0) {
+            continue;
         }
 
         // An array element under a class or nested arm validates (and
