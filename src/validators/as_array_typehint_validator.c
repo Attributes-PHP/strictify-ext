@@ -50,6 +50,9 @@ struct as_spec {
     // error, a class-arm hydration or a nested array validation): pure
     // basic-type specs never build per-element path strings
     bool needs_element_names;
+    // Whether keys must be checked per element at all: only Dict key specs
+    // and the Sequence list form (integer keys) need it
+    bool needs_key_check;
 };
 
 /*
@@ -1183,6 +1186,7 @@ static zend_string *ensure_base_path(as_field *field, zend_string *base_path)
 static void compute_needs_element_names(as_spec *spec)
 {
     spec->needs_element_names = spec->key_arms != NULL;
+    spec->needs_key_check = spec->key_arms != NULL || spec->is_sequence;
 
     for (uint32_t i = 0; i < spec->arms_count; i++) {
         if (spec->arms[i].ce != NULL || spec->arms[i].nested != NULL) {
@@ -1216,6 +1220,20 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
     zend_ulong sequential_index = 0;
     zval *element;
 
+    /* Fast path: a spec with a single basic-type arm (a Sequence/Dict of
+     * plain scalars) accepts an element on the exact type match alone, so
+     * the happy path skips the per-element arm walk entirely. Coercions
+     * and errors still fall through to the generic path below. */
+    const uint32_t fast_mask = (!spec->is_intersection && spec->arms_count == 1 && spec->arms[0].ce == NULL && spec->arms[0].nested == NULL) ? spec->arms[0].basic_mask : 0;
+
+    /* A packed array has only integer keys, so a list-form key check
+     * passes on every element and can be skipped. A packed array without
+     * holes has the keys 0, 1, 2, ... in order by construction, so the
+     * sequential-keys check can be skipped entirely as well. */
+    const zend_array *ht = Z_ARRVAL_P(field->value);
+    const bool packed = HT_IS_PACKED(ht);
+    const bool check_sequential = spec->require_sequential && !(packed && HT_IS_WITHOUT_HOLES(ht));
+
     // The full path of the array property and the per-element names are
     // composed lazily, only when something reads them: an error report, a
     // class-arm hydration or a nested array validation. Specs of plain
@@ -1238,7 +1256,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
             .value = element,
         };
 
-        if (!key_matches_arms(str_key, spec)) {
+        if (spec->needs_key_check && !(packed && spec->key_arms == NULL) && !key_matches_arms(str_key, spec)) {
             element_name = str_key != NULL ? zend_string_copy(str_key) : zend_long_to_str(num_key);
             base_path = ensure_base_path(field, base_path);
             element_field.parent = base_path;
@@ -1260,7 +1278,7 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
         // A Sequence with sequential: true (the default) must be a list:
         // string keys were already rejected above, so only an integer key
         // out of order (a gap or a repeat) lands here
-        if (spec->require_sequential) {
+        if (check_sequential) {
             if (str_key == NULL && num_key == sequential_index) {
                 sequential_index++;
             } else {
@@ -1277,6 +1295,10 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
                 }
                 continue;
             }
+        }
+
+        if (fast_mask != 0 && (fast_mask & (1u << Z_TYPE_P(element))) != 0) {
+            continue;
         }
 
         // An array element under a class or nested arm validates (and
