@@ -21,26 +21,8 @@ class ConstraintValidationBench
 
     public function __construct()
     {
-        $this->validData = [
-            'slug' => 'user-1_name',
-            'label' => 'hello',
-            'age' => 30,
-            'tags' => ['php', 'dev', 'oss'],
-            'birthday' => '1994-01-01',
-            'email' => 'andre@example.com',
-            'grade' => 'b',
-            'score' => 99.5,
-            'quantity' => 1,
-            'packSize' => 20,
-            'username' => 'user-name',
-            'name' => 'andre',
-            'website' => 'https://example.com',
-            'eventId' => '01ARZ3NDEKTSV4RRFFQ69G5FAV',
-            'requestId' => '123e4567-e89b-12d3-a456-426614174000',
-        ];
-
-        $this->invalidData = $this->validData;
-        $this->invalidData['age'] = 17; // Between(18, 99) fails
+        $this->validData = Scenarios::constrained();
+        $this->invalidData = Scenarios::constrained(true);
 
         $this->user = new BenchConstrainedUser;
     }

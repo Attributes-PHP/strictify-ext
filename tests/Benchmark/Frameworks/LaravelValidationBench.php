@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Attributes\Strictify\Tests\Benchmark\Frameworks;
 
+use Attributes\Strictify\Tests\Benchmark\Scenarios;
+
 use Illuminate\Translation\ArrayLoader;
 use Illuminate\Translation\Translator;
 use Illuminate\Validation\Factory;

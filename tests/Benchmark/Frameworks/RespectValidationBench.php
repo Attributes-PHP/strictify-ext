@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Attributes\Strictify\Tests\Benchmark\Frameworks;
 
+use Attributes\Strictify\Tests\Benchmark\Scenarios;
+
 use PhpBench\Attributes as Bench;
 use Respect\Validation\Validator;
 

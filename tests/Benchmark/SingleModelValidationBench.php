@@ -36,43 +36,10 @@ class SingleModelValidationBench
 
     public function __construct()
     {
-        $this->simpleData = [
-            'age' => 30,
-            'name' => 'Andre',
-            'email' => 'andre@example.com',
-            'active' => true,
-            'balance' => 1250.50,
-        ];
-
-        $this->looseData = [
-            'age' => '30',
-            'name' => 123,
-            'email' => 'andre@example.com',
-            'active' => 1,
-            'balance' => '1250.50',
-        ];
-
-        $this->attributeData = [
-            'user_name' => 'Andre',
-            'age' => 30,
-            'tags' => ['php', 'extension', 'validation'],
-        ];
-
-        $this->nestedData = [
-            'id' => 42,
-            'addresses' => [
-                ['street' => 'Main St', 'city' => 'Porto'],
-                ['street' => 'Second St', 'city' => 'Lisbon'],
-                ['street' => 'Third St', 'city' => 'Braga'],
-                ['street' => 'Fourth St', 'city' => 'Faro'],
-                ['street' => 'Fifth St', 'city' => 'Aveiro'],
-                ['street' => 'Sixth St', 'city' => 'Coimbra'],
-                ['street' => 'Seventh St', 'city' => 'Setubal'],
-                ['street' => 'Eighth St', 'city' => 'Guimaraes'],
-                ['street' => 'Ninth St', 'city' => 'Viseu'],
-                ['street' => 'Tenth St', 'city' => 'Evora'],
-            ],
-        ];
+        $this->simpleData = Scenarios::simple();
+        $this->looseData = Scenarios::loose();
+        $this->attributeData = Scenarios::attribute();
+        $this->nestedData = Scenarios::nested();
 
         $this->simpleUser = new BenchSimpleUser;
         $this->emptyUser = new BenchEmptyUser;

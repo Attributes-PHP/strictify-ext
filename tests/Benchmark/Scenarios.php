@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Attributes\Strictify\Tests\Benchmark\Frameworks;
+namespace Attributes\Strictify\Tests\Benchmark;
 
 /**
- * Input data shared by the framework comparison benches, mirroring the
- * strictify benchmark scenarios field for field.
+ * Input data shared by all benchmark suites (strictify and the framework
+ * comparison benches), so every implementation validates identical input.
  */
 final class Scenarios
 {
@@ -122,6 +122,110 @@ final class Scenarios
         }
 
         return ['mixed' => $mixed, 'coerced' => []];
+    }
+
+    public static function attribute(): array
+    {
+        return [
+            'user_name' => 'Andre',
+            'age' => 30,
+            'tags' => ['php', 'extension', 'validation'],
+        ];
+    }
+
+    public static function orders(int $count = 20): array
+    {
+        $data = ['id' => 1, 'addresses' => []];
+        for ($i = 0; $i < $count; $i++) {
+            $data['addresses'][] = ['street' => 'Street ' . $i, 'city' => 'City ' . $i];
+        }
+
+        return $data;
+    }
+
+    public static function dateTime(): array
+    {
+        $stamp = '2026-10-09T12:30:00+00:00';
+
+        return [
+            'createdAt' => $stamp,
+            'updatedAt' => $stamp,
+            'deletedAt' => $stamp,
+            'archivedAt' => $stamp,
+        ];
+    }
+
+    public static function errors(): array
+    {
+        return [
+            'username' => 42,
+            'age' => 'not an int',
+            'score' => true,
+            'active' => 3.14,
+            'note' => false,
+            'when' => 'not a datetime',
+            'email' => 99,
+            'tags' => 'oops',
+        ];
+    }
+
+    public static function extraKeys(): array
+    {
+        $data = [
+            'name' => 'andre',
+            'count' => 7,
+            'ratio' => 1.5,
+        ];
+        for ($i = 0; $i < 97; $i++) {
+            $data['unknown' . $i] = $i;
+        }
+
+        return $data;
+    }
+
+    public static function unionCoerced(): array
+    {
+        $data = ['mixed' => [], 'coerced' => []];
+        for ($i = 0; $i < 100; $i++) {
+            $data['coerced'][] = ($i % 2) === 0 ? '30' : '250';
+        }
+
+        return $data;
+    }
+
+    public static function unionModelArm(): array
+    {
+        $data = ['items' => []];
+        for ($i = 0; $i < 30; $i++) {
+            $data['items'][] = ($i % 3) === 2
+                ? $i
+                : ['street' => 'Street ' . $i, 'city' => 'City ' . $i];
+        }
+
+        return $data;
+    }
+
+    public static function unionTree(): array
+    {
+        // Self-referencing union tree: 4 levels, each node mixing scalar
+        // arms with hydrated child nodes
+        $node = null;
+        $node = static function (int $depth) use (&$node): array {
+            $children = [1, 'leaf'];
+            if ($depth > 0) {
+                for ($i = 0; $i < 4; $i++) {
+                    $children[] = $node($depth - 1);
+                }
+            }
+
+            return ['name' => 'node-' . $depth, 'children' => $children];
+        };
+        $data = ['name' => 'root', 'children' => []];
+        for ($i = 0; $i < 6; $i++) {
+            $data['children'][] = ($i % 2) === 0 ? $i : $node(3);
+        }
+
+        return $data;
     }
 
     /**
