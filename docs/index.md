@@ -59,3 +59,7 @@ New here? The [Quickstart](/quickstart/) takes under a minute.
 - **Guides** — task-oriented: [validating payloads](/guides/validating-payloads/), [nested models and arrays](/guides/nested-models/), [aliases](/guides/aliases/), [error messages](/guides/error-messages/), [sensitive data](/guides/sensitive-data/), [calling functions](/guides/calling-functions/), [serializing models](/guides/serializing-models/).
 - **Reference** — [validate()](/validate/), [toDict()](/toDict/), [call()](/call/), [ModelConfigs](/model-configs/), [Constraints](/constraints/), [Exceptions](/exceptions/), [API](/api/).
 - [FAQ](/faq/) and [Changelog](/changelog/).
+
+## Using with AI assistants
+
+This documentation is also available in LLM-friendly Markdown: [llms.txt](/llms.txt) indexes every page (each page is also served as Markdown at its own URL), and [llms-full.txt](/llms-full.txt) contains the full documentation in a single file.

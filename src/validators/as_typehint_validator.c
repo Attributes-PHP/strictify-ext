@@ -135,9 +135,13 @@ static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_c
 
     const zend_string *str = Z_STR_P(value);
 
-    // A #[DateTime(format: ...)] constraint on the field overrides the
-    // default parse format for string -> DateTime coercion
+    // A #[DateTime(format: ..., timezone: ...)] constraint on the field
+    // overrides the default parse format and timezone for string ->
+    // DateTime coercion, so the hydrated object is resolved in the
+    // declared timezone (the format alone leaves the time of day at the
+    // current time, which would roll the date on timezone conversion)
     zend_string *fmt = as_datetime_format;
+    zval *tz = NULL;
     if (cf != NULL) {
         for (uint32_t c = 0; c < cf->constraints_count; c++) {
             zval *inst = &cf->constraints[c].instance;
@@ -147,6 +151,11 @@ static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_c
                 if (Z_TYPE_P(f) == IS_STRING) {
                     fmt = Z_STR_P(f);
                 }
+                zval rv_tz;
+                zval *t = zend_read_property(AS_Fields_Constraints_DateTime_ce, Z_OBJ_P(inst), "timezone_obj", sizeof("timezone_obj") - 1, false, &rv_tz);
+                if (Z_TYPE_P(t) == IS_OBJECT) {
+                    tz = t;
+                }
                 break;
             }
         }
@@ -154,17 +163,24 @@ static bool coerce_datetime(zval *value, zend_class_entry *target_ce, as_model_c
 
     // The call frame copies and releases its own parameter references:
     // args[0] borrows the request-lifetime format string, args[1] owns
-    // the single reference released after the call
-    zval args[2];
+    // the single reference released after the call, args[2] borrows the
+    // constraint's timezone object
+    zval args[3];
     ZVAL_STR(&args[0], fmt);
     ZVAL_COPY(&args[1], value);
+    if (tz != NULL) {
+        ZVAL_COPY(&args[2], tz);
+    } else {
+        ZVAL_NULL(&args[2]);
+    }
 
     zval datetime_obj;
     ZVAL_UNDEF(&datetime_obj);
 
-    zend_call_known_function(as_date_create_from_format_fn, NULL, NULL, &datetime_obj, 2, args, NULL);
+    zend_call_known_function(as_date_create_from_format_fn, NULL, NULL, &datetime_obj, 3, args, NULL);
 
     zval_ptr_dtor(&args[1]);
+    zval_ptr_dtor(&args[2]);
 
     if (Z_TYPE(datetime_obj) == IS_OBJECT && Z_OBJCE_P(&datetime_obj) == datetime_ce) {
         zval_ptr_dtor(value);
