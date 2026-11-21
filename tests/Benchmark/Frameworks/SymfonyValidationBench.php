@@ -28,60 +28,52 @@ class SymfonyValidationBench
     {
         $this->validator = Validation::createValidator();
 
-        $this->constraints['simple'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['simple'] = new Assert\Collection(fields: [
                 'age' => new Assert\Type('integer'),
                 'name' => new Assert\Type('string'),
                 'email' => new Assert\Type('string'),
                 'active' => new Assert\Type('bool'),
                 'balance' => new Assert\Type('float'),
-            ],
-        ]);
+            ]);
 
         // Symfony validates without coercing: the loose scenario accepts
         // the stringly scalars via union types
-        $this->constraints['loose'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['loose'] = new Assert\Collection(fields: [
                 'age' => new Assert\Type('numeric'),
                 'name' => new Assert\Type('string'),
                 'email' => new Assert\Type('string'),
                 'active' => new Assert\Type(['bool', 'integer']),
                 'balance' => new Assert\Type('numeric'),
-            ],
-        ]);
+            ]);
 
-        $this->constraints['constrained'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['constrained'] = new Assert\Collection(fields: [
                 'slug' => new Assert\Regex('/^[a-zA-Z0-9_-]+$/'),
                 'label' => new Assert\Regex('/^[\x00-\x7F]*$/'),
-                'age' => [new Assert\Type('integer'), new Assert\Range(['min' => 18, 'max' => 99])],
+                'age' => [new Assert\Type('integer'), new Assert\Range(min: 18, max: 99)],
                 'tags' => new Assert\Callback(static function ($value): bool {
                     return is_array($value) && in_array('php', $value, true) && in_array('dev', $value, true);
                 }),
-                'birthday' => new Assert\DateTime(['format' => 'Y-m-d']),
+                'birthday' => new Assert\DateTime(format: 'Y-m-d'),
                 'email' => [new Assert\Type('string'), new Assert\Regex('/\.(com|net)$/')],
-                'grade' => new Assert\Choice(['choices' => ['a', 'b', 'c']]),
+                'grade' => new Assert\Choice(choices: ['a', 'b', 'c']),
                 'score' => [new Assert\Type('float'), new Assert\LessThanOrEqual(100)],
                 'quantity' => [new Assert\Type('integer'), new Assert\GreaterThanOrEqual(1)],
                 'packSize' => [new Assert\Type('integer'), new Assert\Callback(static fn ($value): bool => is_int($value) && $value % 5 === 0)],
                 'username' => new Assert\Regex('/^[a-z][a-z0-9-]*$/'),
-                'name' => [new Assert\Type('string'), new Assert\Length(['min' => 3, 'max' => 20])],
+                'name' => [new Assert\Type('string'), new Assert\Length(min: 3, max: 20)],
                 'website' => [new Assert\Type('string'), new Assert\Regex('#^https://#')],
                 'eventId' => new Assert\Regex('/^[0-7][0-9A-HJKMNP-TV-Z]{25}$/i'),
                 'requestId' => new Assert\Uuid(),
-            ],
-        ]);
+            ]);
 
         $addressFields = [
             'street' => new Assert\Type('string'),
             'city' => new Assert\Type('string'),
         ];
-        $this->constraints['nested'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['nested'] = new Assert\Collection(fields: [
                 'id' => new Assert\Type('integer'),
-                'addresses' => new Assert\All(new Assert\Collection(['fields' => $addressFields])),
-            ],
-        ]);
+                'addresses' => new Assert\All(new Assert\Collection(fields: $addressFields)),
+            ]);
 
         $wideFields = [];
         for ($i = 1; $i <= 32; $i++) {
@@ -93,23 +85,19 @@ class SymfonyValidationBench
                 6, 7 => 'bool',
             });
         }
-        $this->constraints['wide'] = new Assert\Collection(['fields' => $wideFields]);
+        $this->constraints['wide'] = new Assert\Collection(fields: $wideFields);
 
         $intList = new Assert\All(new Assert\Type('integer'));
-        $this->constraints['matrix'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['matrix'] = new Assert\Collection(fields: [
                 'matrix' => new Assert\All($intList),
                 'groups' => new Assert\All($intList),
-            ],
-        ]);
+            ]);
         $this->constraints['dict'] = $this->constraints['matrix'];
 
-        $this->constraints['union'] = new Assert\Collection([
-            'fields' => [
+        $this->constraints['union'] = new Assert\Collection(fields: [
                 'mixed' => new Assert\All(new Assert\Type(['integer', 'string', 'boolean'])),
                 'coerced' => new Assert\All(new Assert\Type(['integer', 'float'])),
-            ],
-        ]);
+            ]);
 
         $this->constraints['nine'] = [];
         $nineRules = [
@@ -128,7 +116,7 @@ class SymfonyValidationBench
             foreach ($fields as $field => $type) {
                 $converted[$field] = $type instanceof Constraint ? $type : new Assert\Type($type);
             }
-            $this->constraints['nine'][$name] = new Assert\Collection(['fields' => $converted]);
+            $this->constraints['nine'][$name] = new Assert\Collection(fields: $converted);
         }
 
         // Warm the metadata caches so subjects measure steady-state cost
