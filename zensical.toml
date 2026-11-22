@@ -27,6 +27,7 @@ nav = [
     { "Exceptions" = "exceptions.md" },
     { "API" = "api.md" },
   ]},
+  { "Benchmarks" = "benchmarks.md" },
   { "FAQ" = "faq.md" },
   { "Changelog" = "changelog.md" },
 ]
