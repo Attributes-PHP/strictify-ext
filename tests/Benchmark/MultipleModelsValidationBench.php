@@ -26,52 +26,22 @@ class MultipleModelsValidationBench
 
     public function __construct()
     {
-        $this->data = [
-            BenchProfile::class => [
-                'username' => 'andre',
-                'email' => 'andre@example.com',
-                'loginCount' => 42,
-            ],
-            BenchSignup::class => [
-                'user_name' => 'andre',
-                'email' => 'andre@example.com',
-                'age' => '30',
-            ],
-            BenchProduct::class => [
-                'sku' => 'SKU-1',
-                'title' => 'Validation extension',
-                'price' => 99.9,
-                'stock' => 10,
-            ],
-            BenchSession::class => [
-                'sessionId' => 'abc123',
-                'userId' => 'user-1',
-                'rememberMe' => true,
-            ],
-            BenchCartItem::class => [
-                'sku' => 'SKU-1',
-                'quantity' => 2,
-                'unitPrice' => 49.95,
-            ],
-            BenchInvoice::class => [
-                'number' => 'INV-2026-001',
-                'customer' => 'Acme Inc',
-                'total' => 1250.50,
-            ],
-            BenchReview::class => [
-                'author' => 'andre',
-                'comment' => 'Fast validation',
-                'rating' => 5,
-            ],
-            BenchCategory::class => [
-                'slug' => 'php-extensions',
-                'name' => 'PHP Extensions',
-            ],
-            BenchTagList::class => [
-                'name' => 'validation',
-                'tags' => ['php', 'c', 'extension'],
-            ],
+        $classes = [
+            'profile' => BenchProfile::class,
+            'signup' => BenchSignup::class,
+            'product' => BenchProduct::class,
+            'session' => BenchSession::class,
+            'cart' => BenchCartItem::class,
+            'invoice' => BenchInvoice::class,
+            'review' => BenchReview::class,
+            'category' => BenchCategory::class,
+            'tags' => BenchTagList::class,
         ];
+        $this->data = [];
+        foreach (Scenarios::nineModels() as $name => $data) {
+            $class = $classes[$name];
+            $this->data[$class] = $data;
+        }
 
         $this->models = [];
         foreach (array_keys($this->data) as $class) {

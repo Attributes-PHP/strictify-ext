@@ -43,68 +43,13 @@ class DataLayoutBench
 
     public function __construct()
     {
-        $this->wideData = [];
-        for ($i = 1; $i <= 32; $i++) {
-            $name = 'field' . str_pad((string) $i, 2, '0', STR_PAD_LEFT);
-            $this->wideData[$name] = match (($i - 1) % 8) {
-                0, 1 => 'value-' . $i,
-                2, 3 => $i,
-                4, 5 => $i + 0.5,
-                6, 7 => $i % 2 === 1,
-            };
-        }
-
-        $this->matrixData = [
-            'matrix' => [],
-            'groups' => ['seed' => [1]],
-        ];
-        for ($i = 0; $i < 20; $i++) {
-            $this->matrixData['matrix'][] = range($i * 50, $i * 50 + 49);
-        }
-
-        $this->groupsData = [
-            'matrix' => [[1]],
-            'groups' => [],
-        ];
-        for ($i = 0; $i < 20; $i++) {
-            $this->groupsData['groups']['group-' . $i] = range(0, 49);
-        }
-
-        $this->ordersData = ['id' => 1, 'addresses' => []];
-        for ($i = 0; $i < 20; $i++) {
-            $this->ordersData['addresses'][] = [
-                'street' => 'Street ' . $i,
-                'city' => 'City ' . $i,
-            ];
-        }
-
-        $stamp = '2026-10-09T12:30:00+00:00';
-        $this->dateTimeData = [
-            'createdAt' => $stamp,
-            'updatedAt' => $stamp,
-            'deletedAt' => $stamp,
-            'archivedAt' => $stamp,
-        ];
-
-        $this->errorData = [
-            'username' => 42,
-            'age' => 'not an int',
-            'score' => true,
-            'active' => 3.14,
-            'note' => false,
-            'when' => 'not a datetime',
-            'email' => 99,
-            'tags' => 'oops',
-        ];
-
-        $this->extraKeysData = [
-            'name' => 'andre',
-            'count' => 7,
-            'ratio' => 1.5,
-        ];
-        for ($i = 0; $i < 97; $i++) {
-            $this->extraKeysData['unknown' . $i] = $i;
-        }
+        $this->wideData = Scenarios::wide();
+        $this->matrixData = Scenarios::matrix();
+        $this->groupsData = Scenarios::dictOfSequences();
+        $this->ordersData = Scenarios::orders();
+        $this->dateTimeData = Scenarios::dateTime();
+        $this->errorData = Scenarios::errors();
+        $this->extraKeysData = Scenarios::extraKeys();
 
         // Warm the compiled plans, field-name and spec caches: the
         // scenarios measure steady-state per-call cost, not the
