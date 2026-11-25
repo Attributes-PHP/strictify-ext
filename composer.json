@@ -1,6 +1,6 @@
 {
     "name": "attributes-php/strictify-ext",
-    "type": "library",
+    "type": "php-ext",
     "description": "Pydantic-inspired PHP library for validating data via type hints at lightning speed \u26a1\ufe0f",
     "keywords": [
         "validation",
@@ -29,6 +29,9 @@
         "respect/validation": "^2.5 || ^3.0",
         "illuminate/validation": "^12.0 || ^13.0",
         "illuminate/translation": "^12.0 || ^13.0"
+    },
+    "php-ext": {
+        "extension-name": "attributes-strictify"
     },
     "prefer-stable": true,
     "config": {
