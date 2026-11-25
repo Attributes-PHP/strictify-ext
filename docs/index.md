@@ -1,13 +1,22 @@
 ---
 title: "Overview"
-description: "Strictify-ext is PHP extension that brings data validation via type-hinting at native speed."
+description: "Strictify brings data validation via type-hinting to PHP — as a pure-PHP Composer library or, at native speed, as a C extension."
 ---
 
 # Strictify
 
 ![Strictify](assets/images/strictify-wallpaper.png)
 
-**Strictify** is a C extension that brings data validation via type-hinting at lightning speed to PHP. So your model types are the schema: no configuration files, no YAML.
+**Strictify** validates data via type-hinting at lightning speed. Your model types are the schema: no configuration files, no YAML.
+
+The same `Attributes\Strictify` API ships as two interchangeable packages, and this documentation covers both:
+
+| | Package | Install |
+|---|---|---|
+| **Strictify** (pure PHP) | [`attributes-php/strictify`](https://github.com/Attributes-PHP/strictify) | `composer require attributes-php/strictify` |
+| **Strictify Extension** | [`attributes-php/strictify-ext`](https://github.com/Attributes-PHP/strictify-ext) | `pie install attributes-php/strictify-ext` |
+
+Same models, same functions, same behavior. The library offers the widest compatibility: it runs anywhere Composer runs — shared hosting, managed platforms, serverless. The extension offers maximum performance for those who control the host and can install a PHP extension — on average roughly an order of magnitude faster, up to ~96x on nested payloads (see [Benchmarks](/benchmarks/)).
 
 ```php
 <?php
@@ -47,8 +56,14 @@ $rawData ──▶ validate($rawData, new User())
 
 ## Installation
 
+Pick one flavor — they expose the same `Attributes\Strictify` API:
+
 ```bash
-pie install attributes-php/strictify
+# Pure-PHP library — widest compatibility, runs anywhere Composer runs
+composer require attributes-php/strictify
+
+# C extension — maximum performance, for hosts you control
+pie install attributes-php/strictify-ext
 ```
 
 New here? The [Quickstart](/quickstart/) takes under a minute.

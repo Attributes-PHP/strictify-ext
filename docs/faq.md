@@ -1,9 +1,13 @@
 ---
 title: "FAQ"
-description: "Frequently asked questions about Strictify: strict vs loose mode, extra keys, error paths, property hooks, performance and caching."
+description: "Frequently asked questions about Strictify: library vs extension, strict vs loose mode, extra keys, error paths, property hooks, performance and caching."
 ---
 
 # FAQ
+
+## Which package should I use: the library or the extension?
+
+They expose the same `Attributes\Strictify` API and behave identically, so the choice is about your environment. [`attributes-php/strictify`](https://github.com/Attributes-PHP/strictify) is the pure-PHP library (`composer require attributes-php/strictify`) — the widest-compatibility option, it runs anywhere Composer runs, including hosts where PHP extensions cannot be installed. [`attributes-php/strictify-ext`](https://github.com/Attributes-PHP/strictify-ext) is the C extension (`pie install attributes-php/strictify-ext`) — for those who control the host and can install a PHP extension; it is on average ~12x faster, up to ~96x on nested payloads (see [Benchmarks](/benchmarks/)). Your model code does not change between them.
 
 ## Why is my numeric string rejected?
 
@@ -35,8 +39,8 @@ No. The model class is compiled once per request (field names, constraints, type
 
 ## Can I use Strictify without Composer/PIE?
 
-The extension is distributed through PIE (`pie install attributes-php/strictify`). Building from source: `phpize && ./configure --enable-attributes-strictify && make`, then load `modules/attributes_strictify.so`. See [DEVELOPMENT.md](https://github.com/Attributes-PHP/strictify-ext/blob/main/DEVELOPMENT.md).
+The library is a plain Composer package (`composer require attributes-php/strictify`); without Composer, clone the repository and wire up its PSR-4 autoloader manually. The extension is distributed through PIE (`pie install attributes-php/strictify-ext`); to build it from source: `phpize && ./configure --enable-attributes-strictify && make`, then load `modules/attributes_strictify.so`. See [DEVELOPMENT.md](https://github.com/Attributes-PHP/strictify-ext/blob/main/DEVELOPMENT.md).
 
 ## Where do I report bugs or request features?
 
-Open an issue on [GitHub](https://github.com/Attributes-PHP/strictify-ext/issues).
+Open an issue on the GitHub repository of the flavor you use: [attributes-php/strictify](https://github.com/Attributes-PHP/strictify/issues) (library) or [attributes-php/strictify-ext](https://github.com/Attributes-PHP/strictify-ext/issues) (extension).

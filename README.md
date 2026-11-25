@@ -1,10 +1,10 @@
 # Strictify Extension
 
 <p align="center">
-    <img src="https://raw.githubusercontent.com/Attributes-PHP/strictify/main/docs/assets/images/strictify-wallpaper.png" alt="strictify logo" width="300">
+    <img src="https://raw.githubusercontent.com/Attributes-PHP/strictify-ext/main/docs/assets/images/strictify-wallpaper.png" alt="strictify logo" width="300">
 </p>
 <p align="center">
-    <a href="https://github.com/Attributes-PHP/strictify/actions"><img alt="GitHub Actions Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/Attributes-PHP/strictify/tests.yml"></a>
+    <a href="https://github.com/Attributes-PHP/strictify-ext/actions"><img alt="GitHub Actions Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/Attributes-PHP/strictify-ext/tests.yml"></a>
     <a href="https://codecov.io/gh/Attributes-PHP/strictify" ><img alt="Code Coverage" src="https://codecov.io/gh/Attributes-PHP/strictify/graph/badge.svg?token=8N7N9NMGLG"/></a>
     <a href="https://packagist.org/packages/Attributes-PHP/strictify"><img alt="Latest Version" src="https://img.shields.io/packagist/v/Attributes-PHP/strictify"></a>
     <a href="https://packagist.org/packages/Attributes-PHP/strictify"><img alt="Supported PHP Versions" src="https://img.shields.io/badge/8.2%2B?label=versions"></a>
@@ -13,7 +13,7 @@
 
 ------
 
-**Strictify Extension** is a Pydantic-inspired PHP library for validating data via type hints at lightning speed ⚡️
+**Strictify Extension** is a Pydantic-inspired PHP library for validating data via type hints at lightning speed ⚡️ It shares its API, behavior and documentation with [strictify](https://github.com/Attributes-PHP/strictify), the pure-PHP Composer flavor of the same library: same models, same functions — the extension just runs them at native speed.
 
 ## Prerequisites
 
@@ -63,7 +63,13 @@ call("myFunction", $rawData);
 ## Installation
 
 ```bash
-pie install attributes-php/strictify
+pie install attributes-php/strictify-ext
+```
+
+For the widest compatibility — including shared hosting and managed platforms where PHP extensions cannot be installed — use the pure-PHP flavor instead, which requires no code changes:
+
+```bash
+composer require attributes-php/strictify
 ```
 
 ## Documentation

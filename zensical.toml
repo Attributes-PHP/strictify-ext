@@ -64,21 +64,25 @@ toggle.name = "Switch to light mode"
 [project.plugins.llmstxt]
 full_output = "llms-full.txt"
 markdown_description = """
-Strictify-ext is a C extension for PHP 8.2+ that validates raw data against class type
-hints at native speed: a model's public property types are the schema, with no YAML and
-no config files. Install with `pie install attributes-php/strictify`. Core entry points:
-`Attributes\\Strictify\\validate()` hydrates a `BaseModel` from an array and throws
-`ValidationException` on invalid data, `BaseModel::toDict()` serializes a model back to
-an array, and `Attributes\\Strictify\\call()` invokes any callable with validated model
-parameters. Models are configured with `#[ModelConfigs]`, values are constrained with the
-constraint attributes, and failures are reported per field path via
-`ValidationException::getErrors()`. Source code: https://github.com/Attributes-PHP/strictify-ext
+Strictify is a Pydantic-inspired data-validation system for PHP 8.2+ that validates raw data against
+class type hints: a model's public property types are the schema, with no YAML and no config files.
+It ships as two interchangeable packages sharing one `Attributes\\Strictify` API: the pure-PHP
+Composer library `attributes-php/strictify` (`composer require attributes-php/strictify`) for the
+widest compatibility, and the C extension `attributes-php/strictify-ext`
+(`pie install attributes-php/strictify-ext`, roughly an order of magnitude faster) for hosts you
+control. Core entry points: `Attributes\\Strictify\\validate()` hydrates a
+`BaseModel` from an array and throws `ValidationException` on invalid data, `BaseModel::toDict()`
+serializes a model back to an array, and `Attributes\\Strictify\\call()` invokes any callable with
+validated model parameters. Models are configured with `#[ModelConfigs]`, values are constrained
+with the constraint attributes, and failures are reported per field path via
+`ValidationException::getErrors()`. Source code: library https://github.com/Attributes-PHP/strictify,
+extension https://github.com/Attributes-PHP/strictify-ext
 """
 
 [project.plugins.llmstxt.sections]
 "Getting started" = [
-  { "index.md" = "Overview: what Strictify is, how validation works, requirements and installation" },
-  { "quickstart.md" = "Install Strictify, define a first model and validate data in under a minute" },
+  { "index.md" = "Overview: what Strictify is, the library and extension packages, how validation works, requirements and installation" },
+  { "quickstart.md" = "Install Strictify (Composer library or PIE extension), define a first model and validate data in under a minute" },
 ]
 "Guides" = [
   { "guides/validating-payloads.md" = "How validate() checks raw data: required fields, strict vs loose mode, return semantics, validation hooks" },
@@ -99,6 +103,6 @@ constraint attributes, and failures are reported per field path via
   { "api.md" = "Generated API reference: functions, classes, attributes and enums, built from stubs/*.stub.php" },
 ]
 "Optional" = [
-  { "faq.md" = "Frequently asked questions: strict vs loose mode, extra keys, error paths, hooks, performance" },
+  { "faq.md" = "Frequently asked questions: library vs extension, strict vs loose mode, extra keys, error paths, hooks, performance" },
   { "changelog.md" = "Release notes, newest first" },
 ]

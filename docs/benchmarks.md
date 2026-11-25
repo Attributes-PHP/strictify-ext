@@ -5,7 +5,7 @@ description: "How Strictify compares with other PHP validation frameworks: bench
 
 # Benchmarks
 
-Strictify validates in a C extension, so per-call cost is close to the engine's own type checks. This page documents the benchmark suite and how it compares against the popular pure-PHP validation libraries.
+Strictify ships as a pure-PHP library and as a C extension with the same API; both flavors are measured below. The extension validates in C, so its per-call cost is close to the engine's own type checks. This page documents the benchmark suite and how Strictify compares against the popular pure-PHP validation libraries.
 
 ## Running the benchmarks
 

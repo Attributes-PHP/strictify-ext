@@ -7,11 +7,17 @@ description: "Install Strictify, define your first model and validate data in un
 
 ## Installation
 
-Install the extension with [PIE](https://php-pie.org):
+Strictify ships as two interchangeable packages with the same `Attributes\Strictify` API. Pick one:
 
 ```bash
-pie install attributes-php/strictify
+# Pure-PHP library — runs anywhere Composer runs, no compiled extension needed
+composer require attributes-php/strictify
+
+# C extension — same API and behavior, roughly an order of magnitude faster (see Benchmarks)
+pie install attributes-php/strictify-ext
 ```
+
+The library is the widest-compatibility option: it runs anywhere Composer runs, including shared hosting and managed platforms where PHP extensions cannot be installed. The extension targets those who control the host and can install a PHP extension — same API and behavior, roughly an order of magnitude faster (see Benchmarks).
 
 Requires PHP 8.2 or later.
 

@@ -5,7 +5,7 @@ description: "Release notes for Strictify: new features, fixes and behavior chan
 
 # Changelog
 
-All notable changes to Strictify are documented here, newest first. Install a released version with `pie install attributes-php/strictify`.
+All notable changes to Strictify are documented here, newest first. Install the pure-PHP library with `composer require attributes-php/strictify`, or the extension with `pie install attributes-php/strictify-ext`.
 
 ## Unreleased
 
