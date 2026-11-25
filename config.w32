@@ -36,6 +36,19 @@ if (PHP_ATTRIBUTES_STRICTIFY != "no") {
 		src/fields/constraints/as_min.c src/fields/constraints/as_multiple_of.c \
 		src/fields/constraints/as_regex.c src/fields/constraints/as_size.c \
 		src/fields/constraints/as_starts_with.c src/fields/constraints/as_ulid.c \
-		src/fields/constraints/as_uuid.c src/validators/as_typehint_validator.c \
+		src/fields/constraints/as_uuid.c src/fields/constraints/as_email.c \
+		src/fields/constraints/as_url.c src/fields/constraints/as_domain.c \
+		src/fields/constraints/as_ip.c src/fields/constraints/as_iban.c \
+		src/fields/constraints/as_isbn.c src/fields/constraints/as_credit_card.c \
+		src/fields/constraints/as_version.c \
+		src/fields/constraints/as_mac_address.c src/fields/constraints/as_alnum.c \
+		src/fields/constraints/as_alpha.c src/fields/constraints/as_digit.c \
+		src/fields/constraints/as_xdigit.c \
+		src/fields/constraints/as_slug.c \
+		src/fields/constraints/as_base64.c src/fields/constraints/as_json.c \
+		src/fields/constraints/as_hex_rgb_color.c \
+		src/fields/constraints/as_even.c src/fields/constraints/as_odd.c \
+		src/fields/constraints/as_positive.c src/fields/constraints/as_negative.c src/fields/constraints/as_prime_number.c \
+		src/fields/constraints/as_contains_any.c src/validators/as_typehint_validator.c \
 		src/validators/as_array_typehint_validator.c");
 }

@@ -36,10 +36,43 @@ typedef enum {
     AS_ERROR_STARTS_WITH,
     AS_ERROR_ULID,
     AS_ERROR_UUID,
+    AS_ERROR_EMAIL,
+    /* Address on a domain outside #[Email(domain: ...)]: reported with its own
+     * template because the address itself is well formed */
+    AS_ERROR_EMAIL_DOMAIN,
+    AS_ERROR_URL,
+    /* Scheme outside #[Url(protocol: ...)]: reported with its own template
+     * because the URL itself is well formed */
+    AS_ERROR_URL_PROTOCOL,
+    /* Host outside #[Url(domain: ...)] */
+    AS_ERROR_URL_DOMAIN,
+    AS_ERROR_DOMAIN,
+    AS_ERROR_IP,
+    AS_ERROR_IBAN,
+    AS_ERROR_ISBN,
+    AS_ERROR_CREDIT_CARD,
+    AS_ERROR_VERSION,
+    AS_ERROR_MAC_ADDRESS,
+    AS_ERROR_ALNUM,
+    AS_ERROR_ALPHA,
+    AS_ERROR_DIGIT,
+    AS_ERROR_XDIGIT,
+    AS_ERROR_SLUG,
+    AS_ERROR_BASE64,
+    AS_ERROR_JSON,
+    AS_ERROR_HEX_RGB_COLOR,
+    AS_ERROR_EVEN,
+    AS_ERROR_ODD,
+    AS_ERROR_POSITIVE,
+    AS_ERROR_NEGATIVE,
+    AS_ERROR_PRIME_NUMBER,
+    AS_ERROR_CONTAINS_ANY,
     AS_ERROR_UNION,
     /* Non-sequential key in a #[Sequence] array (sequential defaults to
      * true): the key must be the next integer 0, 1, 2, ... in order */
     AS_ERROR_SEQUENCE_KEYS,
+    /* Duplicate elements in a #[Sequence]/#[Dict] declaring uniqueValues: true */
+    AS_ERROR_UNIQUE_VALUES,
     /* Unknown input key under ModelConfigs(extra: 'forbid'); reported
      * without a property context, so it bypasses the per-property cache
      * and is discarded from the #[ErrorMessage] keys */

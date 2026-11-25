@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Attributes\Strictify\Tests\Integration\Fields;
 
+use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;
 use Attributes\Strictify\Fields\Intersection;
 use Attributes\Strictify\Fields\Sequence;
@@ -18,6 +20,8 @@ use ValueError;
 use const Attributes\Strictify\T_FLOAT;
 use const Attributes\Strictify\T_INT;
 use const Attributes\Strictify\T_NULL;
+
+use function Attributes\Strictify\validate;
 
 describe('Dict constructor argument validation', function () {
     it('accepts every supported $key type', function ($key) {
@@ -76,4 +80,43 @@ describe('Dict constructor argument validation', function () {
         ValueError::class,
         'Dict::__construct(): Argument #2 ($of) must be a valid class, interface or enum, "DoesNotExist" given',
     );
+});
+
+describe('Dict $uniqueValues', function () {
+    it('defaults to false and accepts the flag', function () {
+        expect((new Dict(key: T_INT, of: T_INT))->uniqueValues)->toBeFalse()
+            ->and((new Dict(key: T_INT, of: T_INT, uniqueValues: true))->uniqueValues)->toBeTrue();
+    });
+
+    it('accepts unique values', function () {
+        $model = new class extends BaseModel {
+            #[Dict(key: T_INT, of: Type::string, uniqueValues: true)]
+            public array $values;
+        };
+
+        expect(validate(['values' => [1 => 'a', 2 => 'b']], $model)->values)->toBe([1 => 'a', 2 => 'b']);
+    });
+
+    it('reports duplicate values on the array property', function () {
+        $model = new class extends BaseModel {
+            #[Dict(key: T_INT, of: Type::string, uniqueValues: true)]
+            public array $values;
+        };
+
+        try {
+            validate(['values' => [1 => 'a', 2 => 'b', 3 => 'a']], $model);
+            expect(false)->toBeTrue('ValidationException expected');
+        } catch (ValidationException $e) {
+            expect($e->getErrors())->toBe(['values' => ['Must contain only unique values']]);
+        }
+    });
+
+    it('keeps duplicates allowed without the flag', function () {
+        $model = new class extends BaseModel {
+            #[Dict(key: T_INT, of: Type::string)]
+            public array $values;
+        };
+
+        expect(validate(['values' => [1 => 'a', 2 => 'a']], $model)->values)->toBe([1 => 'a', 2 => 'a']);
+    });
 });

@@ -36,10 +36,37 @@ extern zend_class_entry *AS_Fields_ErrorMessage_ce;
     X(starts_with, AS_ERROR_STARTS_WITH, "starts_with")             \
     X(ulid, AS_ERROR_ULID, "ulid")                                  \
     X(uuid, AS_ERROR_UUID, "uuid")                                  \
+    X(email, AS_ERROR_EMAIL, "email")                               \
+    X(email_domain, AS_ERROR_EMAIL_DOMAIN, "email_domain")          \
+    X(url, AS_ERROR_URL, "url")                                     \
+    X(url_protocol, AS_ERROR_URL_PROTOCOL, "url_protocol")          \
+    X(url_domain, AS_ERROR_URL_DOMAIN, "url_domain")                \
+    X(domain, AS_ERROR_DOMAIN, "domain")                            \
+    X(ip, AS_ERROR_IP, "ip")                                        \
+    X(iban, AS_ERROR_IBAN, "iban")                                  \
+    X(isbn, AS_ERROR_ISBN, "isbn")                                  \
+    X(credit_card, AS_ERROR_CREDIT_CARD, "credit_card")             \
+    X(version, AS_ERROR_VERSION, "version")                         \
+    X(mac_address, AS_ERROR_MAC_ADDRESS, "mac_address")             \
+    X(alnum, AS_ERROR_ALNUM, "alnum")                               \
+    X(alpha, AS_ERROR_ALPHA, "alpha")                               \
+    X(digit, AS_ERROR_DIGIT, "digit")                               \
+    X(xdigit, AS_ERROR_XDIGIT, "xdigit")                            \
+    X(slug, AS_ERROR_SLUG, "slug")                                  \
+    X(base64, AS_ERROR_BASE64, "base64")                            \
+    X(json, AS_ERROR_JSON, "json")                                  \
+    X(hex_rgb_color, AS_ERROR_HEX_RGB_COLOR, "hex_rgb_color")       \
+    X(even, AS_ERROR_EVEN, "even")                                  \
+    X(odd, AS_ERROR_ODD, "odd")                                     \
+    X(positive, AS_ERROR_POSITIVE, "positive")                      \
+    X(negative, AS_ERROR_NEGATIVE, "negative")                      \
+    X(prime_number, AS_ERROR_PRIME_NUMBER, "prime_number")          \
+    X(contains_any, AS_ERROR_CONTAINS_ANY, "contains_any")          \
     X(union_, AS_ERROR_UNION, "union")                              \
-    X(sequence_keys, AS_ERROR_SEQUENCE_KEYS, "sequence_keys")
+    X(sequence_keys, AS_ERROR_SEQUENCE_KEYS, "sequence_keys")       \
+    X(unique_values, AS_ERROR_UNIQUE_VALUES, "unique_values")
 
-#define AS_ERROR_MESSAGE_KEY_COUNT 22
+#define AS_ERROR_MESSAGE_KEY_COUNT 49
 
 /* Same entry as ZEND_ARG_TYPE_INFO(0, name, IS_STRING, 0), but with an
  * explicit name string so C keywords (union) can be used as keys */
