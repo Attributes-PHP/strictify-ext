@@ -27,9 +27,11 @@ nav = [
     { "Exceptions" = "exceptions.md" },
     { "API" = "api.md" },
   ]},
-  { "Benchmarks" = "benchmarks.md" },
-  { "FAQ" = "faq.md" },
-  { "Changelog" = "changelog.md" },
+  { "Resources" = [
+    { "Benchmarks" = "benchmarks.md" },
+    { "FAQ" = "faq.md" },
+    { "Changelog" = "changelog.md" },
+  ]},
 ]
 
 [project.theme]
@@ -102,7 +104,8 @@ extension https://github.com/Attributes-PHP/strictify-ext
   { "exceptions.md" = "Exceptions Strictify throws: ValidationException and getErrors(), plus error cases" },
   { "api.md" = "Generated API reference: functions, classes, attributes and enums, built from stubs/*.stub.php" },
 ]
-"Optional" = [
+"Resources" = [
+  { "benchmarks.md" = "Benchmark suite and measured comparison: the extension and the pure-PHP library vs Symfony Validator, Respect/Validation and Laravel" },
   { "faq.md" = "Frequently asked questions: library vs extension, strict vs loose mode, extra keys, error paths, hooks, performance" },
   { "changelog.md" = "Release notes, newest first" },
 ]

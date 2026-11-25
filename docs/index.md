@@ -73,7 +73,7 @@ New here? The [Quickstart](/quickstart/) takes under a minute.
 - [Quickstart](/quickstart/) — install, first model, first validation error.
 - **Guides** — task-oriented: [validating payloads](/guides/validating-payloads/), [nested models and arrays](/guides/nested-models/), [aliases](/guides/aliases/), [error messages](/guides/error-messages/), [sensitive data](/guides/sensitive-data/), [calling functions](/guides/calling-functions/), [serializing models](/guides/serializing-models/).
 - **Reference** — [validate()](/validate/), [toDict()](/toDict/), [call()](/call/), [ModelConfigs](/model-configs/), [Constraints](/constraints/), [Exceptions](/exceptions/), [API](/api/).
-- [FAQ](/faq/) and [Changelog](/changelog/).
+- **Resources** — [Benchmarks](/benchmarks/), [FAQ](/faq/) and [Changelog](/changelog/).
 
 ## Using with AI assistants
 

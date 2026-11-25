@@ -79,7 +79,7 @@ Full documentation lives at [strictify.attributes-php.com](https://strictify.att
 - [Quickstart](https://strictify.attributes-php.com/quickstart/) — first model and first validation in under a minute
 - [Guides](https://strictify.attributes-php.com/guides/validating-payloads/) — validating payloads, nested models, aliases, error messages, sensitive data, `call()`, `toDict()`
 - [Reference](https://strictify.attributes-php.com/validate/) — `validate()`, `toDict()`, `call()`, `ModelConfigs`, constraints, exceptions, API
-- [FAQ](https://strictify.attributes-php.com/faq/) and [Changelog](https://strictify.attributes-php.com/changelog/)
+- [Benchmarks](https://strictify.attributes-php.com/benchmarks/), [FAQ](https://strictify.attributes-php.com/faq/) and [Changelog](https://strictify.attributes-php.com/changelog/)
 - For LLMs and agents: [llms.txt](https://strictify.attributes-php.com/llms.txt) indexes every page (each also served as Markdown), and [llms-full.txt](https://strictify.attributes-php.com/llms-full.txt) has the full docs in one file
 
 Strictify Extension was created by **[André Gil](https://www.linkedin.com/in/andre-gil/)** and is open-sourced software licensed under the **[MIT license](https://opensource.org/licenses/MIT)**.
