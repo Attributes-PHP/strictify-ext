@@ -21,6 +21,16 @@
 typedef struct as_spec as_spec;
 
 /*
+ * Maximum depth of nested model / nested array-shape validation. Payload
+ * depth is attacker-controlled (a JSON body nests as deep as the sender
+ * wants), and every level consumes C stack: the engine aborts the process
+ * with SIGSEGV long before memory runs out. The limit matches the depth
+ * json_decode() accepts by default, so a payload that parses is a payload
+ * that validates.
+ */
+#define AS_MAX_VALIDATION_DEPTH 512
+
+/*
  * A constraint attribute instantiated once per field compile: the
  * instance zval is owned by the plan, the validator runs the
  * constraint's logic against the field value at validation time.

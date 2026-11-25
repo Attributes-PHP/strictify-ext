@@ -136,7 +136,7 @@ static zend_string *get_property_name(as_property_info *property_info, zend_stri
 static zend_always_inline bool has_property_default_value(as_property_info *property_info);
 static const as_constraint_dispatch_entry *find_constraint_dispatch(const zend_string *lcname);
 static bool instantiate_constraint_attribute(zval *instance, zend_class_entry *ce, zend_attribute *attribute, zend_class_entry *scope);
-static bool compile_field_constraints(as_compiled_field *cf);
+static bool compile_field_constraints(as_compiled_field *cf, as_property_info *property_info);
 static uint32_t generator_index(char alias_generator);
 static void free_compiled_field(as_compiled_field *cf);
 static void free_compiled_model(as_compiled_model *plan);
@@ -402,7 +402,7 @@ static bool instantiate_constraint_attribute(zval *instance, zend_class_entry *c
  * A failure (pending exception from a bad constructor argument)
  * returns false with the partial array freed.
  */
-static bool compile_field_constraints(as_compiled_field *cf)
+static bool compile_field_constraints(as_compiled_field *cf, as_property_info *property_info)
 {
     if (cf->prop->attributes == NULL) {
         return true;
@@ -445,6 +445,22 @@ static bool compile_field_constraints(as_compiled_field *cf)
         }
 
         if (!instantiate_constraint_attribute(&constraints[count].instance, ce, attribute, cf->declaring_ce)) {
+            for (uint32_t i = 0; i < count; i++) {
+                zval_ptr_dtor(&constraints[i].instance);
+            }
+            efree(constraints);
+            return false;
+        }
+
+        /*
+         * The constructor only enforces the stub signature: the arguments
+         * that would make the constraint unsatisfiable (inverted bounds,
+         * NAN bounds, empty value lists, a pattern that does not compile,
+         * an empty domain list) are rejected here, once per field compile,
+         * so the model cannot silently carry a useless constraint.
+         */
+        if (!as_validate_constraint_attribute_args(&constraints[count].instance, property_info)) {
+            zval_ptr_dtor(&constraints[count].instance);
             for (uint32_t i = 0; i < count; i++) {
                 zval_ptr_dtor(&constraints[i].instance);
             }
@@ -664,6 +680,40 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
         return false;
     }
 
+    /*
+     * An empty #[Alias] is a malformed model: it would expect the empty
+     * input key and report its errors under an empty path.
+     */
+    if (UNEXPECTED(ZSTR_LEN(resolved) == 0)) {
+        zend_throw_exception_ex(class_AS_Exceptions_InvalidBaseModelException, 0, "The #[Alias] name of %s::$%s must not be empty.", ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name));
+        if (resolved != cf->prop->name) {
+            zend_string_release(resolved);
+        }
+        return false;
+    }
+
+    /*
+     * Two properties resolving to the same input key would both be hydrated
+     * from that one key (and one of them would keep its default), which is
+     * never what the model means: an #[Alias] naming another property, or
+     * an alias generator mapping $aB and $a_b to the same key.
+     */
+    for (uint32_t i = 0; i < plan->count; i++) {
+        as_compiled_field *sibling = &plan->fields[i];
+        if (sibling == cf || sibling->name == NULL || !zend_string_equals(sibling->name, resolved)) {
+            continue;
+        }
+
+        zend_throw_exception_ex(
+            class_AS_Exceptions_InvalidBaseModelException, 0, "Properties %s::$%s and %s::$%s both resolve to the input key \"%s\".", ZSTR_VAL(sibling->declaring_ce->name), ZSTR_VAL(sibling->prop->name),
+            ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name), ZSTR_VAL(resolved)
+        );
+        if (resolved != cf->prop->name) {
+            zend_string_release(resolved);
+        }
+        return false;
+    }
+
     zend_type type = cf->prop->type;
     if (!ZEND_TYPE_IS_SET(type)) {
         cf->untyped = true;
@@ -728,12 +778,13 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
         ZEND_HASH_PACKED_FOREACH_PTR(cf->prop->attributes, attribute)
         {
             if (lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\sequence", sizeof("attributes\\strictify\\fields\\sequence") - 1) ||
-                lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1)) {
+                lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\dict", sizeof("attributes\\strictify\\fields\\dict") - 1) ||
+                lcname_equals_str(attribute->lcname, "attributes\\strictify\\fields\\intersection", sizeof("attributes\\strictify\\fields\\intersection") - 1)) {
                 if (!cf->untyped && (cf->contains_code & MAY_BE_ARRAY) == 0) {
                     zend_throw_exception_ex(
                         class_AS_Exceptions_InvalidBaseModelException, 0,
-                        "Sequence/Dict can only be declared on array-like properties (array, a union containing array, mixed or untyped); property %s::$%s is not array-like.", ZSTR_VAL(cf->declaring_ce->name),
-                        ZSTR_VAL(cf->prop->name)
+                        "Sequence/Dict/Intersection can only be declared on array-like properties (array, a union containing array, mixed or untyped); property %s::$%s is not array-like.",
+                        ZSTR_VAL(cf->declaring_ce->name), ZSTR_VAL(cf->prop->name)
                     );
                     if (resolved != cf->prop->name) {
                         zend_string_release(resolved);
@@ -764,7 +815,7 @@ static bool compile_field(as_compiled_field *cf, as_compiled_model *plan)
      * assigned below) so the constructor error keeps firing on every
      * validation.
      */
-    if (!compile_field_constraints(cf)) {
+    if (!compile_field_constraints(cf, &property_info)) {
         if (resolved != cf->prop->name) {
             zend_string_release(resolved);
         }
@@ -920,6 +971,25 @@ static void as_transform_field_value(as_compiled_field *cf, as_field *field, con
 }
 
 /*
+ * Stores an unknown input key as a dynamic property. The standard write path
+ * (zend_update_property) raises the PHP 8.2+ "Creation of dynamic property"
+ * deprecation on classes that do not declare #[\AllowDynamicProperties], but
+ * extra:'allow' is an explicit request to store these keys: write into the
+ * object's dynamic-properties table directly, the state the engine itself
+ * keeps once the class allows them.
+ */
+static void as_write_dynamic_property(zend_object *object, zend_string *name, zval *value)
+{
+    HashTable *properties = zend_std_get_properties(object);
+    if (UNEXPECTED(properties == NULL)) {
+        return;
+    }
+
+    Z_TRY_ADDREF_P(value);
+    zend_hash_update(properties, name, value);
+}
+
+/*
  * ModelConfigs extra: 'forbid' reports every input key that resolves to no
  * property of the model. 'allow' stores unknown keys as dynamic properties
  * on the model instance; the auto-resolved 'allow' only happens for classes
@@ -973,10 +1043,7 @@ static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model
                 continue;
             }
 
-            zend_update_property(ce, Z_OBJ_P(model), ZSTR_VAL(key), ZSTR_LEN(key), entry);
-            if (UNEXPECTED(EG(exception) != NULL)) {
-                return;
-            }
+            as_write_dynamic_property(Z_OBJ_P(model), key, entry);
             continue;
         }
 
@@ -997,7 +1064,24 @@ static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model
     ZEND_HASH_FOREACH_END();
 }
 
-bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path)
+/*
+ * Compiles every slot of a plan up front. Field names, constraint instances
+ * and the cross-field rules (two properties resolving to the same input key)
+ * must be resolved the same way for every run, whatever the payload makes
+ * the validation loop reach first.
+ */
+static bool compile_plan_fields(as_compiled_model *plan)
+{
+    for (uint32_t i = 0; i < plan->count; i++) {
+        if (plan->fields[i].name == NULL && !compile_field(&plan->fields[i], plan)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static bool as_validate_model_body(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path)
 {
     ZEND_ASSERT(Z_TYPE_P(raw_data) == IS_ARRAY);
     ZEND_ASSERT(Z_TYPE_P(errors) == IS_ARRAY);
@@ -1012,6 +1096,10 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
     if (plan == NULL) {
         plan = compile_plan_skeleton(ce, properties->alias_generator);
         plans->by_generator[index] = plan;
+    }
+
+    if (!compile_plan_fields(plan)) {
+        return false;
     }
 
     for (uint32_t i = 0; i < plan->count; i++) {
@@ -1071,8 +1159,13 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
         /* Constraints run on the (possibly coerced) value; a failing
          * constraint keeps the value out of the model. Every declared
          * constraint reports its own error unless stopFirstError
-         * aborts the run. */
-        if (cf->constraints_count > 0) {
+         * aborts the run.
+         *
+         * null is not a constrained value: a nullable property accepts it
+         * (the type check above already passed it), exactly like a missing
+         * key backed by a null default. Running the constraints on null
+         * would make ?T properties impossible to leave empty. */
+        if (cf->constraints_count > 0 && Z_TYPE_P(field.value) != IS_NULL) {
             bool constraints_valid = true;
 
             for (uint32_t c = 0; c < cf->constraints_count; c++) {
@@ -1123,6 +1216,26 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
     as_check_extra_fields(raw_data, model, plan, properties, parent_path, errors);
 
     return zend_hash_num_elements(Z_ARRVAL_P(errors)) == 0;
+}
+
+/*
+ * Entry point with the nesting guard: nested models and nested array shapes
+ * re-enter here, and each level consumes C stack. Past the limit the run
+ * stops with a catchable exception instead of overflowing the stack, which
+ * would take the whole process down.
+ */
+bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path)
+{
+    if (UNEXPECTED(AS_G(validation_depth) >= AS_MAX_VALIDATION_DEPTH)) {
+        zend_throw_exception_ex(class_AS_Exceptions_BaseException, 0, "Maximum validation nesting depth of %d exceeded: the payload nests models or arrays too deeply.", AS_MAX_VALIDATION_DEPTH);
+        return false;
+    }
+
+    AS_G(validation_depth)++;
+    bool result = as_validate_model_body(raw_data, model, properties, errors, parent_path);
+    AS_G(validation_depth)--;
+
+    return result;
 }
 
 /*
@@ -1270,6 +1383,10 @@ static bool as_model_to_dict_with_generator(zval *model, char generator, bool in
     if (plan == NULL) {
         plan = compile_plan_skeleton(ce, generator);
         plans->by_generator[index] = plan;
+    }
+
+    if (!compile_plan_fields(plan)) {
+        return false;
     }
 
     array_init(return_value);

@@ -80,12 +80,6 @@ typedef enum {
     AS_ERROR_TYPE_COUNT
 } as_error_type;
 
-typedef struct {
-    uint32_t mask;
-    const char *name;
-    size_t length;
-} as_basic_type_mapping;
-
 // Default error message templates, one per error type (defined in as_error_messages.c).
 // Supported placeholders: {field}, {value} and {expected}
 extern const char *as_default_error_type_messages[];

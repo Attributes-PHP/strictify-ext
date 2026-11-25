@@ -77,12 +77,12 @@ $blog = validate([
 ], new Blog());
 ```
 
-- `Sequence` validates every element against one element type. Keys must always be integers — a string key reports `Must be integer` under that key's path (e.g. `tags.x`). By default the array must additionally be a **list** with keys `0, 1, 2, ...` in order; a gap or out-of-order key reports a `sequence_keys` error. Pass `sequential: false` to allow any integer keys. Pass `sorted: 'asc'` (or `'ASC'` / `'desc'` / `'DESC'`) to sort the validated values and renumber the keys `0, 1, 2, ...`; the default `null` keeps the input order. Pass `uniqueValues: true` to reject repeated elements (`unique_values` error on the property).
+- `Sequence` validates every element against one element type. Keys must always be integers — a string key reports `Must be integer` under that key's path (e.g. `tags.x`). By default the array must additionally be a **list** with keys `0, 1, 2, ...` in order; a gap or out-of-order key reports a `sequence_keys` error. Pass `sequential: false` to allow any integer keys. Pass `sorted: 'asc'` (or `'ASC'` / `'desc'` / `'DESC'`) to sort the validated values and renumber the keys `0, 1, 2, ...`; the default `null` keeps the input order, and any other value throws a `ValueError` instead of being ignored. Pass `uniqueValues: true` to reject repeated elements (`unique_values` error on the property).
 - `Union` accepts an element matching any declared arm — but only nested inside `Sequence(of: new Union(...))` or `Dict(of: new Union(...))`. Declared directly on an `array` property it throws an `InvalidBaseModelException`; on a non-array property it checks the whole value instead (below).
 - `Intersection` requires an element to match every declared class or interface. Its arms must name classes or interfaces only — enums are rejected, mirroring PHP intersection type hints.
 - `Dict` validates keys against `$key` and values against `$of`. The key spec accepts every PHP-castable key type — integer, string, float, boolean and null ([language.types.array](https://www.php.net/manual/en/language.types.array.php)). The engine casts float and bool keys to int and null to the empty string, so those arms match the post-cast key: a `T_FLOAT` or `T_BOOL` arm accepts integer keys, a `T_NULL` arm accepts the `""` key (`[null => ...]`). E.g. `#[Dict(key: T_INT | T_STRING | T_NULL, of: ...)]`. Pass `uniqueValues: true` to reject repeated values (`unique_values` error on the property).
 
-`Sequence` and `Dict` may only be declared on array-like properties (an `array` hint, a union containing `array`, `mixed` or untyped); anywhere else they throw an `InvalidBaseModelException`. On `mixed` or untyped properties a non-array value fails with `Must be array`.
+`Sequence`, `Dict` and `Intersection` may only be declared on array-like properties — an `array` hint (alone or inside a union), `mixed`, or untyped. On anything else they throw an `InvalidBaseModelException` naming the property, whether the hint is scalar (`string`, `int`), the `object` class type, or an intersection type without `array`. On `mixed` or untyped properties a non-array value fails with `Must be array`.
 
 ## Union on non-array properties
 
@@ -192,6 +192,18 @@ public array $values;
 ```
 
 Arguments of a composed `new` expression are validated at construction: an unsupported argument type throws a `TypeError` and a string that names no loadable class, interface or enum throws a `ValueError`.
+
+## Recursion and the depth limit
+
+A self-referencing model (`public ?Node $child`) validates as deep as the payload goes. To keep a hostile payload from exhausting the C stack, `validate()` stops 512 nested model levels deep and throws a catchable `Attributes\Strictify\Exceptions\BaseException`:
+
+```php
+<?php
+// BaseException: Maximum validation nesting depth of 512 exceeded:
+//   the payload nests models or arrays too deeply.
+```
+
+Only nesting adds depth: siblings do not. A list of ten thousand models is one level deep and validates fine, while a chain of 512 nested models throws. The counter is per `validate()` call and unwinds on the way out, so a caught failure — including one that ends in a `ValidationException` — does not affect the next call.
 
 ## See also
 

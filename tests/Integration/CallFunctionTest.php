@@ -434,9 +434,9 @@ describe('call function argument building', function () {
         call('Attributes\\Strictify\\Tests\\Integration\\call_function_throws', []);
     })->throws(Error::class, 'callable failure');
 
-    it('reports the positional index when an internal function misses a required argument', function () {
+    it('names the parameter of an internal function that misses a required argument', function () {
         call('str_repeat', [], ['x']);
-    })->throws(Error::class, 'No value provided for parameter 2 of str_repeat().');
+    })->throws(Error::class, 'No value provided for parameter $times of str_repeat().');
 });
 
 describe('call function sensitive parameters', function () {

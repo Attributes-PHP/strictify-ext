@@ -25,7 +25,39 @@ class User extends BaseModel
 
 Constraints compose: every constraint declared on a property runs, and each failing one reports its own error under the resolved field name (the `Alias` name, when one is declared). `ModelConfigs(stopAtFirstError: true)` aborts the run at the first error, as with type errors.
 
-Attribute constructor arguments are validated at construction — an argument rejected by the constructor (`#[Between('a', 'b')]`) throws a `TypeError` on the first `validate()` call and keeps throwing on every call until the attribute is fixed.
+Attribute constructor arguments are type-checked at construction — an argument the constructor signature rejects (`#[Between('a', 'b')]`) throws a `TypeError` on the first `validate()` call and keeps throwing on every call until the attribute is fixed. Arguments that satisfy the signature but can never behave usefully throw a `ValueError` instead, see below.
+
+## Malformed constraint arguments
+
+A constraint whose declared arguments make it unsatisfiable, or silently turn it into a no-op, is a malformed model definition: `validate()` throws a `ValueError` naming the attribute, the model class and the property, and keeps throwing on every call until the attribute is fixed.
+
+```php
+<?php
+class User extends BaseModel
+{
+    #[Between(99, 18)]
+    public int $age;
+}
+
+validate(['age' => 5], new User());
+// ValueError: Attribute "Attributes\Strictify\Fields\Constraints\Between" on User::$age:
+//   $min (99) must be less than or equal to $max (18).
+```
+
+| Constraint | Rejected arguments |
+| ---------- | ------------------ |
+| `Between` | a `NAN` bound; `$min` greater than `$max` |
+| `Max`, `Min`, `MultipleOf` | a `NAN` bound |
+| `Size` | a negative `$min` or `$max`; `$min` greater than `$max` |
+| `In` | no declared value |
+| `StartsWith`, `EndsWith` | no declared value; an empty string entry (it matches every value) |
+| `Regex` | a pattern that cannot compile: missing or unterminated delimiter, unknown or duplicate modifier, invalid body, embedded NUL byte |
+| `Email` | `domain: ''`, `domain: []`, or an empty string entry in the list |
+| `Url` | `protocol`/`domain` set to `''`, `[]`, or a list holding an empty string |
+
+Degenerate-but-satisfiable arguments are accepted: `Between(5, 5)`, `Between(-INF, INF)`, `Size` with no bounds, `MultipleOf(0)`, `MultipleOf(-5)`, and a pattern with every supported modifier (`/^[a-z]+$/iDSUXn`).
+
+Because the rule runs during the field's first compile, the check is per model class: the `ValueError` fires even when the payload has no value for the property, and it never caches a partial result.
 
 ## Built-in constraints at a glance
 
@@ -126,6 +158,8 @@ class Account extends BaseModel
 
 Passes: `'user-name'`, `'bbbaaabb'` (partial match). Fails: `'User Name'`, `'bbb'`, strings when the pattern fails to compile, and non-string values.
 
+The pattern is validated when the property's field is compiled, so a typo surfaces as a `ValueError` naming the attribute, the model and the property — never as a PHP warning. Supported modifiers are `i`, `m`, `s`, `x`, `A`, `D`, `U`, `J`, `n`, `u` and `r`; `S` and `X` are accepted no-ops. See [malformed constraint arguments](#malformed-constraint-arguments).
+
 ### `StartsWith`
 
 The string must start with one of the declared values; numeric values match by their string representation.
@@ -164,7 +198,7 @@ Passes: `'andre@example.com'`, `'answer 42'`. Fails: `'andre@example.org'`, `'an
 
 ### `Ulid`
 
-Exactly 26 Crockford base32 characters, either letter case.
+Exactly 26 Crockford base32 characters, either letter case. A ULID encodes 128 bits, so the first character is limited to `0`-`7`: a larger first character overflows the range.
 
 ```php
 <?php
@@ -175,7 +209,7 @@ class Event extends BaseModel
 }
 ```
 
-Passes: `'01ARZ3NDEKTSV4RRFFQ69G5FAV'`, `'01arz3ndektsv4rrffq69g5fav'`. Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, `''`, any other character, and non-string values.
+Passes: `'01ARZ3NDEKTSV4RRFFQ69G5FAV'`, `'01arz3ndektsv4rrffq69g5fav'`. Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, a first character above `7` (`'Z1ARZ3NDEKTSV4RRFFQ69G5FAV'`), `''`, any other character, and non-string values.
 
 ### `Uuid`
 
@@ -261,7 +295,7 @@ class Pack extends BaseModel
 }
 ```
 
-Passes: `20`, `0.3`. Fails: `21`, `0.35`, and non-numeric values.
+Passes: `20`, `0.3`. Fails: `21`, `0.35`, and non-numeric values. The divisor may be negative — `MultipleOf(-5)` accepts `-10` — and only `0` is a multiple of `0`, for the integer `0` and the float `0.0` alike.
 
 ## Membership constraints
 
@@ -352,7 +386,7 @@ class Event extends BaseModel
 }
 ```
 
-Passes: `'1994-01-01'`, a `DateTimeInterface` instance, `'2024-03-01T10:00:00+00:00'`. Fails: a string that does not parse in the declared format (`'01/01/1994'`), and any value that is neither string nor `DateTimeInterface`.
+Passes: `'1994-01-01'`, a `DateTimeInterface` instance, `'2024-03-01T10:00:00+00:00'`. Fails: a string that does not parse in the declared format (`'01/01/1994'`), a date that does not exist (`'1994-02-30'`, `'1994-13-01'`, `'2023-02-29'`) — the date extension would roll it over instead of raising — and any value that is neither string nor `DateTimeInterface`. Unpadded fields are still accepted (`'1994-1-1'` under `format: 'Y-m-d'`).
 
 !!! tip "Type-level rules on union-typed properties"
     Declare [`Union`](/guides/nested-models/#union-on-non-array-properties) directly on the property to check the whole value against its arms — on a union hint such as `int|float` the arms must repeat the hint's type-hints exactly, otherwise an `InvalidBaseModelException` is thrown.
@@ -379,7 +413,7 @@ class Contact extends BaseModel
 }
 ```
 
-`$domain` is compared with the part after the `@`, case-insensitively and in full — `domain: 'example.com'` does not allow `andre@mail.example.com`. Leave it `null` (the default) to accept any domain.
+`$domain` is compared with the part after the `@`, case-insensitively and in full — `domain: 'example.com'` does not allow `andre@mail.example.com`. Leave it `null` (the default) to accept any domain. The top-level domain must be at least two characters long, exactly like [`Domain`](#domain).
 
 Passes: `andre@example.com`, `a.b+tag@sub.domain.co`. Fails: `not-an-email`, `missing@tld`, `@example.com`, `a b@example.com`, and — with `$domain` declared — `andre@gmail.com` (`Must be an email address on an allowed domain: 'example.com'`) or `andre@mail.example.com`.
 
@@ -456,7 +490,7 @@ class BankAccount extends BaseModel
 }
 ```
 
-Passes: `DE89370400440532013000`, `GB29NWBK60161331926819`. Fails: `DE89370400440532013001` (mod-97 checksum), `XX00123` (no such country code), `DE89 3704` (spaces).
+Passes: `DE89370400440532013000`, `GB29NWBK60161331926819`, and the lowercase form of either (`de89370400440532013000`). Fails: `DE89370400440532013001` (mod-97 checksum), `XX00123` (no such country code), `DE89 3704` (spaces).
 
 ### `Isbn`
 
@@ -629,7 +663,7 @@ class Payload extends BaseModel
 }
 ```
 
-Passes: `{"a":1}`, `[1,2,3]`, `"str"`, `null`, `42`. Fails: `{invalid}`, `[1,`.
+Passes: `{"a":1}`, `[1,2,3]`, `"str"`, `null`, `42`. Fails: `{invalid}`, `[1,`. Nesting is checked with `json_decode`'s default depth of 512 levels, so a document nested deeper fails as `Must be valid JSON`.
 
 ### `HexRgbColor`
 
@@ -639,12 +673,12 @@ The string is not a hex RGB(A) color (`#fff`, `#ff0080`). Constructor: `()`. Non
 <?php
 class Theme extends BaseModel
 {
-    #[HexRgbColor] // '#fff', '#FFFFFF', '#ff000080' pass; '#ggg' fails
+    #[HexRgbColor] // '#fff', '#FFFFFF', '#ffff' (RGBA shorthand) and '#ff000080' pass; '#ggg' fails
     public string $value;
 }
 ```
 
-Passes: `#fff`, `#FFFFFF` (3- and 6-digit), `#ff000080` (8-digit, alpha). Fails: `#ff` (two digits), `#fffff` (five), `fff` (no leading `#`), `#ggg` (non-hex).
+Passes: `#fff`, `#ffff` (4-digit RGBA shorthand), `#FFFFFF` (6-digit), `#ff000080` (8-digit, alpha). Fails: `#ff` (two digits), `#fffff` (five), `fff` (no leading `#`), `#ggg` (non-hex).
 
 ## More numeric constraints
 
@@ -742,11 +776,13 @@ Passes: `['y']`, `[1, 'y']`, `'say hello'`. Fails: `['a', 'b']`, `'nope'`, and a
 
 ## Value semantics
 
-- **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`, `Even`, `Odd`, `Positive`, `Negative`, `PrimeNumber`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
+- **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`, `Even`, `Odd`, `Positive`, `Negative`, `PrimeNumber`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`, and a negative divisor is allowed.
 - **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`, `Email`, `Url`, `Domain`, `Ip`, `Iban`, `Isbn`, `CreditCard`, `Version`, `MacAddress`, `Alnum`, `Alpha`, `Digit`, `Xdigit`, `Slug`, `Base64`, `Json`, `HexRgbColor`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
 - **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring. `ContainsAny` is the "at least one match" variant of the same check.
-- **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, and an invalid timezone name throws a `ValueError` at construction.
+- **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, an invalid timezone name throws a `ValueError` at construction, and a date that does not exist (`1994-02-30`) is rejected instead of rolling over.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.
+- **`null` skips every constraint** on the property, exactly like a missing key: `#[Regex('/^[a-z]+$/')] public ?string $name = null` accepts `['name' => null]` and `[]`. A non-null value is checked as usual.
+- **The empty string** is accepted by `Alnum`, `Alpha`, `Ascii` and `Base64`, and rejected by `Digit`, `Xdigit`, `Slug` and `HexRgbColor`. Length-based rules reject it through their bound (`Size(min: 1)`).
 
 ## Error messages
 

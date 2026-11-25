@@ -24,6 +24,9 @@ typedef struct {
 
 static void as_model_configs_cache_entry_dtor(zval *entry);
 static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_properties *properties, char *alias_generator_name, char *extra_name);
+static as_model_configs_cache_entry *get_configs_entry(zend_class_entry *model_ce, bool *failed);
+static bool parse_bool_option(zval *arg_val, int argument_number, const char *name, bool *target);
+static bool parse_string_option(zval *arg_val, int argument_number, const char *name, char *pretty_name, size_t pretty_name_size);
 static void update_model_properties(zend_object *this, as_model_configs_properties *properties, char *pretty_alias_generator, char *pretty_extra);
 static zend_always_inline void set_default_properties(as_model_configs_properties *properties);
 static bool validate_alias_generator(char *pretty_alias_generator);
@@ -139,6 +142,10 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
     alias_generator_name[0] = '\0';
     extra_name[0] = '\0';
 
+    /* Options this class declares itself: the others come from the parent
+     * class (see the inheritance step below). */
+    uint32_t declared = 0;
+
     if (model_configs_attr != NULL) {
         /* Parse attribute arguments */
         for (uint32_t i = 0; i < model_configs_attr->argc; i++) {
@@ -148,46 +155,120 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
 
             zend_attribute_arg argument = model_configs_attr->args[i];
             int index = argument.name == NULL ? i : get_argument_index_by_name(argument.name);
+            if (index < 0) {
+                zval_ptr_dtor(&arg_val);
+                return;
+            }
+
+            declared |= 1u << index;
 
             switch (index) {
                 case 0: /* aliasGenerator */
-                    if (Z_TYPE(arg_val) == IS_STRING) {
-                        if (!validate_alias_generator(Z_STRVAL(arg_val)))
+                    if (!parse_string_option(&arg_val, 1, "aliasGenerator", alias_generator_name, sizeof(((as_model_configs_cache_entry *)0)->alias_generator_name))) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
+                    if (alias_generator_name[0] != '\0') {
+                        if (!validate_alias_generator(alias_generator_name)) {
+                            zval_ptr_dtor(&arg_val);
                             return;
+                        }
 
-                        properties->alias_generator = Z_STRVAL(arg_val)[0];
-                        strcpy(alias_generator_name, Z_STRVAL(arg_val));
+                        properties->alias_generator = alias_generator_name[0];
                     }
                     break;
                 case 1: /* strToLower */
-                    properties->str_to_lower = Z_TYPE(arg_val) == IS_TRUE;
+                    if (!parse_bool_option(&arg_val, 2, "strToLower", &properties->str_to_lower)) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
                     break;
                 case 2: /* strToUpper */
-                    properties->str_to_upper = Z_TYPE(arg_val) == IS_TRUE;
+                    if (!parse_bool_option(&arg_val, 3, "strToUpper", &properties->str_to_upper)) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
                     break;
                 case 3: /* stripWhitespace */
-                    properties->strip_whitespace = Z_TYPE(arg_val) == IS_TRUE;
+                    if (!parse_bool_option(&arg_val, 4, "stripWhitespace", &properties->strip_whitespace)) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
                     break;
                 case 4: /* extra: a null value stays unset and resolves per class below */
-                    if (Z_TYPE(arg_val) == IS_STRING) {
-                        if (!validate_extra(Z_STRVAL(arg_val)))
+                    if (!parse_string_option(&arg_val, 5, "extra", extra_name, sizeof(((as_model_configs_cache_entry *)0)->extra_name))) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
+                    if (extra_name[0] != '\0') {
+                        if (!validate_extra(extra_name)) {
+                            zval_ptr_dtor(&arg_val);
                             return;
+                        }
 
-                        properties->extra = Z_STRVAL(arg_val)[0];
-                        strcpy(extra_name, Z_STRVAL(arg_val));
+                        properties->extra = extra_name[0];
                     }
                     break;
                 case 5: /* strict */
-                    properties->strict = Z_TYPE(arg_val) == IS_TRUE;
+                    if (!parse_bool_option(&arg_val, 6, "strict", &properties->strict)) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
                     break;
                 case 6: /* stopAtFirstError */
-                    properties->stop_first_error = Z_TYPE(arg_val) == IS_TRUE;
+                    if (!parse_bool_option(&arg_val, 7, "stopAtFirstError", &properties->stop_first_error)) {
+                        zval_ptr_dtor(&arg_val);
+                        return;
+                    }
                     break;
                 default:
                     zval_ptr_dtor(&arg_val);
                     return;
             }
             zval_ptr_dtor(&arg_val);
+        }
+    }
+
+    /*
+     * Inheritance: ModelConfigs is inherited through the class hierarchy
+     * only, option by option. A child that declares #[ModelConfigs] to
+     * change one option keeps the parent's value for every option it does
+     * not name, instead of silently falling back to the built-in defaults.
+     */
+    const uint32_t all_options = (1u << 7) - 1;
+    if (model_ce->parent != NULL && declared != all_options) {
+        bool failed = false;
+        as_model_configs_cache_entry *parent = get_configs_entry(model_ce->parent, &failed);
+        if (parent == NULL) {
+            if (failed) {
+                return;
+            }
+        } else {
+            if (!(declared & (1u << 0)) && parent->properties.alias_generator != false) {
+                properties->alias_generator = parent->properties.alias_generator;
+                memcpy(alias_generator_name, parent->alias_generator_name, sizeof(parent->alias_generator_name));
+            }
+            if (!(declared & (1u << 1))) {
+                properties->str_to_lower = parent->properties.str_to_lower;
+            }
+            if (!(declared & (1u << 2))) {
+                properties->str_to_upper = parent->properties.str_to_upper;
+            }
+            if (!(declared & (1u << 3))) {
+                properties->strip_whitespace = parent->properties.strip_whitespace;
+            }
+            /* Only an explicitly declared extra is inherited: a null one keeps
+             * resolving against this class's own #[AllowDynamicProperties]. */
+            if (!(declared & (1u << 4)) && parent->properties.extra != '\0') {
+                properties->extra = parent->properties.extra;
+                memcpy(extra_name, parent->extra_name, sizeof(parent->extra_name));
+            }
+            if (!(declared & (1u << 5))) {
+                properties->strict = parent->properties.strict;
+            }
+            if (!(declared & (1u << 6))) {
+                properties->stop_first_error = parent->properties.stop_first_error;
+            }
         }
     }
 
@@ -212,31 +293,13 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
  */
 void as_get_model_configs(zval *configs, zval *model, as_model_configs_properties *properties, bool build_object)
 {
-    zend_class_entry *model_ce = Z_OBJCE_P(model);
-    as_model_configs_cache_entry *entry = NULL;
-
-    if (AS_G(as_model_configs_cache) != NULL) {
-        entry = zend_hash_index_find_ptr(AS_G(as_model_configs_cache), (zend_ulong)(uintptr_t)model_ce);
-    }
+    bool failed = false;
+    as_model_configs_cache_entry *entry = get_configs_entry(Z_OBJCE_P(model), &failed);
 
     if (entry == NULL) {
-        as_model_configs_cache_entry new_entry;
-        as_parse_model_configs(model_ce, &new_entry.properties, new_entry.alias_generator_name, new_entry.extra_name);
-
-        if (UNEXPECTED(EG(exception) != NULL)) {
-            *properties = new_entry.properties;
-            ZVAL_UNDEF(configs);
-            return;
-        }
-
-        if (AS_G(as_model_configs_cache) == NULL) {
-            AS_G(as_model_configs_cache) = emalloc(sizeof(HashTable));
-            zend_hash_init(AS_G(as_model_configs_cache), 8, NULL, as_model_configs_cache_entry_dtor, 0);
-        }
-
-        entry = emalloc(sizeof(as_model_configs_cache_entry));
-        memcpy(entry, &new_entry, sizeof(as_model_configs_cache_entry));
-        entry = zend_hash_index_add_ptr(AS_G(as_model_configs_cache), (zend_ulong)(uintptr_t)model_ce, entry);
+        set_default_properties(properties);
+        ZVAL_UNDEF(configs);
+        return;
     }
 
     *properties = entry->properties;
@@ -248,6 +311,82 @@ void as_get_model_configs(zval *configs, zval *model, as_model_configs_propertie
 
     object_init_ex(configs, AS_ModelConfigs_ce);
     update_model_properties(Z_OBJ_P(configs), properties, entry->alias_generator_name[0] != '\0' ? entry->alias_generator_name : NULL, entry->extra_name);
+}
+
+/*
+ * Parses the configs of a class once and caches them. A parse that fails
+ * (pending exception) is never cached, so the error keeps firing.
+ */
+static as_model_configs_cache_entry *get_configs_entry(zend_class_entry *model_ce, bool *failed)
+{
+    *failed = false;
+
+    if (AS_G(as_model_configs_cache) != NULL) {
+        as_model_configs_cache_entry *cached = zend_hash_index_find_ptr(AS_G(as_model_configs_cache), (zend_ulong)(uintptr_t)model_ce);
+        if (cached != NULL) {
+            return cached;
+        }
+    }
+
+    as_model_configs_cache_entry new_entry;
+    as_parse_model_configs(model_ce, &new_entry.properties, new_entry.alias_generator_name, new_entry.extra_name);
+
+    if (UNEXPECTED(EG(exception) != NULL)) {
+        *failed = true;
+        return NULL;
+    }
+
+    if (AS_G(as_model_configs_cache) == NULL) {
+        AS_G(as_model_configs_cache) = emalloc(sizeof(HashTable));
+        zend_hash_init(AS_G(as_model_configs_cache), 8, NULL, as_model_configs_cache_entry_dtor, 0);
+    }
+
+    as_model_configs_cache_entry *entry = emalloc(sizeof(as_model_configs_cache_entry));
+    memcpy(entry, &new_entry, sizeof(as_model_configs_cache_entry));
+
+    return zend_hash_index_add_ptr(AS_G(as_model_configs_cache), (zend_ulong)(uintptr_t)model_ce, entry);
+}
+
+/*
+ * Reads a bool option. Attribute arguments bypass the engine's parameter
+ * type checks, so a truthy string would silently flip a flag: only real
+ * booleans are accepted, like the option table documents.
+ */
+static bool parse_bool_option(zval *arg_val, int argument_number, const char *name, bool *target)
+{
+    if (Z_TYPE_P(arg_val) != IS_TRUE && Z_TYPE_P(arg_val) != IS_FALSE) {
+        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type bool, %s given", argument_number, name, zend_zval_type_name(arg_val));
+        return false;
+    }
+
+    *target = Z_TYPE_P(arg_val) == IS_TRUE;
+    return true;
+}
+
+/*
+ * Reads a ?string option: null keeps it unset (empty pretty name), anything
+ * else must be a string.
+ */
+static bool parse_string_option(zval *arg_val, int argument_number, const char *name, char *pretty_name, size_t pretty_name_size)
+{
+    pretty_name[0] = '\0';
+
+    if (Z_TYPE_P(arg_val) == IS_NULL) {
+        return true;
+    }
+
+    if (Z_TYPE_P(arg_val) != IS_STRING) {
+        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type ?string, %s given", argument_number, name, zend_zval_type_name(arg_val));
+        return false;
+    }
+
+    if (Z_STRLEN_P(arg_val) >= pretty_name_size) {
+        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must not be longer than %zu characters", argument_number, name, pretty_name_size - 1);
+        return false;
+    }
+
+    strcpy(pretty_name, Z_STRVAL_P(arg_val));
+    return true;
 }
 
 static void update_model_properties(zend_object *this, as_model_configs_properties *properties, char *pretty_alias_generator, char *pretty_extra)
@@ -280,14 +419,14 @@ static zend_always_inline void set_default_properties(as_model_configs_propertie
 static bool validate_alias_generator(char *pretty_alias_generator)
 {
     char *all_pretty_alias[] = {"pascal", "camel", "snake", "kebab"};
-    as_invalid_method_parameter invalid_parameter_error = {.class_name = "Attributes\\Strictify\\ModelConfigs", .method_name = "__construct()", .parameter_number = 1, .name = "aliasGenerator"};
+    as_invalid_method_parameter invalid_parameter_error = {.class_name = "Attributes\\Strictify\\ModelConfigs", .method_name = "__construct()", .parameter_number = 1};
     return as_validate_method_parameter(pretty_alias_generator, all_pretty_alias, 4, &invalid_parameter_error);
 }
 
 static bool validate_extra(char *pretty_extra)
 {
     char *all_pretty_extra[] = {"ignore", "forbid", "allow"};
-    as_invalid_method_parameter invalid_parameter_error = {.class_name = "Attributes\\Strictify\\ModelConfigs", .method_name = "__construct()", .parameter_number = 5, .name = "extra"};
+    as_invalid_method_parameter invalid_parameter_error = {.class_name = "Attributes\\Strictify\\ModelConfigs", .method_name = "__construct()", .parameter_number = 5};
     return as_validate_method_parameter(pretty_extra, all_pretty_extra, 3, &invalid_parameter_error);
 }
 

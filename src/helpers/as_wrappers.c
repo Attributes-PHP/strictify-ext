@@ -8,6 +8,7 @@
 #include "Zend/zend_interfaces.h"
 #include "Zend/zend_list.h"
 #include "Zend/zend_operators.h"
+#include "Zend/zend_strtod.h"
 #include "Zend/zend_variables.h"
 
 /*
@@ -66,11 +67,6 @@ zend_string *as_string_copy(zend_string *s)
 zend_string *as_long_to_str(zend_long num)
 {
     return zend_long_to_str(num);
-}
-
-zend_string *as_double_to_str(double num)
-{
-    return zend_double_to_str(num);
 }
 
 bool as_is_stringable(const zend_class_entry *instance_ce)
@@ -149,6 +145,29 @@ int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len
 }
 
 #endif /* TESTING */
+
+/*
+ * Renders a double with the shortest representation that parses back to the
+ * same value. zend_double_to_str() would render with the `precision` ini
+ * setting (14 by default) and truncate: a #[Between] bound of
+ * 0.30000000000000004 would be reported as "0.3" while the comparison uses
+ * the full value. Compiled in both modes (not a passthrough macro) so the
+ * messages always match the bound actually enforced.
+ */
+zend_string *as_double_to_str(double num)
+{
+    char buffer[ZEND_DOUBLE_MAX_LENGTH];
+
+    for (int precision = 1; precision < 17; precision++) {
+        zend_gcvt(num, precision, '.', 'E', buffer);
+        if (zend_strtod(buffer, NULL) == num) {
+            return zend_string_init(buffer, strlen(buffer), 0);
+        }
+    }
+
+    zend_gcvt(num, 17, '.', 'E', buffer);
+    return zend_string_init(buffer, strlen(buffer), 0);
+}
 
 /*
  * =============================================================================

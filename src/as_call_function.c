@@ -317,10 +317,16 @@ static bool build_call_arguments(zend_function *function, zval *params, as_depen
         }
 
         const char *callable_name = function->common.function_name != NULL ? ZSTR_VAL(function->common.function_name) : "the callable";
+        /* Internal functions keep the other arg_info layout (char* names), and
+         * a missing dependency there is named the same way userland ones are. */
+        const char *parameter_name = name != NULL ? ZSTR_VAL(name) : NULL;
+        if (parameter_name == NULL && function->common.arg_info != NULL && i < function->common.num_args) {
+            parameter_name = ((const zend_internal_arg_info *)function->common.arg_info)[i].name;
+        }
         /* A #[\SensitiveParameter] parameter is reported positionally: the
          * named message would disclose the parameter name in the error. */
-        if (name != NULL && !parameter_is_sensitive(function, i)) {
-            zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter $%s of %s().", ZSTR_VAL(name), callable_name);
+        if (parameter_name != NULL && !parameter_is_sensitive(function, i)) {
+            zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter $%s of %s().", parameter_name, callable_name);
         } else {
             zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
         }

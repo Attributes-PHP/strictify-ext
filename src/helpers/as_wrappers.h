@@ -35,7 +35,6 @@
 #define as_string_concat3(str1, str1_len, str2, str2_len, str3, str3_len) zend_string_concat3(str1, str1_len, str2, str2_len, str3, str3_len)
 #define as_string_copy(s)                                                 zend_string_copy(s)
 #define as_long_to_str(num)                                               zend_long_to_str(num)
-#define as_double_to_str(num)                                             zend_double_to_str(num)
 #define as_is_stringable(instance_ce)                                     instanceof_function(instance_ce, zend_ce_stringable)
 #define as_rsrc_list_get_rsrc_type(res)                                   zend_rsrc_list_get_rsrc_type(res)
 #define as_zval_ptr_dtor(zval_ptr)                                        zval_ptr_dtor(zval_ptr)
@@ -71,7 +70,6 @@ zend_string *as_string_truncate(zend_string *s, size_t length, bool persistent);
 zend_string *as_string_concat3(const char *str1, size_t str1_len, const char *str2, size_t str2_len, const char *str3, size_t str3_len);
 zend_string *as_string_copy(zend_string *s);
 zend_string *as_long_to_str(zend_long num);
-zend_string *as_double_to_str(double num);
 bool as_is_stringable(const zend_class_entry *instance_ce);
 const char *as_rsrc_list_get_rsrc_type(zend_resource *res);
 void as_zval_ptr_dtor(zval *zval_ptr);
@@ -118,6 +116,10 @@ bool as_has_exception(void);
  * These always remain as real functions because they contain actual logic,
  * not just passthrough to Zend functions.
  */
+
+/* Renders a double with the shortest representation that parses back to the
+ * same value, so error messages match the numbers actually compared. */
+zend_string *as_double_to_str(double num);
 
 zend_result as_call_tostring(zend_object *object, zval *retval);
 void as_zval_stringl(zval *z, const char *str, size_t len);

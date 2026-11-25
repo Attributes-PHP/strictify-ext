@@ -12,7 +12,44 @@ zend_class_entry *AS_Fields_Constraints_DateTime_ce;
 
 static bool is_valid_timezone(zval *value);
 static bool build_timezone_from_name(zval *result, zval *name);
+static bool as_datetime_parse_rolled_over(void);
 zend_always_inline static void add_invalid_datetime_error_message(zval *format, as_field *field, as_property_info *property, zval *errors);
+
+/*
+ * Whether the last date parse (the php_date_initialize() call right before)
+ * reported warnings, i.e. the parsed date was not a real calendar date and
+ * got rolled over. Reads DateTime::getLastErrors(), the public view of the
+ * date extension's own error container, so no date internals are needed.
+ */
+static bool as_datetime_parse_rolled_over(void)
+{
+    zend_class_entry *date_ce = php_date_get_date_ce();
+    zend_function *get_last_errors = zend_hash_str_find_ptr(&date_ce->function_table, "getlasterrors", sizeof("getlasterrors") - 1);
+    if (get_last_errors == NULL) {
+        return false;
+    }
+
+    zval last_errors;
+    ZVAL_UNDEF(&last_errors);
+    zend_call_known_function(get_last_errors, NULL, date_ce, &last_errors, 0, NULL, NULL);
+
+    if (UNEXPECTED(EG(exception) != NULL)) {
+        zval_ptr_dtor(&last_errors);
+        zend_clear_exception();
+        return false;
+    }
+
+    bool rolled_over = false;
+    if (Z_TYPE(last_errors) == IS_ARRAY) {
+        zval *warnings = zend_hash_str_find(Z_ARRVAL(last_errors), "warning_count", sizeof("warning_count") - 1);
+        if (warnings != NULL && Z_TYPE_P(warnings) == IS_LONG) {
+            rolled_over = Z_LVAL_P(warnings) > 0;
+        }
+    }
+
+    zval_ptr_dtor(&last_errors);
+    return rolled_over;
+}
 
 /*
  * $timezone: DateTimeZone|string|null
@@ -131,7 +168,18 @@ bool as_validate_DateTime_constraint(zval *constraint, as_field *field, as_prope
 
     zval date_obj;
     php_date_instantiate(php_date_get_date_ce(), &date_obj);
-    const bool valid = php_date_initialize(php_date_obj_from_obj(Z_OBJ_P(&date_obj)), Z_STRVAL_P(value), Z_STRLEN_P(value), ZSTR_VAL(Z_STR_P(format)), Z_TYPE_P(timezone_obj) == IS_OBJECT ? timezone_obj : NULL, 0);
+    const bool parsed = php_date_initialize(php_date_obj_from_obj(Z_OBJ_P(&date_obj)), Z_STRVAL_P(value), Z_STRLEN_P(value), ZSTR_VAL(Z_STR_P(format)), Z_TYPE_P(timezone_obj) == IS_OBJECT ? timezone_obj : NULL, 0);
+
+    /*
+     * A value that parses but does not describe a real date (1994-02-30,
+     * month 13, April 31) is reported by the date extension as a warning
+     * and silently rolled over into the next month: treat it as invalid.
+     * Lenient-but-real input (the unpadded 1994-1-1) produces no warning
+     * and keeps passing. DateTime::getLastErrors() exposes exactly the
+     * warnings of the parse above.
+     */
+    const bool rolled_over = parsed && as_datetime_parse_rolled_over();
+    const bool valid = parsed && !rolled_over;
     if (!valid)
         add_invalid_datetime_error_message(format, field, property, errors);
 
@@ -146,40 +194,20 @@ zend_always_inline static void add_invalid_datetime_error_message(zval *format, 
     as_string_release(expected);
 }
 
-void as_register_DateTime_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "DateTime", class_AS_Fields_Constraints_DateTime_methods);
-    AS_Fields_Constraints_DateTime_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_DateTime_ce != NULL);
-    AS_Fields_Constraints_DateTime_ce->ce_flags |= ZEND_ACC_FINAL;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_DateTime_ce, 1, AS_Fields_Field_ce);
-
-    /* Register promoted $format and $timezone properties */
-    as_declare_typed_property(AS_Fields_Constraints_DateTime_ce, "format", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING));
+AS_REGISTER_CONSTRAINT_CLASS(
+    DateTime, ZEND_ACC_FINAL, as_declare_typed_property(AS_Fields_Constraints_DateTime_ce, "format", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING));
 
     /* Class-name strings in ZEND_TYPE_INIT_CLASS are kept by the type, so they are intentionally not released */
-    zval property_timezone_default_value;
-    ZVAL_UNDEF(&property_timezone_default_value);
-    zend_string *property_timezone_name = zend_string_init("timezone", sizeof("timezone") - 1, 1);
-    zend_declare_typed_property(
+    zval property_timezone_default_value; ZVAL_UNDEF(&property_timezone_default_value); zend_string *property_timezone_name = zend_string_init("timezone", sizeof("timezone") - 1, 1); zend_declare_typed_property(
         AS_Fields_Constraints_DateTime_ce, property_timezone_name, &property_timezone_default_value, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, NULL,
         (zend_type)ZEND_TYPE_INIT_CLASS(zend_string_init("DateTimeZone", sizeof("DateTimeZone") - 1, 1), 0, MAY_BE_STRING | MAY_BE_NULL)
     );
     zend_string_release(property_timezone_name);
 
-    zval property_timezone_obj_default_value;
-    ZVAL_NULL(&property_timezone_obj_default_value);
-    zend_string *property_timezone_obj_name = zend_string_init("timezone_obj", sizeof("timezone_obj") - 1, 1);
+    zval property_timezone_obj_default_value; ZVAL_NULL(&property_timezone_obj_default_value); zend_string *property_timezone_obj_name = zend_string_init("timezone_obj", sizeof("timezone_obj") - 1, 1);
     zend_declare_typed_property(
         AS_Fields_Constraints_DateTime_ce, property_timezone_obj_name, &property_timezone_obj_default_value, ZEND_ACC_PRIVATE, NULL,
         (zend_type)ZEND_TYPE_INIT_CLASS(zend_string_init("DateTimeZone", sizeof("DateTimeZone") - 1, 1), 0, MAY_BE_STRING | MAY_BE_NULL)
     );
     zend_string_release(property_timezone_obj_name);
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_DateTime_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+)

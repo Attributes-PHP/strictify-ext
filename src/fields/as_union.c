@@ -3,6 +3,7 @@
 #include "../as_exception.h"
 #include "../as_type.h"
 #include "../helpers/as_error_messages.h"
+#include "../helpers/as_type_names.h"
 #include "../helpers/as_wrappers.h"
 #include "as_dict.h"
 #include "as_intersection.h"
@@ -96,20 +97,8 @@ ZEND_METHOD(AS_Fields_Union, __construct)
  * type match per arm, never a coercion — the constraint runs after the
  * native type check, so the value is already of the declared type.
  */
-static const struct {
-    uint32_t mask;
-    const char *name;
-    size_t length;
-} union_scalar_type_names[] = {
-    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
-    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
-};
-
-#define UNION_SCALAR_TYPE_NAMES_SIZE (sizeof(union_scalar_type_names) / sizeof(union_scalar_type_names[0]))
-
 static uint32_t union_normalize_mask(zend_long type_value);
 static bool union_arm_matches_scalar(zval *arm, zval *value);
-static zend_string *union_mask_to_string(uint32_t mask);
 static zend_string *union_scalar_arms_to_expected_string(zval *arms);
 
 static uint32_t union_normalize_mask(zend_long type_value)
@@ -119,25 +108,6 @@ static uint32_t union_normalize_mask(zend_long type_value)
         mask = (mask & ~(uint32_t)AS_TYPE_DICT) | MAY_BE_ARRAY;
     }
     return mask;
-}
-
-/* Expands a type mask into its basic type names joined with ", " ("mixed" when empty) */
-static zend_string *union_mask_to_string(uint32_t mask)
-{
-    zend_string *result = NULL;
-    for (size_t i = 0; i < UNION_SCALAR_TYPE_NAMES_SIZE; i++) {
-        if ((mask & union_scalar_type_names[i].mask) != union_scalar_type_names[i].mask) {
-            continue;
-        }
-        if (result == NULL) {
-            result = zend_string_init(union_scalar_type_names[i].name, union_scalar_type_names[i].length, 0);
-        } else {
-            zend_string *joined = as_string_concat3(ZSTR_VAL(result), ZSTR_LEN(result), ", ", 2, union_scalar_type_names[i].name, union_scalar_type_names[i].length);
-            zend_string_release(result);
-            result = joined;
-        }
-    }
-    return result != NULL ? result : zend_string_init("mixed", sizeof("mixed") - 1, 0);
 }
 
 static bool union_arm_matches_scalar(zval *arm, zval *value)
@@ -255,7 +225,7 @@ static zend_string *union_scalar_arms_to_expected_string(zval *arms)
                 } else if (arm_ce == AS_Type_ce) {
                     zval *case_value = zend_enum_fetch_case_value(Z_OBJ_P(arm));
                     zend_long mask_value = Z_TYPE_P(case_value) == IS_LONG ? Z_LVAL_P(case_value) : 0;
-                    part = union_mask_to_string(union_normalize_mask(mask_value));
+                    part = as_type_mask_to_string(union_normalize_mask(mask_value), false);
                 } else {
                     // Sequence/Union/Dict nested-shape arm
                     part = zend_string_init("array", sizeof("array") - 1, 0);
@@ -264,7 +234,7 @@ static zend_string *union_scalar_arms_to_expected_string(zval *arms)
             }
 
             default:
-                part = union_mask_to_string(union_normalize_mask(Z_LVAL_P(arm)));
+                part = as_type_mask_to_string(union_normalize_mask(Z_LVAL_P(arm)), false);
                 break;
         }
 

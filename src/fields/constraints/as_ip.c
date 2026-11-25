@@ -93,15 +93,19 @@ static bool as_is_ipv6(zend_string *str)
         /* possible IPv4 tail */
         bool has_digit = false, has_dot = false;
         for (size_t j = start; j < i; j++) {
-            if (s[j] == '.') has_dot = true;
-            if (s[j] >= '0' && s[j] <= '9') has_digit = true;
+            if (s[j] == '.')
+                has_dot = true;
+            if (s[j] >= '0' && s[j] <= '9')
+                has_digit = true;
         }
         if (has_dot) {
-            if (!has_digit) return false;
+            if (!has_digit)
+                return false;
             zend_string *tail = zend_string_init(s + start, glen, 0);
             bool ok = as_is_ipv4(tail);
             zend_string_release(tail);
-            if (!ok) return false;
+            if (!ok)
+                return false;
             groups += 2;
         } else {
             if (!as_hex_group(s + start, glen)) {
@@ -111,13 +115,16 @@ static bool as_is_ipv6(zend_string *str)
         }
         if (i < len) {
             if (i + 1 < len && s[i + 1] == ':') {
-                if (compressed) return false;
+                if (compressed)
+                    return false;
                 compressed = true;
                 i += 2;
-                if (i == len) break; /* trailing :: */
+                if (i == len)
+                    break; /* trailing :: */
             } else {
                 i++;
-                if (i == len) return false; /* trailing single colon */
+                if (i == len)
+                    return false; /* trailing single colon */
             }
         }
     }
@@ -176,19 +183,6 @@ ZEND_METHOD(AS_Fields_Constraints_Ip, __construct)
     zend_update_property(AS_Fields_Constraints_Ip_ce, Z_OBJ_P(getThis()), "version", sizeof("version") - 1, &version_z);
 }
 
-void as_register_Ip_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Ip", class_AS_Fields_Constraints_Ip_methods);
-    AS_Fields_Constraints_Ip_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Ip_ce != NULL);
-    AS_Fields_Constraints_Ip_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Ip_ce, 1, AS_Fields_Field_ce);
-
-    as_declare_typed_property(AS_Fields_Constraints_Ip_ce, "version", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING | MAY_BE_NULL));
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Ip_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(
+    Ip, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS, as_declare_typed_property(AS_Fields_Constraints_Ip_ce, "version", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING | MAY_BE_NULL));
+)

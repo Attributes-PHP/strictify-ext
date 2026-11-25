@@ -1,4 +1,5 @@
 #include "as_error_messages.h"
+#include "as_type_names.h"
 #include "as_wrappers.h"
 #include "../as_globals.h"
 #include "Zend/zend_API.h"
@@ -144,8 +145,6 @@ static zend_always_inline void add_field_error(zval *errors, zend_string *field_
 static zend_string *generate_type_name(const zend_type type);
 static zend_class_entry *resolve_enum_ce(const zend_type type);
 static zend_string *enum_case_label(zend_class_entry *ce, zend_object *case_obj);
-static uint32_t count_basic_types(uint32_t pure_mask);
-static zend_always_inline zend_string *build_union_only_basic_types(uint32_t pure_mask);
 static zend_always_inline zend_string *build_single_type_string(zend_type property_type);
 static zend_always_inline void append_union_type_part(zend_string **result, uint32_t index, uint32_t total, const char *name, size_t name_len);
 static uint32_t count_enum_type_parts(zend_class_entry *ce);
@@ -158,13 +157,6 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
 static zend_string *get_custom_error_template(as_error_type type, as_property_info *property);
 static zend_string *get_property_full_path(as_field *field);
 static zend_string *replace_placeholders(const char *template, size_t length, as_field *field, as_property_info *prop_info, const zend_string *expected_override);
-
-static const as_basic_type_mapping basic_type_mappings[] = {
-    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
-    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
-};
-
-#define BASIC_TYPE_MAPPINGS_SIZE (sizeof(basic_type_mappings) / sizeof(basic_type_mappings[0]))
 
 static zend_always_inline void add_field_error_to_array(zval *errors_array, const char *error_message, size_t length)
 {
@@ -201,11 +193,10 @@ static zend_string *generate_type_name(const zend_type type)
     }
 
     uint32_t type_mask = ZEND_TYPE_PURE_MASK(type);
+    const as_type_name *basic = as_type_name_for(type_mask);
 
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (type_mask == basic_type_mappings[i].mask) {
-            return as_string_init(basic_type_mappings[i].name, basic_type_mappings[i].length, 0);
-        }
+    if (basic != NULL) {
+        return as_string_init(basic->name, basic->length, 0);
     }
 
     return as_string_init("mixed", 5, 0);
@@ -234,59 +225,6 @@ static zend_string *enum_case_label(zend_class_entry *ce, zend_object *case_obj)
     }
 
     return as_value_to_string(zend_enum_fetch_case_name(case_obj));
-}
-
-static uint32_t count_basic_types(uint32_t pure_mask)
-{
-    uint32_t total = 0;
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (pure_mask & basic_type_mappings[i].mask)
-            total += 1;
-    }
-
-    return total;
-}
-
-static zend_always_inline zend_string *build_union_only_basic_types(uint32_t pure_mask)
-{
-    size_t total = count_basic_types(pure_mask);
-    ZEND_ASSERT(total >= 1);
-
-    size_t max_string_size = 0;
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (pure_mask & basic_type_mappings[i].mask)
-            max_string_size += basic_type_mappings[i].length;
-    }
-
-    // All types but the last two are followed by ", ", the last two by " or ".
-    if (total >= 2)
-        max_string_size += (total - 2) * (sizeof(", ") - 1) + (sizeof(" or ") - 1);
-
-    zend_string *result = as_string_alloc(max_string_size, 0);
-    char *output = ZSTR_VAL(result);
-    size_t output_pos = 0;
-    size_t remaining = total;
-
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (!(pure_mask & basic_type_mappings[i].mask))
-            continue;
-
-        if (output_pos > 0) {
-            const char *separator = (remaining == 1) ? " or " : ", ";
-            size_t separator_len = (remaining == 1) ? (sizeof(" or ") - 1) : (sizeof(", ") - 1);
-            memcpy(output + output_pos, separator, separator_len);
-            output_pos += separator_len;
-        }
-
-        memcpy(output + output_pos, basic_type_mappings[i].name, basic_type_mappings[i].length);
-        output_pos += basic_type_mappings[i].length;
-        remaining -= 1;
-    }
-
-    output[output_pos] = '\0';
-
-    ZEND_ASSERT(output_pos == max_string_size);
-    return as_string_truncate(result, output_pos, 0);
 }
 
 static zend_always_inline zend_string *build_single_type_string(zend_type property_type)
@@ -384,7 +322,7 @@ static uint32_t append_enum_type_parts(zend_string **result, uint32_t index, uin
 zend_string *build_union_type_string(zend_type property_type)
 {
     uint32_t pure_mask = ZEND_TYPE_PURE_MASK(property_type);
-    uint32_t basic_total = count_basic_types(pure_mask);
+    uint32_t basic_total = as_type_mask_count(pure_mask);
 
     // Single classification pass over the named types: detects enums and
     // classes and counts the parts each named type contributes to a union
@@ -414,7 +352,7 @@ zend_string *build_union_type_string(zend_type property_type)
         if (basic_total <= 1)
             return build_single_type_string(property_type);
 
-        return build_union_only_basic_types(pure_mask);
+        return as_type_mask_to_string(pure_mask, true);
     }
 
     // Class types only: class names or-joined
@@ -452,11 +390,11 @@ zend_string *build_union_type_string(zend_type property_type)
     zend_string *result = NULL;
     uint32_t index = 0;
 
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (!(pure_mask & basic_type_mappings[i].mask))
+    for (size_t i = 0; i < AS_TYPE_NAMES_COUNT; i++) {
+        if (!(pure_mask & as_type_names[i].mask))
             continue;
 
-        append_union_type_part(&result, index, total, basic_type_mappings[i].name, basic_type_mappings[i].length);
+        append_union_type_part(&result, index, total, as_type_names[i].name, as_type_names[i].length);
         index += 1;
     }
 

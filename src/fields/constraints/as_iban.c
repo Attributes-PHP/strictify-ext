@@ -6,7 +6,6 @@
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 
-
 zend_class_entry *AS_Fields_Constraints_Iban_ce;
 
 /*
@@ -19,14 +18,32 @@ bool as_validate_Iban_constraint(zval *constraint, as_field *field, as_property_
         as_add_field_error_with_prefix(AS_ERROR_IBAN, field, property, errors);
         return false;
     }
+
+    /* IBANs are case-insensitive in practice (printed and pasted in either
+     * case): the checksum is computed on the uppercased form. */
+    char uppercased[64];
+    const size_t length = Z_STRLEN_P(value);
+    if (length >= sizeof(uppercased)) {
+        as_add_field_error_with_prefix(AS_ERROR_IBAN, field, property, errors);
+        return false;
+    }
+
+    const char *source = Z_STRVAL_P(value);
+    for (size_t i = 0; i < length; i++) {
+        char c = source[i];
+        uppercased[i] = (c >= 'a' && c <= 'z') ? (char)(c - 'a' + 'A') : c;
+    }
+
+    zend_string *normalized = zend_string_init(uppercased, length, 0);
     static zend_string *as_pattern = NULL;
-    if (!as_pattern_match(&as_pattern, "~^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$~", Z_STR_P(value))) {
+    if (!as_pattern_match(&as_pattern, "~^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$~", normalized)) {
+        zend_string_release(normalized);
         as_add_field_error_with_prefix(AS_ERROR_IBAN, field, property, errors);
         return false;
     }
     /* mod-97 checksum over the rearranged string (first 4 chars moved to the end) */
-    const char *s = Z_STRVAL_P(value);
-    size_t len = Z_STRLEN_P(value);
+    const char *s = ZSTR_VAL(normalized);
+    size_t len = ZSTR_LEN(normalized);
     int remainder = 0;
     for (size_t i = 4; i < len; i++) {
         char c = s[i];
@@ -48,6 +65,8 @@ bool as_validate_Iban_constraint(zval *constraint, as_field *field, as_property_
             remainder = (remainder * 10 + n % 10) % 97;
         }
     }
+    zend_string_release(normalized);
+
     if (remainder != 1) {
         as_add_field_error_with_prefix(AS_ERROR_IBAN, field, property, errors);
         return false;
@@ -55,20 +74,4 @@ bool as_validate_Iban_constraint(zval *constraint, as_field *field, as_property_
     return true;
 }
 
-
-void as_register_Iban_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Iban", class_AS_Fields_Constraints_Iban_methods);
-    AS_Fields_Constraints_Iban_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Iban_ce != NULL);
-    AS_Fields_Constraints_Iban_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Iban_ce, 1, AS_Fields_Field_ce);
-
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Iban_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(Iban, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS)
