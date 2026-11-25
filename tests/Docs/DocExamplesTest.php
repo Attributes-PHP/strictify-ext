@@ -24,8 +24,16 @@ use RuntimeException;
 it('runs every doctest-marked php code block in the docs', function () {
     $root = dirname(__DIR__, 2);
     $docsDir = $root . '/docs';
-    $extension = $root . '/modules/attributes_strictify.so';
-    $extensionFlag = is_file($extension) ? ' -d extension=' . escapeshellarg($extension) : '';
+    $extension = getenv('STRICTIFY_EXTENSION') ?: null;
+    if ($extension === null) {
+        foreach ([$root . '/modules/attributes_strictify.so', $root . '/modules/php_attributes_strictify.dll'] as $candidate) {
+            if (is_file($candidate)) {
+                $extension = $candidate;
+                break;
+            }
+        }
+    }
+    $extensionFlag = $extension !== null ? ' -d extension=' . escapeshellarg($extension) : '';
 
     $blocks = [];
     $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($docsDir, FilesystemIterator::SKIP_DOTS));

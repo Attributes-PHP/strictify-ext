@@ -91,3 +91,100 @@ jobs:
 
       - name: Run integration tests
         run: task test:integration
+
+  # macOS and Windows build the extension and run the PHP-level suites
+  # (tests/Integration + tests/Docs). The C tooling jobs above stay on Linux:
+  # clang-format/clang-tidy need `bear`, and Ceedling builds with a gcc-style
+  # toolchain, so neither is worth porting.
+  test-macos:
+    name: Run tests (macOS, PHP ${{ matrix.php-version }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+
+      - name: Install PCRE2 headers
+        # config.m4 probes /opt/homebrew/include and /usr/local/include for
+        # pcre2.h, which ext/pcre/php_pcre.h includes.
+        run: brew list pcre2 >/dev/null 2>&1 || brew install pcre2
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Build the extension
+        run: |
+          phpize
+          ./configure --enable-attributes-strictify
+          make -j"$(sysctl -n hw.ncpu)"
+
+      - name: Run integration and docs tests
+        run: php -d extension="$(pwd)/modules/attributes_strictify.so" ./vendor/bin/pest --colors=always tests/Integration tests/Docs
+
+  test-windows:
+    name: Run tests (Windows, PHP ${{ matrix.php-version }})
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4', '8.5']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build the extension
+        # Builds PHP from source with config.w32 and a PECL-style
+        # php_attributes_strictify.dll; its own PHPT runner is skipped because
+        # this repository's tests are Pest. The configure flags are derived from
+        # config.w32, which requests a shared build.
+        uses: php/php-windows-builder/extension@v1
+        with:
+          php-version: ${{ matrix.php-version }}
+          arch: x64
+          ts: nts
+          run-tests: false
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php-version }}
+          coverage: none
+          ini-values: memory_limit=-1
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist
+
+      - name: Unpack the built extension
+        id: extension
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem artifacts -Filter *.zip -File | Select-Object -First 1
+          if (-not $zip) { throw "the build produced no extension package" }
+          Expand-Archive -Path $zip.FullName -DestinationPath build-ext -Force
+          $dll = Get-ChildItem build-ext -Recurse -Filter *.dll |
+            Where-Object { $_.Name -like '*attributes*' } |
+            Select-Object -First 1
+          if (-not $dll) { throw "no extension DLL in $($zip.Name)" }
+          $final = Join-Path $dll.DirectoryName 'php_attributes_strictify.dll'
+          if ($dll.FullName -ne $final) { Rename-Item $dll.FullName $final -Force }
+          "path=$final" >> $env:GITHUB_OUTPUT
+
+      - name: Run integration and docs tests
+        shell: pwsh
+        env:
+          STRICTIFY_EXTENSION: ${{ steps.extension.outputs.path }}
+        run: |
+          php -d extension="$env:STRICTIFY_EXTENSION" ./vendor/bin/pest --colors=always tests/Integration tests/Docs
+

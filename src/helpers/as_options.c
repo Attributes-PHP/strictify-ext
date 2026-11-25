@@ -8,7 +8,7 @@
 bool as_validate_method_parameter(char *option, char **all_valid_options, size_t length, as_invalid_method_parameter *invalid_parameter_error)
 {
     for (size_t i = 0; i < length; i++) {
-        if (strcasecmp(option, all_valid_options[i]) == 0) {
+        if (as_binary_strcasecmp(option, strlen(option), all_valid_options[i], strlen(all_valid_options[i])) == 0) {
             return true;
         }
     }

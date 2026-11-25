@@ -1,0 +1,41 @@
+// vim:ft=javascript
+//
+// Windows build configuration for the attributes-strictify extension. Mirrors
+// config.m4, which drives the Linux and macOS builds — keep the source list
+// below in sync with PHP_NEW_EXTENSION there when adding a file.
+//
+// PCRE headers (ext/pcre/php_pcre.h -> pcre2.h) come from the PHP build itself,
+// so no extra library is required here.
+
+ARG_ENABLE("attributes-strictify", "Enable attributes-strictify support", "no");
+
+if (PHP_ATTRIBUTES_STRICTIFY != "no") {
+	if (PHP_VERSION < "8.2") {
+		ERROR("attributes-strictify requires PHP 8.2 or later");
+	}
+
+	// Referencing this token is what makes the Windows builder pass
+	// --enable-attributes-strictify=shared, i.e. produce a loadable
+	// php_attributes_strictify.dll rather than a static module.
+	if (PHP_ATTRIBUTES_STRICTIFY_SHARED) {
+		AC_DEFINE('ATTRIBUTES_STRICTIFY_SHARED', 1, 'Define to 1 if attributes-strictify is built as a shared module.');
+	}
+
+	EXTENSION("attributes_strictify", "strictify.c \
+		src/as_validate_function.c src/as_compiled_model.c src/as_call_function.c \
+		src/as_base_model.c src/as_exception.c src/as_model_configs.c src/as_error_translator.c \
+		src/as_type.c src/helpers/as_wrappers.c src/helpers/as_options.c src/helpers/as_string.c \
+		src/helpers/as_error_messages.c src/fields/as_constraint.c \
+		src/fields/as_config_aware_constraint.c src/fields/as_field.c src/fields/as_alias.c \
+		src/fields/as_error_message.c src/fields/as_sequence.c src/fields/as_union.c \
+		src/fields/as_intersection.c src/fields/as_dict.c src/fields/as_sensitive.c \
+		src/fields/constraints/as_alpha_dash.c src/fields/constraints/as_ascii.c \
+		src/fields/constraints/as_between.c src/fields/constraints/as_contains.c \
+		src/fields/constraints/as_datetime.c src/fields/constraints/as_ends_with.c \
+		src/fields/constraints/as_in.c src/fields/constraints/as_max.c \
+		src/fields/constraints/as_min.c src/fields/constraints/as_multiple_of.c \
+		src/fields/constraints/as_regex.c src/fields/constraints/as_size.c \
+		src/fields/constraints/as_starts_with.c src/fields/constraints/as_ulid.c \
+		src/fields/constraints/as_uuid.c src/validators/as_typehint_validator.c \
+		src/validators/as_array_typehint_validator.c");
+}
