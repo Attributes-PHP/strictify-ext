@@ -34,6 +34,15 @@ struct as_arm {
     as_spec *nested;         // nested array spec, NULL otherwise
 };
 
+/*
+ * #[Sequence(sorted: ...)]: the order the validated values are put in.
+ */
+typedef enum {
+    AS_SEQUENCE_SORT_NONE = 0,
+    AS_SEQUENCE_SORT_ASC,
+    AS_SEQUENCE_SORT_DESC,
+} as_sequence_sort;
+
 struct as_spec {
     as_arm *arms;
     uint32_t arms_count;
@@ -46,6 +55,11 @@ struct as_spec {
     // Sequence only: keys must be the sequential integers 0, 1, 2, ...
     // (the default; #[Sequence(sequential: false)] opts out)
     bool require_sequential;
+    // Sequence only: the order the validated values are put in (asc, desc or
+    // none, the default)
+    as_sequence_sort sort;
+    // Sequence and Dict: elements must not repeat (uniqueValues: true)
+    bool require_unique;
     // Whether validating an element can read its name (a key or element
     // error, a class-arm hydration or a nested array validation): pure
     // basic-type specs never build per-element path strings
@@ -647,6 +661,65 @@ static bool build_value_arms(zval *of_value, as_spec_context *ctx, as_spec *spec
 }
 
 /*
+ * Reads a #[Sequence(sorted: ...)] value: 'asc'/'ASC' ascending,
+ * 'desc'/'DESC' descending, null (or anything else) leaves the order alone.
+ */
+static as_sequence_sort sequence_sort_mode(zval *sorted)
+{
+    if (sorted == NULL || Z_TYPE_P(sorted) != IS_STRING) {
+        return AS_SEQUENCE_SORT_NONE;
+    }
+
+    if (zend_string_equals_literal_ci(Z_STR_P(sorted), "asc")) {
+        return AS_SEQUENCE_SORT_ASC;
+    }
+
+    if (zend_string_equals_literal_ci(Z_STR_P(sorted), "desc")) {
+        return AS_SEQUENCE_SORT_DESC;
+    }
+
+    return AS_SEQUENCE_SORT_NONE;
+}
+
+/*
+ * Reads the $uniqueValues flag of a #[Sequence]/#[Dict]: absent or falsy
+ * keeps duplicate elements allowed.
+ */
+static bool unique_values_flag(zval *flag)
+{
+    return flag != NULL && zend_is_true(flag);
+}
+
+/*
+ * Reads an optional boolean attribute argument by name, falling back to its
+ * positional slot. Returns false when the argument cannot be evaluated (the
+ * exception is already thrown).
+ */
+static bool read_optional_bool_arg(const zend_attribute *attribute, const char *name, uint32_t positional_index, zend_class_entry *scope, bool *target)
+{
+    const size_t name_length = strlen(name);
+
+    for (uint32_t i = 0; i < attribute->argc; i++) {
+        bool matches = attribute->args[i].name != NULL
+                           ? (ZSTR_LEN(attribute->args[i].name) == name_length && zend_binary_strcasecmp(ZSTR_VAL(attribute->args[i].name), ZSTR_LEN(attribute->args[i].name), name, name_length) == 0)
+                           : i == positional_index;
+        if (!matches) {
+            continue;
+        }
+
+        zval value;
+        if (!evaluate_attribute_argument(&value, attribute, i, scope)) {
+            return false;
+        }
+        *target = zend_is_true(&value);
+        zval_ptr_dtor(&value);
+        return true;
+    }
+
+    return true;
+}
+
+/*
  * Builds a spec from a materialized attribute object. Attribute objects
  * reach this function as evaluated attribute arguments (new expressions
  * nested inside an attribute).
@@ -673,6 +746,8 @@ static as_spec *build_spec_from_object(zval *object, as_spec_context *ctx)
             return NULL;
         }
 
+        spec->require_unique = unique_values_flag(read_object_property(object, "uniqueValues", sizeof("uniqueValues") - 1));
+
         return spec;
     }
 
@@ -687,6 +762,9 @@ static as_spec *build_spec_from_object(zval *object, as_spec_context *ctx)
         // sequential defaults to true unless explicitly set to false
         zval *sequential = read_object_property(object, "sequential", sizeof("sequential") - 1);
         spec->require_sequential = sequential == NULL || Z_TYPE_P(sequential) != IS_FALSE;
+
+        spec->require_unique = unique_values_flag(read_object_property(object, "uniqueValues", sizeof("uniqueValues") - 1));
+        spec->sort = sequence_sort_mode(read_object_property(object, "sorted", sizeof("sorted") - 1));
 
         return spec;
     }
@@ -791,6 +869,11 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
             return NULL;
         }
 
+        if (!read_optional_bool_arg(attribute, "uniqueValues", 2, scope, &spec->require_unique)) {
+            free_spec(spec);
+            return NULL;
+        }
+
         return spec;
     }
 
@@ -824,6 +907,11 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
 
         spec->is_sequence = true;
 
+        if (!read_optional_bool_arg(attribute, "uniqueValues", 1, scope, &spec->require_unique)) {
+            free_spec(spec);
+            return NULL;
+        }
+
         // sequential defaults to true; it can be passed as a named argument
         // (sequential: false) or as the third positional argument
         spec->require_sequential = true;
@@ -840,6 +928,24 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
             }
             spec->require_sequential = zend_is_true(&sequential_value);
             zval_ptr_dtor(&sequential_value);
+            break;
+        }
+
+        // sorted is optional too: named (sorted: 'asc') or the fourth
+        // positional argument
+        for (uint32_t i = 1; i < attribute->argc; i++) {
+            bool is_sorted = attribute->args[i].name != NULL ? zend_string_equals_literal_ci(attribute->args[i].name, "sorted") : i == 3;
+            if (!is_sorted) {
+                continue;
+            }
+
+            zval sorted_value;
+            if (!evaluate_attribute_argument(&sorted_value, attribute, i, scope)) {
+                free_spec(spec);
+                return NULL;
+            }
+            spec->sort = sequence_sort_mode(&sorted_value);
+            zval_ptr_dtor(&sorted_value);
             break;
         }
 
@@ -1199,6 +1305,77 @@ static void compute_needs_element_names(as_spec *spec)
 }
 
 /*
+ * Reports duplicate element values (uniqueValues: true) on the array property.
+ * Strict comparison, matching how #[Contains] and #[In] compare.
+ *
+ * ponytail: O(n^2) pairwise scan — values cannot be hashed without
+ * serialization; switch to a hash of serialized values if very large arrays
+ * with uniqueValues ever matter.
+ */
+static bool has_duplicate_values(zend_array *ht)
+{
+    const uint32_t count = zend_hash_num_elements(ht);
+
+    if (count < 2) {
+        return false;
+    }
+
+    zval *values = safe_emalloc(count, sizeof(zval), 0);
+    uint32_t filled = 0;
+    zval *value;
+
+    ZEND_HASH_FOREACH_VAL(ht, value)
+    {
+        ZVAL_COPY_VALUE(&values[filled++], value);
+    }
+    ZEND_HASH_FOREACH_END();
+
+    bool duplicate = false;
+    for (uint32_t i = 0; i < filled && !duplicate; i++) {
+        for (uint32_t j = i + 1; j < filled; j++) {
+            if (zend_is_identical(&values[i], &values[j])) {
+                duplicate = true;
+                break;
+            }
+        }
+    }
+
+    efree(values);
+    return duplicate;
+}
+
+/*
+ * Sorts a #[Sequence] array's values in place and renumbers the keys to
+ * 0, 1, 2, ..., using the engine's standard comparison (the one sort()
+ * applies). Called once the whole array validated, so the model receives
+ * the values in the requested order.
+ */
+static int compare_values_ascending(Bucket *a, Bucket *b)
+{
+    return zend_compare(&a->val, &b->val);
+}
+
+static int compare_values_descending(Bucket *a, Bucket *b)
+{
+    return zend_compare(&b->val, &a->val);
+}
+
+static void sort_sequence_values(zval *value, as_sequence_sort sort)
+{
+    if (Z_TYPE_P(value) != IS_ARRAY || sort == AS_SEQUENCE_SORT_NONE) {
+        return;
+    }
+
+    if (zend_hash_num_elements(Z_ARRVAL_P(value)) < 2) {
+        return;
+    }
+
+    SEPARATE_ARRAY(value);
+
+    zend_hash_sort(Z_ARRVAL_P(value), sort == AS_SEQUENCE_SORT_ASC ? compare_values_ascending : compare_values_descending, true);
+}
+
+/*
  * Walks the array and validates/coerces every key and element in place
  * against the spec.
  *
@@ -1348,6 +1525,15 @@ static bool validate_array_elements(as_field *field, as_property_info *prop_info
     }
     if (base_path != NULL) {
         zend_string_release(base_path);
+    }
+
+    if (all_valid && spec->require_unique && has_duplicate_values(Z_ARRVAL_P(field->value))) {
+        as_add_field_error_with_prefix(AS_ERROR_UNIQUE_VALUES, field, prop_info, errors);
+        all_valid = false;
+    }
+
+    if (all_valid && spec->is_sequence) {
+        sort_sequence_values(field->value, spec->sort);
     }
 
     return all_valid;

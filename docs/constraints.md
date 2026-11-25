@@ -48,6 +48,29 @@ All built-ins live in `Attributes\Strictify\Fields\Constraints` and may be decla
 | [`Contains`](#contains) | membership | `(string\|int\|float ...$values, at least one)` | an array is missing one of the declared values, or a string is missing one of them as a substring |
 | [`Size`](#size) | size | `(?int $min = null, ?int $max = null)` | the string length or array count is outside the inclusive bounds |
 | [`DateTime`](#datetime) | date/time | `(string $format = 'X-m-d\\TH:i:sP', DateTimeZone\|string\|null $timezone = null)` | the value does not parse in the declared format and timezone |
+| [`Email`](#email) | format | `(?string\|array $domain = null)` | the string is not a valid email address, or its domain is not in the declared `$domain` list |
+| [`Url`](#url) | format | `(?string\|array $protocol = null, ?string\|array $domain = null)` | the string is not a URL with a scheme (`https://...`), or its scheme/host is not in the declared `$protocol`/`$domain` |
+| [`Domain`](#domain) | format | `()` | the string is not a valid domain name |
+| [`Ip`](#ip) | format | `(?string $version = null)` | the string is not an IP address (`v4`/`v6` restricts the family) |
+| [`Iban`](#iban) | format | `()` | the string is not a valid IBAN (mod-97 checksum) |
+| [`Isbn`](#isbn) | format | `()` | the string is not a valid ISBN-10 or ISBN-13 |
+| [`CreditCard`](#creditcard) | format | `()` | the string is not a 12-19 digit number passing the Luhn check |
+| [`Version`](#version) | format | `()` | the string is not a semantic version (`1.2.3`, `v2.0.0-rc.1+build`) |
+| [`MacAddress`](#macaddress) | format | `()` | the string is not a MAC address (`00:1A:2B:3C:4D:5E`) |
+| [`Alnum`](#alnum) | string | `(string $extra = '')` | the string contains characters other than letters, numbers and `$extra` |
+| [`Alpha`](#alpha) | string | `(string $extra = '')` | the string contains non-letter characters (beyond `$extra`) |
+| [`Digit`](#digit) | string | `()` | the string is empty or contains non-digit characters |
+| [`Xdigit`](#xdigit) | string | `()` | the string is empty or contains non-hexadecimal characters |
+| [`Slug`](#slug) | string | `()` | the string is not a lowercase slug (`hello-world-2`) |
+| [`Base64`](#base64) | string | `()` | the string is not valid base64 (length a multiple of 4, padding only at the end) |
+| [`Json`](#json) | string | `()` | the string is not valid JSON |
+| [`HexRgbColor`](#hexrgbcolor) | string | `()` | the string is not a hex RGB(A) color (`#fff`, `#ff0080`) |
+| [`Even`](#even) | numeric | `()` | the number is not even |
+| [`Odd`](#odd) | numeric | `()` | the number is not odd |
+| [`Positive`](#positive) | numeric | `()` | the number is not greater than zero |
+| [`Negative`](#negative) | numeric | `()` | the number is not less than zero |
+| [`PrimeNumber`](#primenumber) | numeric | `()` | the integer is not prime |
+| [`ContainsAny`](#containsany) | membership | `(string\|int\|float ...$values, at least one)` | an array contains none of the declared values, or a string contains none of them as a substring |
 
 Named constructor arguments work everywhere: `#[Size(min: 3)]` validates only the lower bound, `#[DateTime(timezone: 'Europe/London')]` parses in that timezone.
 
@@ -68,7 +91,7 @@ class Profile extends BaseModel
 }
 ```
 
-Fails: `'user name'` (space), `'user.name'` (dot), and any non-string value.
+Passes: `'user-1_name'`, `'A1b2C3'`, `''`. Fails: `'user name'` (space), `'user.name'` (dot), `'héllo'`, and any non-string value.
 
 ### `Ascii`
 
@@ -83,7 +106,7 @@ class Label extends BaseModel
 }
 ```
 
-Fails: `'héllo'` (UTF-8 bytes above 0x7F), and any non-string value.
+Passes: `'plain text'`, `''`, `"tabs\tand\nnewlines"`. Fails: `'héllo'` (UTF-8 bytes above 0x7F), `'em—dash'`, and any non-string value.
 
 ### `Regex`
 
@@ -101,7 +124,7 @@ class Account extends BaseModel
 }
 ```
 
-Fails: non-matching strings, strings when the pattern fails to compile, and non-string values.
+Passes: `'user-name'`, `'bbbaaabb'` (partial match). Fails: `'User Name'`, `'bbb'`, strings when the pattern fails to compile, and non-string values.
 
 ### `StartsWith`
 
@@ -119,7 +142,7 @@ class Link extends BaseModel
 }
 ```
 
-Fails: non-string values, non-matching strings, and prefixes longer than the value.
+Passes: `'https://example.com'`, `'4242'`. Fails: `'http://example.com'`, `'142'`, prefixes longer than the value, and non-string values.
 
 ### `EndsWith`
 
@@ -137,7 +160,7 @@ class Contact extends BaseModel
 }
 ```
 
-Fails: non-string values, and strings ending with none of the declared values (including a suffix longer than the value).
+Passes: `'andre@example.com'`, `'answer 42'`. Fails: `'andre@example.org'`, `'answer 43'`, suffixes longer than the value, and non-string values.
 
 ### `Ulid`
 
@@ -152,7 +175,7 @@ class Event extends BaseModel
 }
 ```
 
-Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, any other character, and non-string values.
+Passes: `'01ARZ3NDEKTSV4RRFFQ69G5FAV'`, `'01arz3ndektsv4rrffq69g5fav'`. Fails: wrong length (25 or 27 chars), the letters `I`, `L`, `O`, `U` in either case, `''`, any other character, and non-string values.
 
 ### `Uuid`
 
@@ -167,7 +190,7 @@ class Request extends BaseModel
 }
 ```
 
-Fails: wrong length, a dash in the wrong position, a non-hex character, and non-string values.
+Passes: `'123e4567-e89b-12d3-a456-426614174000'`, `'123E4567-E89B-12D3-A456-426614174000'`. Fails: wrong length, a dash in the wrong position, a non-hex character, and non-string values.
 
 ## Numeric constraints
 
@@ -187,7 +210,7 @@ class User extends BaseModel
 }
 ```
 
-Fails: any non-numeric value, with a dedicated type error.
+Passes: `18`, `99`, `1.5`. Fails: `17`, `100`, `3.0` against the float range, and any non-numeric value.
 
 ### `Max`
 
@@ -202,7 +225,7 @@ class Score extends BaseModel
 }
 ```
 
-Fails: numbers above the bound and non-numeric values.
+Passes: `100`, `-5`. Fails: `101` and non-numeric values.
 
 ### `Min`
 
@@ -217,7 +240,7 @@ class Cart extends BaseModel
 }
 ```
 
-Fails: numbers below the bound and non-numeric values.
+Passes: `1`, `42`. Fails: `0` and non-numeric values.
 
 ### `MultipleOf`
 
@@ -238,7 +261,7 @@ class Pack extends BaseModel
 }
 ```
 
-Fails: non-multiples and non-numeric values.
+Passes: `20`, `0.3`. Fails: `21`, `0.35`, and non-numeric values.
 
 ## Membership constraints
 
@@ -258,11 +281,11 @@ class Grade extends BaseModel
 }
 ```
 
-Fails: any value identical to none of the declared values.
+Passes: `'b'`, `1`, `true`. Fails: `'d'`, `'1'` (strict: not the integer `1`), and any value identical to none of the declared values.
 
 ### `Contains`
 
-Arrays and strings are both supported.
+Arrays and strings are both supported; every declared value must be present.
 
 ```php
 <?php
@@ -278,7 +301,9 @@ class Article extends BaseModel
 }
 ```
 
-Fails: any value that is neither array nor string.
+Passes: `['php', 'dev', 'oss']`, `['dev', 'php']`, `'see example.com'`. Fails: `['php']`, `['oss']`, `'see other.org'`, and any value that is neither array nor string.
+
+When one match out of several is enough, use [`ContainsAny`](#containsany) — it is the same check with the "at least one" quantifier, and reports `Must contain at least one of: ...`.
 
 ## Size
 
@@ -304,7 +329,7 @@ class Profile extends BaseModel
 }
 ```
 
-Fails: sizes outside the bounds and values that are neither string nor array.
+Passes: `'andre'`, `'abc'`, `['a']`, `[]` with a max-only bound. Fails: `'ab'`, a 21-character string, `[]` with a min bound, six elements against `#[Size(max: 5)]`, and values that are neither string nor array.
 
 ## Date and time
 
@@ -327,16 +352,399 @@ class Event extends BaseModel
 }
 ```
 
-Fails: a string that does not parse in the declared format, and any value that is neither string nor `DateTimeInterface`.
+Passes: `'1994-01-01'`, a `DateTimeInterface` instance, `'2024-03-01T10:00:00+00:00'`. Fails: a string that does not parse in the declared format (`'01/01/1994'`), and any value that is neither string nor `DateTimeInterface`.
 
 !!! tip "Type-level rules on union-typed properties"
     Declare [`Union`](/guides/nested-models/#union-on-non-array-properties) directly on the property to check the whole value against its arms — on a union hint such as `int|float` the arms must repeat the hint's type-hints exactly, otherwise an `InvalidBaseModelException` is thrown.
 
+## Format and network constraints
+
+### `Email`
+
+A valid email address, optionally restricted to a domain or a list of domains. Constructor: `(?string|array $domain = null)`.
+
+```php
+<?php
+class Contact extends BaseModel
+{
+    #[Email] // 'andre@example.com', 'a.b+tag@sub.domain.co' pass; 'missing@tld' fails
+    public string $value;
+
+    #[Email(domain: 'example.com')] // 'andre@example.com' passes; 'andre@gmail.com' fails
+    public string $work;
+
+    // several domains: one array entry per allowed domain
+    #[Email(domain: ['example.com', 'example.org'])] // 'andre@example.org' passes
+    public string $anyOf;
+}
+```
+
+`$domain` is compared with the part after the `@`, case-insensitively and in full — `domain: 'example.com'` does not allow `andre@mail.example.com`. Leave it `null` (the default) to accept any domain.
+
+Passes: `andre@example.com`, `a.b+tag@sub.domain.co`. Fails: `not-an-email`, `missing@tld`, `@example.com`, `a b@example.com`, and — with `$domain` declared — `andre@gmail.com` (`Must be an email address on an allowed domain: 'example.com'`) or `andre@mail.example.com`.
+
+### `Url`
+
+An absolute URL with a scheme, optionally restricted to a protocol and a host. Constructor: `(?string|array $protocol = null, ?string|array $domain = null)`.
+
+```php
+<?php
+class Link extends BaseModel
+{
+    #[Url] // 'https://example.com/path?q=1', 'ftp://files.example.com/x' pass; 'example.com' fails
+    public string $value;
+
+    #[Url(protocol: 'https')] // 'https://example.com' passes; 'http://example.com' fails
+    public string $secure;
+
+    // several entries: one array element per allowed protocol or host
+    #[Url(protocol: ['http', 'https'], domain: ['example.com', 'example.org'])]
+    public string $internal;
+}
+```
+
+`$protocol` is compared with the scheme, `$domain` with the host — both case-insensitively and in full, so `domain: 'example.com'` does not allow `https://mail.example.com`. Ports and userinfo are ignored on the URL side (`https://user:pass@example.com:8443` matches host `example.com`). Protocol entries may be written `https`, `https:` or `https://`; they mean the same scheme. Leave either argument `null` (the default) to accept any.
+
+Passes: any absolute URL with a scheme — `https://example.com/path?q=1`, `http://localhost:8080`, `ftp://files.example.com/x`. Fails: `example.com` (no scheme), `https://` (no host), `://no-scheme`, `https://exa mple.com`, and — with the arguments declared — `http://example.com` under `protocol: 'https'` (`Must be a URL using an allowed protocol: 'https'`) or `https://gmail.com` under `domain: 'example.com'` (`Must be a URL on an allowed domain: 'example.com'`).
+
+### `Domain`
+
+The string is not a valid domain name. Constructor: `()`.
+
+```php
+<?php
+class Site extends BaseModel
+{
+    #[Domain] // 'example.com', 'sub.domain.co.uk', 'a-b.io' pass; '-bad.com' fails
+    public string $value;
+}
+```
+
+Passes: `example.com`, `sub.domain.co.uk`, `a-b.io`. Fails: `-bad.com` (leading dash), `example` (no TLD), `example.c` (one-letter TLD), `exa mple.com`.
+
+### `Ip`
+
+The string is not an IP address (`v4`/`v6` restricts the family). Constructor: `(?string $version = null)`.
+
+```php
+<?php
+class Request extends BaseModel
+{
+    #[Ip] // '192.168.0.1', '::1' and '2001:db8::ff00:42:8329' pass; '256.1.1.1' fails
+    public string $address;
+
+    #[Ip(version: 'v4')] // '192.168.0.1' passes, '::1' fails
+    public string $ipv4;
+
+    #[Ip(version: 'v6')] // '::1' passes, '192.168.0.1' fails
+    public string $ipv6;
+}
+```
+
+Passes: any IPv4 or IPv6 literal (`192.168.0.1`, `::1`, `2001:db8::ff00:42:8329`). Fails: `256.1.1.1` (octet above 255), `1.2.3` (incomplete), `hello`. With `version: 'v4'`/`'v6'` the other family fails too.
+
+### `Iban`
+
+The string is not a valid IBAN (mod-97 checksum). Constructor: `()`.
+
+```php
+<?php
+class BankAccount extends BaseModel
+{
+    #[Iban] // 'DE89370400440532013000', 'GB29NWBK60161331926819' pass; 'DE89370400440532013001' fails
+    public string $value;
+}
+```
+
+Passes: `DE89370400440532013000`, `GB29NWBK60161331926819`. Fails: `DE89370400440532013001` (mod-97 checksum), `XX00123` (no such country code), `DE89 3704` (spaces).
+
+### `Isbn`
+
+The string is not a valid ISBN-10 or ISBN-13. Constructor: `()`.
+
+```php
+<?php
+class Book extends BaseModel
+{
+    #[Isbn] // '978-0-13-468599-1', '0-306-40615-2', '9783161484100' pass; '0-306-40615-3' fails
+    public string $value;
+}
+```
+
+Passes: ISBN-10 (`0-306-40615-2`) and ISBN-13 (`978-0-13-468599-1`, `9783161484100`), with or without dashes. Fails: `0-306-40615-3` (bad check digit), `12345` (too short), `97831614841XX`.
+
+### `CreditCard`
+
+The string is not a 12-19 digit number passing the Luhn check. Constructor: `()`.
+
+```php
+<?php
+class Card extends BaseModel
+{
+    #[CreditCard] // '4111 1111 1111 1111', '5500-0000-0000-0004' pass; '4111 1111 1111 1112' fails
+    public string $value;
+}
+```
+
+Passes: 12-19 digits, spaces or dashes allowed, Luhn check — `4111 1111 1111 1111`, `5500-0000-0000-0004`, `378282246310005`. Fails: `4111 1111 1111 1112` (Luhn), `1234` (too short), `abcd` (non-digits).
+
+### `Version`
+
+The string is not a semantic version (`1.2.3`, `v2.0.0-rc.1+build`). Constructor: `()`.
+
+```php
+<?php
+class Release extends BaseModel
+{
+    #[Version] // '1.0.0', 'v2.3.1', '1.0.0-rc.1+build.5' pass; '1.0' fails
+    public string $value;
+}
+```
+
+Passes: full semantic versions — `1.0.0`, `v2.3.1`, `1.0.0-rc.1+build.5`. Fails: `1.0` (missing patch), `01.2.3` (leading zero), `1.0.0-` (empty pre-release), `latest`.
+
+### `MacAddress`
+
+The string is not a MAC address (`00:1A:2B:3C:4D:5E`). Constructor: `()`.
+
+```php
+<?php
+class Device extends BaseModel
+{
+    #[MacAddress] // '00:1A:2B:3C:4D:5E', '00-1a-2b-3c-4d-5e' pass; '001A2B3C4D5E' fails
+    public string $value;
+}
+```
+
+Passes: six hex pairs separated by `:` or `-`, either letter case — `00:1A:2B:3C:4D:5E`, `00-1a-2b-3c-4d-5e`. Fails: `00:1A:2B:3C:4D` (five pairs), `001A2B3C4D5E` (no separators), `zz:1a:2b:3c:4d:5e` (non-hex).
+
+## More string constraints
+
+### `Alnum`
+
+The string contains characters other than letters, numbers and `$extra`. Constructor: `(string $extra = '')`. Non-string values fail.
+
+```php
+<?php
+class Username extends BaseModel
+{
+    #[Alnum] // 'abc123' and '' pass, 'abc-123' fails
+    public string $plain;
+
+    #[Alnum(extra: '-_')] // 'abc-123' passes with the extra characters declared
+    public string $slug;
+}
+```
+
+Passes: `abc123`, `ABC`, `''`. Fails: `abc-123`, `a b`.
+
+### `Alpha`
+
+The string contains non-letter characters (beyond `$extra`). Constructor: `(string $extra = '')`. Non-string values fail.
+
+```php
+<?php
+class Name extends BaseModel
+{
+    #[Alpha] // 'ABCdef' and '' pass, 'a b' fails
+    public string $plain;
+
+    #[Alpha(extra: ' ')] // 'a b' passes with the space declared
+    public string $withSpaces;
+}
+```
+
+Passes: `abc`, `ABCdef`, `''`. Fails: `abc1`, `a b`.
+
+### `Digit`
+
+The string is empty or contains non-digit characters. Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Quantity extends BaseModel
+{
+    #[Digit] // '0123456789' and '42' pass, '12a' fails
+    public string $value;
+}
+```
+
+Passes: `0123456789`, `42`. Fails: `12a`, `''` (empty).
+
+### `Xdigit`
+
+The string is empty or contains non-hexadecimal characters. Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Color extends BaseModel
+{
+    #[Xdigit] // '0aF9' and 'FF' pass, '0g' fails
+    public string $value;
+}
+```
+
+Passes: `0aF9`, `FF`. Fails: `0g`, `''` (empty).
+
+### `Slug`
+
+The string is not a lowercase slug (`hello-world-2`). Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Post extends BaseModel
+{
+    #[Slug] // 'hello-world', 'php8', 'a' pass; 'Hello' fails
+    public string $value;
+}
+```
+
+Passes: `hello-world`, `php8`, `a`. Fails: `Hello` (uppercase), `-lead`, `trail-`, `a__b`.
+
+### `Base64`
+
+The string is not valid base64 (length a multiple of 4, padding only at the end). Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Blob extends BaseModel
+{
+    #[Base64] // 'aGVsbG8=' and '' pass, 'aGVsbG8' fails
+    public string $value;
+}
+```
+
+Passes: `aGVsbG8=`, `AAAA`, `''`. Fails: `aGVsbG8` (length not a multiple of 4), `aGVsbG8===` (padding), `a b=`.
+
+### `Json`
+
+The string is not valid JSON. Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Payload extends BaseModel
+{
+    #[Json] // '{"a":1}', '[1,2,3]', '"str"', '42' pass; '{invalid}' fails
+    public string $value;
+}
+```
+
+Passes: `{"a":1}`, `[1,2,3]`, `"str"`, `null`, `42`. Fails: `{invalid}`, `[1,`.
+
+### `HexRgbColor`
+
+The string is not a hex RGB(A) color (`#fff`, `#ff0080`). Constructor: `()`. Non-string values fail.
+
+```php
+<?php
+class Theme extends BaseModel
+{
+    #[HexRgbColor] // '#fff', '#FFFFFF', '#ff000080' pass; '#ggg' fails
+    public string $value;
+}
+```
+
+Passes: `#fff`, `#FFFFFF` (3- and 6-digit), `#ff000080` (8-digit, alpha). Fails: `#ff` (two digits), `#fffff` (five), `fff` (no leading `#`), `#ggg` (non-hex).
+
+## More numeric constraints
+
+### `Even`
+
+The number is not even. Constructor: `()`. Non-numeric values fail.
+
+```php
+<?php
+class Counter extends BaseModel
+{
+    #[Even] // 2 and -4 pass, 3 fails
+    public int|float $value;
+}
+```
+
+Passes: `2`, `0`, `-4`. Fails: `3`, `2.5`, and non-numeric values.
+
+### `Odd`
+
+The number is not odd. Constructor: `()`. Non-numeric values fail.
+
+```php
+<?php
+class Ticket extends BaseModel
+{
+    #[Odd] // 3 and -1 pass, 2 fails
+    public int|float $value;
+}
+```
+
+Passes: `3`, `1`, `-1`. Fails: `2`, `0`, `3.5`, and non-numeric values.
+
+### `Positive`
+
+The number is not greater than zero. Constructor: `()`. Non-numeric values fail.
+
+```php
+<?php
+class Balance extends BaseModel
+{
+    #[Positive] // 1 and 0.5 pass, 0 and -1 fail
+    public int|float $value;
+}
+```
+
+Passes: `1`, `0.5`. Fails: `0`, `-1`, and non-numeric values.
+
+### `Negative`
+
+The number is not less than zero. Constructor: `()`. Non-numeric values fail.
+
+```php
+<?php
+class Debt extends BaseModel
+{
+    #[Negative] // -1 and -0.5 pass, 0 and 1 fail
+    public int|float $value;
+}
+```
+
+Passes: `-1`, `-0.5`. Fails: `0`, `1`, and non-numeric values.
+
+### `PrimeNumber`
+
+The integer is not prime. Constructor: `()`. Non-numeric values fail.
+
+```php
+<?php
+class Divisor extends BaseModel
+{
+    #[PrimeNumber] // 2 and 97 pass, 1 and 9 fail
+    public int|float $value;
+}
+```
+
+Passes: `2`, `97`, `7919`. Fails: `0`, `1`, `4`, `9` (3 × 3), `-7`, and the numeric string `'7'`.
+
+## Array constraints
+
+### `ContainsAny`
+
+At least one of the declared values must be present, in an array or as a substring of a string. Constructor: `(string\|int\|float ...$values, at least one)`.
+
+```php
+<?php
+class Model extends BaseModel
+{
+    #[ContainsAny('x', 'y')] // ['y'], [1, 'y'] and 'say hello' pass
+    public array|string $value;
+}
+```
+
+Passes: `['y']`, `[1, 'y']`, `'say hello'`. Fails: `['a', 'b']`, `'nope'`, and any non-array, non-string value such as `42`.
+
 ## Value semantics
 
-- **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
-- **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
-- **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring.
+- **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`, `Even`, `Odd`, `Positive`, `Negative`, `PrimeNumber`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`.
+- **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`, `Email`, `Url`, `Domain`, `Ip`, `Iban`, `Isbn`, `CreditCard`, `Version`, `MacAddress`, `Alnum`, `Alpha`, `Digit`, `Xdigit`, `Slug`, `Base64`, `Json`, `HexRgbColor`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
+- **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring. `ContainsAny` is the "at least one match" variant of the same check.
 - **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, and an invalid timezone name throws a `ValueError` at construction.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.
 

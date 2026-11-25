@@ -1,6 +1,7 @@
 #include "as_dict.h"
 #include "as_field.h"
 #include "../as_type.h"
+#include "../helpers/as_wrappers.h"
 #include "as_intersection.h"
 #include "as_sequence.h"
 #include "as_union.h"
@@ -76,10 +77,13 @@ static bool is_resolvable_class_name(zval *value, uint32_t arg_num)
 ZEND_METHOD(AS_Fields_Dict, __construct)
 {
     zval *key, *of;
+    bool unique_values = false;
 
-    ZEND_PARSE_PARAMETERS_START(2, 2)
+    ZEND_PARSE_PARAMETERS_START(2, 3)
     Z_PARAM_ZVAL(key)
     Z_PARAM_ZVAL(of)
+    Z_PARAM_OPTIONAL
+    Z_PARAM_BOOL(unique_values)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!is_valid_dict_key(key)) {
@@ -98,6 +102,7 @@ ZEND_METHOD(AS_Fields_Dict, __construct)
 
     zend_update_property(AS_Fields_Dict_ce, Z_OBJ_P(getThis()), "key", sizeof("key") - 1, key);
     zend_update_property(AS_Fields_Dict_ce, Z_OBJ_P(getThis()), "of", sizeof("of") - 1, of);
+    zend_update_property_bool(AS_Fields_Dict_ce, Z_OBJ_P(getThis()), "uniqueValues", sizeof("uniqueValues") - 1, unique_values);
 }
 
 void as_register_Dict_class(void)
@@ -115,6 +120,7 @@ void as_register_Dict_class(void)
     /* Register $key and $of properties */
     zend_declare_property_null(AS_Fields_Dict_ce, "key", sizeof("key") - 1, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY);
     zend_declare_property_null(AS_Fields_Dict_ce, "of", sizeof("of") - 1, ZEND_ACC_PUBLIC | ZEND_ACC_READONLY);
+    as_declare_typed_property(AS_Fields_Dict_ce, "uniqueValues", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL));
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AS_Fields_Dict_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);

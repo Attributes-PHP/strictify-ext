@@ -19,6 +19,29 @@
 #include "fields/constraints/as_starts_with.h"
 #include "fields/constraints/as_ulid.h"
 #include "fields/constraints/as_uuid.h"
+#include "fields/constraints/as_email.h"
+#include "fields/constraints/as_url.h"
+#include "fields/constraints/as_domain.h"
+#include "fields/constraints/as_ip.h"
+#include "fields/constraints/as_iban.h"
+#include "fields/constraints/as_isbn.h"
+#include "fields/constraints/as_credit_card.h"
+#include "fields/constraints/as_version.h"
+#include "fields/constraints/as_mac_address.h"
+#include "fields/constraints/as_alnum.h"
+#include "fields/constraints/as_alpha.h"
+#include "fields/constraints/as_digit.h"
+#include "fields/constraints/as_xdigit.h"
+#include "fields/constraints/as_slug.h"
+#include "fields/constraints/as_base64.h"
+#include "fields/constraints/as_json.h"
+#include "fields/constraints/as_hex_rgb_color.h"
+#include "fields/constraints/as_even.h"
+#include "fields/constraints/as_odd.h"
+#include "fields/constraints/as_positive.h"
+#include "fields/constraints/as_negative.h"
+#include "fields/constraints/as_prime_number.h"
+#include "fields/constraints/as_contains_any.h"
 #include "fields/as_union.h"
 #include "helpers/as_error_messages.h"
 #include "helpers/as_string.h"
@@ -74,6 +97,29 @@ static const as_constraint_dispatch_entry constraint_dispatch_table[] = {
     /* The single Union class doubles as the scalar whole-value constraint:
      * declared directly on a non-array property it checks the value
      * against its arms; on arrays it must be nested in Sequence/Dict */
+    AS_CONSTRAINT_ENTRY("email", Email),
+    AS_CONSTRAINT_ENTRY("url", Url),
+    AS_CONSTRAINT_ENTRY("domain", Domain),
+    AS_CONSTRAINT_ENTRY("ip", Ip),
+    AS_CONSTRAINT_ENTRY("iban", Iban),
+    AS_CONSTRAINT_ENTRY("isbn", Isbn),
+    AS_CONSTRAINT_ENTRY("creditcard", CreditCard),
+    AS_CONSTRAINT_ENTRY("version", Version),
+    AS_CONSTRAINT_ENTRY("macaddress", MacAddress),
+    AS_CONSTRAINT_ENTRY("alnum", Alnum),
+    AS_CONSTRAINT_ENTRY("alpha", Alpha),
+    AS_CONSTRAINT_ENTRY("digit", Digit),
+    AS_CONSTRAINT_ENTRY("xdigit", Xdigit),
+    AS_CONSTRAINT_ENTRY("slug", Slug),
+    AS_CONSTRAINT_ENTRY("base64", Base64),
+    AS_CONSTRAINT_ENTRY("json", Json),
+    AS_CONSTRAINT_ENTRY("hexrgbcolor", HexRgbColor),
+    AS_CONSTRAINT_ENTRY("even", Even),
+    AS_CONSTRAINT_ENTRY("odd", Odd),
+    AS_CONSTRAINT_ENTRY("positive", Positive),
+    AS_CONSTRAINT_ENTRY("negative", Negative),
+    AS_CONSTRAINT_ENTRY("primenumber", PrimeNumber),
+    AS_CONSTRAINT_ENTRY("containsany", ContainsAny),
     {"attributes\\strictify\\fields\\union", sizeof("attributes\\strictify\\fields\\union") - 1, &AS_Fields_Union_ce, as_validate_Union_scalar},
 };
 

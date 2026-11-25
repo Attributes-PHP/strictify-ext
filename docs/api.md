@@ -241,12 +241,13 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public int|string|\Attributes\Strictify\Type|Sequence|Union|Intersection|Dict $of` | — |
 | `public bool $uniqueValues` | — |
 | `public bool $sequential` | — |
+| `public ?string $sorted` | — |
 
 **Methods**
 
 | Method |
 | ------ |
-| `public function __construct(int|string|\Attributes\Strictify\Type|Sequence|Union|Intersection|Dict $of, bool $uniqueValues = false, bool $sequential = true)` |
+| `public function __construct(int|string|\Attributes\Strictify\Type|Sequence|Union|Intersection|Dict $of, bool $uniqueValues = false, bool $sequential = true, ?string $sorted = null)` |
 
 ### `Attributes\Strictify\Fields\Union` — readonly class implements Field
 
@@ -266,11 +267,47 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 ## `Attributes\Strictify\Fields\Constraints`
 
+### `Attributes\Strictify\Fields\Constraints\Alnum` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public string $extra` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(string $extra = '')` |
+
+### `Attributes\Strictify\Fields\Constraints\Alpha` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public string $extra` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(string $extra = '')` |
+
 ### `Attributes\Strictify\Fields\Constraints\AlphaDash` — final readonly class implements Field
 
 - Attribute: yes
 
 ### `Attributes\Strictify\Fields\Constraints\Ascii` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Base64` — final readonly class implements Field
 
 - Attribute: yes
 
@@ -307,6 +344,26 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | ------ |
 | `public function __construct(string|int|float ...$values)` |
 
+### `Attributes\Strictify\Fields\Constraints\ContainsAny` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public array $values` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(string|int|float ...$values)` |
+
+### `Attributes\Strictify\Fields\Constraints\CreditCard` — final readonly class implements Field
+
+- Attribute: yes
+
 ### `Attributes\Strictify\Fields\Constraints\DateTime` — final class implements Field
 
 - Attribute: yes
@@ -325,6 +382,30 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | ------ |
 | `public function __construct(string $format = 'X-m-d\\TH:i:sP', \DateTimeZone|string|null $timezone = null)` |
 
+### `Attributes\Strictify\Fields\Constraints\Digit` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Domain` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Email` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public string|array|null $domain` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(string|array|null $domain = null)` |
+
 ### `Attributes\Strictify\Fields\Constraints\EndsWith` — final readonly class implements Field
 
 - Attribute: yes
@@ -341,6 +422,18 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | ------ |
 | `public function __construct(string|int|float ...$values)` |
 
+### `Attributes\Strictify\Fields\Constraints\Even` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\HexRgbColor` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Iban` — final readonly class implements Field
+
+- Attribute: yes
+
 ### `Attributes\Strictify\Fields\Constraints\In` — final readonly class implements Field
 
 - Attribute: yes
@@ -356,6 +449,34 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | Method |
 | ------ |
 | `public function __construct(string|int|float|bool ...$values)` |
+
+### `Attributes\Strictify\Fields\Constraints\Ip` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public ?string $version` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(?string $version = null)` |
+
+### `Attributes\Strictify\Fields\Constraints\Isbn` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Json` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\MacAddress` — final readonly class implements Field
+
+- Attribute: yes
 
 ### `Attributes\Strictify\Fields\Constraints\Max` — final readonly class implements Field
 
@@ -405,6 +526,22 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | ------ |
 | `public function __construct(int|float $value)` |
 
+### `Attributes\Strictify\Fields\Constraints\Negative` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Odd` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Positive` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\PrimeNumber` — final readonly class implements Field
+
+- Attribute: yes
+
 ### `Attributes\Strictify\Fields\Constraints\Regex` — final readonly class implements Field
 
 - Attribute: yes
@@ -438,6 +575,10 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | ------ |
 | `public function __construct(?int $min = null, ?int $max = null)` |
 
+### `Attributes\Strictify\Fields\Constraints\Slug` — final readonly class implements Field
+
+- Attribute: yes
+
 ### `Attributes\Strictify\Fields\Constraints\StartsWith` — final readonly class implements Field
 
 - Attribute: yes
@@ -458,7 +599,32 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 - Attribute: yes
 
+### `Attributes\Strictify\Fields\Constraints\Url` — final readonly class implements Field
+
+- Attribute: yes
+
+**Properties**
+
+| Property | Default |
+| -------- | ------- |
+| `public string|array|null $protocol` | — |
+| `public string|array|null $domain` | — |
+
+**Methods**
+
+| Method |
+| ------ |
+| `public function __construct(string|array|null $protocol = null, string|array|null $domain = null)` |
+
 ### `Attributes\Strictify\Fields\Constraints\Uuid` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Version` — final readonly class implements Field
+
+- Attribute: yes
+
+### `Attributes\Strictify\Fields\Constraints\Xdigit` — final readonly class implements Field
 
 - Attribute: yes
 

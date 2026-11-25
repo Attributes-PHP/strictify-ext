@@ -13,6 +13,7 @@ zend_class_entry *AS_Fields_Constraints_Contains_ce;
  *
  * Enforced per element because PHP 8.2 arginfo cannot express a
  * union-typed variadic parameter. At least one value is required.
+ * ContainsAny covers the "one match is enough" case.
  */
 ZEND_METHOD(AS_Fields_Constraints_Contains, __construct)
 {
@@ -47,11 +48,11 @@ ZEND_METHOD(AS_Fields_Constraints_Contains, __construct)
 }
 
 /*
- * #[Contains(...values)]: every declared value must be present. Array
- * values must contain each declared value (strict comparison); string
- * values must contain each declared value as a substring (numeric
- * values are matched by their string representation). Other value
- * types fail the constraint.
+ * #[Contains(...values)]: every declared value must be present.
+ * Array values must contain each declared value (strict comparison); string
+ * values must contain each declared value as a substring (numeric values are
+ * matched by their string representation). Other value types fail the
+ * constraint.
  */
 bool as_validate_Contains_constraint(zval *constraint, as_field *field, as_property_info *property, zval *errors)
 {
@@ -78,30 +79,29 @@ bool as_validate_Contains_constraint(zval *constraint, as_field *field, as_prope
             }
         }
         ZEND_HASH_FOREACH_END();
-        return true;
-    }
-
-    // Needs to contain all array values
-    zval *needle;
-    ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(required), needle)
-    {
-        bool found = false;
-        zval *element;
-        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(value), element)
+    } else {
+        zval *needle;
+        ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(required), needle)
         {
-            if (zend_is_identical(needle, element)) {
-                found = true;
-                break;
+            bool found = false;
+            zval *element;
+            ZEND_HASH_FOREACH_VAL(Z_ARRVAL_P(value), element)
+            {
+                if (zend_is_identical(needle, element)) {
+                    found = true;
+                    break;
+                }
+            }
+            ZEND_HASH_FOREACH_END();
+
+            if (!found) {
+                add_invalid_contains_error_message(required, field, property, errors);
+                return false;
             }
         }
         ZEND_HASH_FOREACH_END();
-
-        if (!found) {
-            add_invalid_contains_error_message(required, field, property, errors);
-            return false;
-        }
     }
-    ZEND_HASH_FOREACH_END();
+
     return true;
 }
 

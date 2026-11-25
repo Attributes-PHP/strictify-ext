@@ -9,6 +9,7 @@ extern zend_class_entry *AS_Fields_Dict_ce;
 ZEND_BEGIN_ARG_INFO_EX(arginfo_class_AS_Fields_Dict___construct, 0, 0, 2)
 ZEND_ARG_INFO(0, key)
 ZEND_ARG_INFO(0, of)
+ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, uniqueValues, _IS_BOOL, 0, "false")
 ZEND_END_ARG_INFO()
 
 ZEND_METHOD(AS_Fields_Dict, __construct);

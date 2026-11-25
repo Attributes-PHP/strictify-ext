@@ -41,6 +41,29 @@
 #include "src/fields/constraints/as_starts_with.h"
 #include "src/fields/constraints/as_ulid.h"
 #include "src/fields/constraints/as_uuid.h"
+#include "src/fields/constraints/as_email.h"
+#include "src/fields/constraints/as_url.h"
+#include "src/fields/constraints/as_domain.h"
+#include "src/fields/constraints/as_ip.h"
+#include "src/fields/constraints/as_iban.h"
+#include "src/fields/constraints/as_isbn.h"
+#include "src/fields/constraints/as_credit_card.h"
+#include "src/fields/constraints/as_version.h"
+#include "src/fields/constraints/as_mac_address.h"
+#include "src/fields/constraints/as_alnum.h"
+#include "src/fields/constraints/as_alpha.h"
+#include "src/fields/constraints/as_digit.h"
+#include "src/fields/constraints/as_xdigit.h"
+#include "src/fields/constraints/as_slug.h"
+#include "src/fields/constraints/as_base64.h"
+#include "src/fields/constraints/as_json.h"
+#include "src/fields/constraints/as_hex_rgb_color.h"
+#include "src/fields/constraints/as_even.h"
+#include "src/fields/constraints/as_odd.h"
+#include "src/fields/constraints/as_positive.h"
+#include "src/fields/constraints/as_negative.h"
+#include "src/fields/constraints/as_prime_number.h"
+#include "src/fields/constraints/as_contains_any.h"
 #include "src/validators/as_typehint_validator.h"
 #include "src/helpers/as_error_messages.h"
 
@@ -119,6 +142,29 @@ PHP_MINIT_FUNCTION(strictify)
     as_register_MultipleOf_class();
     // Date-specific
     as_register_DateTime_class();
+    as_register_Email_class();
+    as_register_Url_class();
+    as_register_Domain_class();
+    as_register_Ip_class();
+    as_register_Iban_class();
+    as_register_Isbn_class();
+    as_register_CreditCard_class();
+    as_register_Version_class();
+    as_register_MacAddress_class();
+    as_register_Alnum_class();
+    as_register_Alpha_class();
+    as_register_Digit_class();
+    as_register_Xdigit_class();
+    as_register_Slug_class();
+    as_register_Base64_class();
+    as_register_Json_class();
+    as_register_HexRgbColor_class();
+    as_register_Even_class();
+    as_register_Odd_class();
+    as_register_Positive_class();
+    as_register_Negative_class();
+    as_register_PrimeNumber_class();
+    as_register_ContainsAny_class();
     return SUCCESS;
 }
 

@@ -60,12 +60,14 @@ ZEND_METHOD(AS_Fields_Sequence, __construct)
     zval *of;
     bool unique_values = false;
     bool sequential = true;
+    zend_string *sorted = NULL;
 
-    ZEND_PARSE_PARAMETERS_START(1, 3)
+    ZEND_PARSE_PARAMETERS_START(1, 4)
     Z_PARAM_ZVAL(of)
     Z_PARAM_OPTIONAL
     Z_PARAM_BOOL(unique_values)
     Z_PARAM_BOOL(sequential)
+    Z_PARAM_STR_OR_NULL(sorted)
     ZEND_PARSE_PARAMETERS_END();
 
     if (!is_valid_sequence_of(of)) {
@@ -77,9 +79,23 @@ ZEND_METHOD(AS_Fields_Sequence, __construct)
         RETURN_THROWS();
     }
 
+    if (sorted != NULL && !zend_string_equals_literal_ci(sorted, "asc") && !zend_string_equals_literal_ci(sorted, "desc")) {
+        zend_argument_value_error(4, "must be \"asc\", \"ASC\", \"desc\", \"DESC\" or null, \"%s\" given", ZSTR_VAL(sorted));
+        RETURN_THROWS();
+    }
+
     zend_update_property(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "of", sizeof("of") - 1, of);
     zend_update_property_bool(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "uniqueValues", sizeof("uniqueValues") - 1, unique_values);
     zend_update_property_bool(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "sequential", sizeof("sequential") - 1, sequential);
+
+    if (sorted == NULL) {
+        zend_update_property_null(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "sorted", sizeof("sorted") - 1);
+    } else {
+        zval sorted_value;
+        ZVAL_STR_COPY(&sorted_value, sorted);
+        zend_update_property(AS_Fields_Sequence_ce, Z_OBJ_P(getThis()), "sorted", sizeof("sorted") - 1, &sorted_value);
+        zval_ptr_dtor(&sorted_value);
+    }
 }
 
 void as_register_Sequence_class(void)
@@ -102,6 +118,7 @@ void as_register_Sequence_class(void)
      * the constructor's single write fail; the constructor always sets them. */
     as_declare_typed_property(AS_Fields_Sequence_ce, "uniqueValues", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL));
     as_declare_typed_property(AS_Fields_Sequence_ce, "sequential", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_BOOL));
+    as_declare_typed_property(AS_Fields_Sequence_ce, "sorted", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING | MAY_BE_NULL));
 
     /* Register as an internal attribute that can be used on properties and parameters */
     zend_internal_attribute_register(AS_Fields_Sequence_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
