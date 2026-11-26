@@ -22,6 +22,7 @@ All notable changes to Strictify are documented here, newest first. Install the 
 - Constraint attribute arguments are now validated once per field compile: arguments that make a constraint unsatisfiable or turn it into a no-op throw a `ValueError` naming the attribute, the model and the property — inverted or `NAN` numeric bounds, a negative or inverted `Size` range, an empty `In`/`StartsWith`/`EndsWith` list, an empty prefix or suffix, an empty `Email`/`Url` domain or protocol restriction, and a `Regex` pattern that does not compile (previously a PHP warning on every call).
 - Two alias mistakes now throw `InvalidBaseModelException`: an empty `#[Alias('')]`, and two properties resolving to the same input key (`#[Alias('id')]` twice, or an alias generator collapsing `$aB` and `$a_b` onto `a_b`). Both used to produce fields that could never be satisfied or silently shadowed each other.
 - A validation nesting depth guard: a payload that nests models more than 512 levels deep throws a catchable `BaseException` instead of exhausting the C stack. Siblings (array elements at one level) do not add depth, and the counter unwinds on every exit path, including a failing deep run.
+- `validate()` and `call()` accept a `?int $maxDepth` argument (default `null`, i.e. 512) to override the nesting limit for one run — raise it for legitimately deep payloads or lower it to reject deep nesting earlier. A value below 1 throws a `ValueError`, and the exception message reports the limit that fired.
 
 ### Changed
 

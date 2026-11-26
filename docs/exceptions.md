@@ -82,6 +82,8 @@ It is also thrown directly when a payload nests models more than 512 levels deep
 
 Depth is counted per `validate()` call and unwound on the way out, including when the deep run fails with a `ValidationException`, so a caught deep failure does not affect the next call. The limit turns an otherwise unbounded recursion (a self-referencing model fed a deep payload) into a catchable error instead of a stack overflow.
 
+The default limit is 512 and [`validate()`](/validate/) / [`call()`](/call/) accept a `$maxDepth` argument to override it per run; the exception message reports the limit that fired.
+
 ## See also
 
 - [Error messages guide](/guides/error-messages/) — `ErrorMessage`, translators and the default error catalog

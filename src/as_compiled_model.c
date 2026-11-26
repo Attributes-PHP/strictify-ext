@@ -1206,12 +1206,15 @@ static bool as_validate_model_body(zval *raw_data, zval *model, as_model_configs
  * Entry point with the nesting guard: nested models and nested array shapes
  * re-enter here, and each level consumes C stack. Past the limit the run
  * stops with a catchable exception instead of overflowing the stack, which
- * would take the whole process down.
+ * would take the whole process down. The limit is the default one unless the
+ * validate()/call() call that started the run passed its own $maxDepth.
  */
 bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_properties *properties, zval *errors, zend_string *parent_path)
 {
-    if (UNEXPECTED(AS_G(validation_depth) >= AS_MAX_VALIDATION_DEPTH)) {
-        zend_throw_exception_ex(class_AS_Exceptions_BaseException, 0, "Maximum validation nesting depth of %d exceeded: the payload nests models or arrays too deeply.", AS_MAX_VALIDATION_DEPTH);
+    const uint32_t limit = AS_G(validation_depth_limit);
+
+    if (UNEXPECTED(AS_G(validation_depth) >= limit)) {
+        zend_throw_exception_ex(class_AS_Exceptions_BaseException, 0, "Maximum validation nesting depth of %u exceeded: the payload nests models or arrays too deeply.", limit);
         return false;
     }
 

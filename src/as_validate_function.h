@@ -9,9 +9,18 @@
 ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_AS_validate, 0, 2, Attributes\\Strictify\\BaseModel, 0)
 ZEND_ARG_TYPE_INFO(0, rawData, IS_ARRAY, 0)
 ZEND_ARG_OBJ_INFO(0, model, Attributes\\Strictify\\BaseModel, 0)
+ZEND_ARG_TYPE_INFO_WITH_DEFAULT_VALUE(0, maxDepth, IS_LONG, 1, "null")
 ZEND_END_ARG_INFO()
 
 ZEND_FUNCTION(validate);
+
+/**
+ * Applies a $maxDepth argument for the duration of one validate()/call()
+ * run: null (or no argument) keeps the current limit. Returns the previous
+ * limit, which the caller restores once the run is over.
+ */
+uint32_t as_apply_validation_depth_limit(bool has_limit, zend_long limit);
+void as_restore_validation_depth_limit(uint32_t previous);
 
 /**
  * Runs the full validation flow for one model instance: ModelConfigs,

@@ -205,6 +205,8 @@ A self-referencing model (`public ?Node $child`) validates as deep as the payloa
 
 Only nesting adds depth: siblings do not. A list of ten thousand models is one level deep and validates fine, while a chain of 512 nested models throws. The counter is per `validate()` call and unwinds on the way out, so a caught failure — including one that ends in a `ValidationException` — does not affect the next call.
 
+The limit is the `$maxDepth` argument of [`validate()`](/validate/) and [`call()`](/call/), 512 by default. Raise it when a legitimately deep payload is expected, or lower it to reject deep nesting earlier than the stack would; the value must be greater than 0, and the exception message reports the limit that fired (`... depth of 10 exceeded ...`).
+
 ## See also
 
 - [Validating payloads](/guides/validating-payloads/)

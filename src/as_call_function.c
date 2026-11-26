@@ -1,6 +1,7 @@
 #include "as_call_function.h"
 #include "as_base_model.h"
 #include "as_validate_function.h"
+#include "as_globals.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
@@ -366,19 +367,41 @@ static void release_call_arguments(zval *args, uint32_t args_count)
  * dependencies array or ArrayAccess container. Returns the callable's
  * return value.
  */
+static void as_call_with_arguments(INTERNAL_FUNCTION_PARAMETERS, zval *function, zval *params, zval *dependencies);
+
+/* Function implementation for call */
 ZEND_FUNCTION(call)
 {
     zval *function;
     zval *params;
     zval *dependencies = NULL;
+    zend_long max_depth = 0;
+    bool max_depth_is_null = false;
 
-    ZEND_PARSE_PARAMETERS_START(2, 3)
+    const bool max_depth_given = ZEND_NUM_ARGS() >= 4;
+
+    ZEND_PARSE_PARAMETERS_START(2, 4)
     Z_PARAM_ZVAL(function)
     Z_PARAM_ARRAY(params)
     Z_PARAM_OPTIONAL
     Z_PARAM_ZVAL(dependencies)
+    Z_PARAM_LONG_OR_NULL(max_depth, max_depth_is_null)
     ZEND_PARSE_PARAMETERS_END();
 
+    if (max_depth_given && !max_depth_is_null && max_depth < 1) {
+        zend_argument_value_error(4, "must be greater than 0, " ZEND_LONG_FMT " given", max_depth);
+        RETURN_THROWS();
+    }
+
+    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth_given && !max_depth_is_null, max_depth);
+    as_call_with_arguments(INTERNAL_FUNCTION_PARAM_PASSTHRU, function, params, dependencies);
+    as_restore_validation_depth_limit(previous_limit);
+}
+
+/* The $maxDepth limit is already applied: build the arguments, validate the
+ * model ones and dispatch the call. */
+static void as_call_with_arguments(INTERNAL_FUNCTION_PARAMETERS, zval *function, zval *params, zval *dependencies)
+{
     as_dependencies dependencies_source = {
         .source = dependencies,
         .is_array = dependencies != NULL && Z_TYPE_P(dependencies) == IS_ARRAY,

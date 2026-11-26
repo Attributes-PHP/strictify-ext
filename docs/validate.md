@@ -11,7 +11,7 @@ Validates a raw data array against the type hints and attributes of a `BaseModel
 <?php
 namespace Attributes\\Strictify;
 
-function validate(array $rawData, BaseModel $model): BaseModel
+function validate(array $rawData, BaseModel $model, ?int $maxDepth = null): BaseModel
 ```
 
 ```php
@@ -29,6 +29,7 @@ New to Strictify? Start with the [Quickstart](/quickstart/), then the [guides](/
 | --------- | ---- | ----------- |
 | `$rawData` | `array` | The input data, keyed by property name (or by [alias](/guides/aliases/)). Missing keys fail validation unless the property is nullable or declares a default value. |
 | `$model` | `BaseModel` | The model instance to hydrate. Its public property type hints and attribute declarations define the validation schema. |
+| `$maxDepth` | `?int` | Nesting limit for this run: how many models deep the payload may nest before a `BaseException` is thrown. `null` (the default) uses 512; the value must be greater than 0. The limit only applies to this call — a nested `validate()` from a hook starts from the default again. |
 
 ## Return value
 
