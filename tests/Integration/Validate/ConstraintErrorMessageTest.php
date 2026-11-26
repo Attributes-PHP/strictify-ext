@@ -165,22 +165,22 @@ final class ConstraintMessageKeys
 
 final class CustomConstraintMessages extends BaseModel
 {
-    #[AlphaDash, ErrorMessage(alpha_dash: 'custom:alpha_dash')]
+    #[AlphaDash, ErrorMessage(alphaDash: 'custom:alpha_dash')]
     public string $alpha_dash;
 
-    #[AlphaDash, ErrorMessage(alpha_dash_type: 'custom:alpha_dash_type')]
+    #[AlphaDash, ErrorMessage(alphaDashType: 'custom:alpha_dash_type')]
     public mixed $alpha_dash_type;
 
     #[Ascii, ErrorMessage(ascii: 'custom:ascii')]
     public string $ascii;
 
-    #[Ascii, ErrorMessage(ascii_type: 'custom:ascii_type')]
+    #[Ascii, ErrorMessage(asciiType: 'custom:ascii_type')]
     public mixed $ascii_type;
 
     #[Between(1, 5), ErrorMessage(between: 'custom:between')]
     public int $between;
 
-    #[Between(1, 5), ErrorMessage(between_type: 'custom:between_type')]
+    #[Between(1, 5), ErrorMessage(betweenType: 'custom:between_type')]
     public mixed $between_type;
 
     #[Contains('needle'), ErrorMessage(contains: 'custom:contains')]
@@ -189,7 +189,7 @@ final class CustomConstraintMessages extends BaseModel
     #[DateTime('Y-m-d'), ErrorMessage(datetime: 'custom:datetime')]
     public string $datetime;
 
-    #[EndsWith('x', 'y'), ErrorMessage(ends_with: 'custom:ends_with')]
+    #[EndsWith('x', 'y'), ErrorMessage(endsWith: 'custom:ends_with')]
     public string $ends_with;
 
     #[In('a', 'b'), ErrorMessage(in: 'custom:in')]
@@ -201,7 +201,7 @@ final class CustomConstraintMessages extends BaseModel
     #[Min(5), ErrorMessage(min: 'custom:min')]
     public int $min;
 
-    #[MultipleOf(3), ErrorMessage(multiple_of: 'custom:multiple_of')]
+    #[MultipleOf(3), ErrorMessage(multipleOf: 'custom:multiple_of')]
     public int $multiple_of;
 
     #[Regex('/^a$/'), ErrorMessage(regex: 'custom:regex')]
@@ -210,7 +210,7 @@ final class CustomConstraintMessages extends BaseModel
     #[Size(5), ErrorMessage(size: 'custom:size')]
     public string $size;
 
-    #[StartsWith('x', 'y'), ErrorMessage(starts_with: 'custom:starts_with')]
+    #[StartsWith('x', 'y'), ErrorMessage(startsWith: 'custom:starts_with')]
     public string $starts_with;
 
     #[Ulid, ErrorMessage(ulid: 'custom:ulid')]
@@ -222,16 +222,16 @@ final class CustomConstraintMessages extends BaseModel
     #[Email, ErrorMessage(email: 'custom:email')]
     public string $email;
 
-    #[Email(domain: 'example.com'), ErrorMessage(email_domain: 'custom:email_domain')]
+    #[Email(domain: 'example.com'), ErrorMessage(emailDomain: 'custom:email_domain')]
     public string $email_domain;
 
     #[Url, ErrorMessage(url: 'custom:url')]
     public string $url;
 
-    #[Url(protocol: 'https'), ErrorMessage(url_protocol: 'custom:url_protocol')]
+    #[Url(protocol: 'https'), ErrorMessage(urlProtocol: 'custom:url_protocol')]
     public string $url_protocol;
 
-    #[Url(domain: 'example.com'), ErrorMessage(url_domain: 'custom:url_domain')]
+    #[Url(domain: 'example.com'), ErrorMessage(urlDomain: 'custom:url_domain')]
     public string $url_domain;
 
     #[Domain, ErrorMessage(domain: 'custom:domain')]
@@ -246,13 +246,13 @@ final class CustomConstraintMessages extends BaseModel
     #[Isbn, ErrorMessage(isbn: 'custom:isbn')]
     public string $isbn;
 
-    #[CreditCard, ErrorMessage(credit_card: 'custom:credit_card')]
+    #[CreditCard, ErrorMessage(creditCard: 'custom:credit_card')]
     public string $credit_card;
 
     #[Version, ErrorMessage(version: 'custom:version')]
     public string $version;
 
-    #[MacAddress, ErrorMessage(mac_address: 'custom:mac_address')]
+    #[MacAddress, ErrorMessage(macAddress: 'custom:mac_address')]
     public string $mac_address;
 
     #[Alnum, ErrorMessage(alnum: 'custom:alnum')]
@@ -276,7 +276,7 @@ final class CustomConstraintMessages extends BaseModel
     #[Json, ErrorMessage(json: 'custom:json')]
     public string $json;
 
-    #[HexRgbColor, ErrorMessage(hex_rgb_color: 'custom:hex_rgb_color')]
+    #[HexRgbColor, ErrorMessage(hexRgbColor: 'custom:hex_rgb_color')]
     public string $hex_rgb_color;
 
     #[Even, ErrorMessage(even: 'custom:even')]
@@ -291,19 +291,19 @@ final class CustomConstraintMessages extends BaseModel
     #[Negative, ErrorMessage(negative: 'custom:negative')]
     public int $negative;
 
-    #[PrimeNumber, ErrorMessage(prime_number: 'custom:prime_number')]
+    #[PrimeNumber, ErrorMessage(primeNumber: 'custom:prime_number')]
     public int $prime_number;
 
-    #[ContainsAny('x', 'y'), ErrorMessage(contains_any: 'custom:contains_any')]
+    #[ContainsAny('x', 'y'), ErrorMessage(containsAny: 'custom:contains_any')]
     public string $contains_any;
 
     #[Union(Type::int, Type::string), ErrorMessage(union: 'custom:union')]
     public $union;
 
-    #[Sequence(Type::int), ErrorMessage(sequence_keys: 'custom:sequence_keys')]
+    #[Sequence(Type::int), ErrorMessage(sequenceKeys: 'custom:sequence_keys')]
     public array $sequence_keys;
 
-    #[Sequence(Type::int, uniqueValues: true), ErrorMessage(unique_values: 'custom:unique_values')]
+    #[Sequence(Type::int, uniqueValues: true), ErrorMessage(uniqueValues: 'custom:unique_values')]
     public array $unique_values;
 }
 

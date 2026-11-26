@@ -505,14 +505,42 @@ static zend_always_inline bool attribute_argument_name_equals(const zend_string 
 }
 
 /*
+ * Catalog keys are snake_case (the stable keys handed to the translator); the
+ * matching #[ErrorMessage] argument is their camelCase form, so the attribute
+ * exposes PHP-style names while the translation key stays unchanged
+ * (sequence_keys -> sequenceKeys). Writes into `buffer`, which must hold
+ * 2 * strlen(key) + 1 bytes, and returns it.
+ */
+static const char *error_message_argument_name(const char *key, char *buffer)
+{
+    char *out = buffer;
+    bool upper_next = false;
+
+    for (const char *in = key; *in != '\0'; in++) {
+        if (*in == '_') {
+            upper_next = true;
+            continue;
+        }
+
+        const bool uppercase = upper_next && *in >= 'a' && *in <= 'z';
+        *out++ = uppercase ? (char)(*in - 'a' + 'A') : *in;
+        upper_next = false;
+    }
+
+    *out = '\0';
+
+    return buffer;
+}
+
+/*
  * Resolves the raw error message template for the given error type from
  * the #[ErrorMessage] attribute, or NULL when the property declares no
  * template for it (the caller falls back to the default). The attribute
- * declares one argument per catalog key, named after the stable key and
- * positionally in enum order. The extra key is discarded: extra inputs
- * have no owning property, so the extra error never uses a per-property
- * override. Throws when an argument value cannot be evaluated or is not
- * a string.
+ * declares one argument per catalog key, named after the camelCase argument
+ * (sequence_keys is sequenceKeys) and positionally in enum order. The extra
+ * key is discarded: extra inputs have no owning property, so the extra error
+ * never uses a per-property override. Throws when an argument value cannot be
+ * evaluated or is not a string.
  */
 static zend_string *resolve_error_template(as_error_type type, as_property_info *property)
 {
@@ -525,7 +553,8 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
         return NULL;
     }
 
-    const char *argument_name = as_error_type_names[type];
+    char argument_buffer[2 * 16 + 1];
+    const char *argument_name = error_message_argument_name(as_error_type_names[type], argument_buffer);
     size_t argument_length = strlen(argument_name);
     uint32_t argument_position = (uint32_t)type;
 

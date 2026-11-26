@@ -149,7 +149,9 @@ describe('Url $domain restriction', function () {
             validate(['value' => 'https://gmail.com'], $model);
             expect(false)->toBeTrue('expected a ValidationException');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['value' => ["Must be a URL on an allowed domain: 'example.com', 'example.org'"]]);
+            expect($e->getErrors())->toBe(['value' => [
+                "Must be a URL on an allowed domain: 'example.com', 'example.org'",
+            ]]);
         }
     });
 
@@ -224,7 +226,7 @@ describe('Url $protocol and $domain combined', function () {
     it('overrides the new error messages with their keys', function () {
         $model = new class extends BaseModel {
             #[Url(protocol: 'https')]
-            #[ErrorMessage(url_protocol: 'Only https links please')]
+            #[ErrorMessage(urlProtocol: 'Only https links please')]
             public string $value;
         };
 
@@ -240,13 +242,20 @@ describe('Url $protocol and $domain combined', function () {
 describe('Url constructor arguments', function () {
     it('defaults both to null and keeps them as given', function () {
         expect((new Url)->protocol)->toBeNull()
-            ->and((new Url)->domain)->toBeNull()
-            ->and((new Url(null, null))->protocol)->toBeNull()
-            ->and((new Url('https'))->protocol)->toBe('https')
-            ->and((new Url('https'))->domain)->toBeNull()
-            ->and((new Url(null, 'example.com'))->domain)->toBe('example.com')
-            ->and((new Url(['http', 'https'], ['example.com']))->protocol)->toBe(['http', 'https'])
-            ->and((new Url(['http', 'https'], ['example.com']))->domain)->toBe(['example.com']);
+            ->and((new Url)->domain)
+            ->toBeNull()
+            ->and((new Url(null, null))->protocol)
+            ->toBeNull()
+            ->and((new Url('https'))->protocol)
+            ->toBe('https')
+            ->and((new Url('https'))->domain)
+            ->toBeNull()
+            ->and((new Url(null, 'example.com'))->domain)
+            ->toBe('example.com')
+            ->and((new Url(['http', 'https'], ['example.com']))->protocol)
+            ->toBe(['http', 'https'])
+            ->and((new Url(['http', 'https'], ['example.com']))->domain)
+            ->toBe(['example.com']);
     });
 
     it('throws a TypeError for unsupported argument types', function (mixed $protocol, mixed $domain) {

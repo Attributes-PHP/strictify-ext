@@ -24,7 +24,7 @@ it('documents every ErrorMessage key with the runtime default', function () {
     $stub = file_get_contents($stubPath);
     expect($stub)->not->toBeFalse();
 
-    preg_match_all("/public string \\\$([a-z_0-9]+) = '([^']*)';/", $stub, $matches, PREG_SET_ORDER);
+    preg_match_all("/public string \\\$([A-Za-z_0-9]+) = '([^']*)';/", $stub, $matches, PREG_SET_ORDER);
 
     $documented = [];
     foreach ($matches as [, $key, $default]) {
@@ -37,7 +37,9 @@ it('documents every ErrorMessage key with the runtime default', function () {
         $runtime[$property->getName()] = $property->getDefaultValue();
     }
 
-    expect($documented)->not->toBeEmpty()
+    expect($documented)
+        ->not
+        ->toBeEmpty()
         ->and(array_keys($documented))
         ->toEqualCanonicalizing(array_keys($runtime))
         ->and($documented)
@@ -58,7 +60,7 @@ it('overrides the message of the constraints added with the parity batch', funct
         },
         'contains_any' => new class extends BaseModel {
             #[ContainsAny('x')]
-            #[ErrorMessage(contains_any: 'Nothing matched')]
+            #[ErrorMessage(containsAny: 'Nothing matched')]
             public array $value;
         },
     };
@@ -70,7 +72,7 @@ it('overrides the message of the constraints added with the parity batch', funct
         expect($e->getErrors())->toBe(['value' => [$expected]]);
     }
 })->with([
-    ['digit', 'Only digits, please'],
-    ['iban', 'Bad IBAN'],
+    ['digit',        'Only digits, please'],
+    ['iban',         'Bad IBAN'],
     ['contains_any', 'Nothing matched'],
 ]);

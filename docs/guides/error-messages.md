@@ -48,11 +48,13 @@ Every template — the defaults, translated messages and `ErrorMessage` override
 
 ## Per-property overrides: ErrorMessage
 
-Override any of a property's templates with the `ErrorMessage` attribute — one named argument per key from the [default catalog](#default-error-messages) above (`required`, `type`, `min`, `max`, `sequence_keys`, ...), each defaulting to that key's default message:
+Override any of a property's templates with the `ErrorMessage` attribute — one named argument per key from the [default catalog](#default-error-messages) above, named in camelCase (`sequenceKeys`, `urlProtocol`, `emailDomain`, `hexRgbColor`, ...), each defaulting to that key's default message:
 
 ```php
 #[ErrorMessage(required: 'Name is mandatory', min: 'Too small, at least {expected}')]
 ```
+
+The catalog keys themselves stay snake_case: they are the stable keys handed to the translator. The attribute's property names are the camelCase form of the same key, so `#[ErrorMessage(sequenceKeys: ...)]` overrides the message reported under `sequence_keys`.
 
 The `extra` key is discarded: extra inputs have no owning property, so that error always uses the translator or its default.
 
