@@ -86,7 +86,7 @@ Attribute arguments declared on a model now raise `InvalidBaseModelException`; a
 - a non-string `#[ErrorMessage]` argument (`#[ErrorMessage(min: 5)]`), reported when the template is first resolved during validation instead of when the model is compiled,
 - constructing a constraint object directly in userland with an argument the constructor rejects as a value — `new Union('NoSuchClass')`, `new DateTime(timezone: 'Nope/Nope')`.
 
-The same constraint arguments in a declaration (`#[Union('NoSuchClass')]`, `#[DateTime(timezone: 'Nope/Nope')]`) raise `InvalidBaseModelException` instead. A non-string `#[ErrorMessage]` value is the exception: it stays a `ValueError`.
+The same constraint arguments in a declaration (`#[Union('NoSuchClass')]`, `#[DateTime(timezone: 'Nope/Nope')]`) raise `InvalidBaseModelException` instead. A non-string `#[ErrorMessage]` value is deliberately not converted: it stays a `ValueError`.
 
 ## MaxDepthException
 
