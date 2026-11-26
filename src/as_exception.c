@@ -97,3 +97,33 @@ ZEND_METHOD(AS_Exceptions_ValidationException, getErrors)
 
     RETURN_ZVAL(allErrors, 1, 0);
 }
+
+void as_convert_attribute_exception(void)
+{
+    zend_object *exception = EG(exception);
+
+    if (exception == NULL) {
+        return;
+    }
+
+    zend_class_entry *ce = exception->ce;
+    if (!instanceof_function(ce, zend_ce_type_error) && !instanceof_function(ce, zend_ce_value_error)) {
+        return;
+    }
+
+    /* Reading through the object's own class: the inherited Exception::$message
+     * is not readable with the base class as scope. */
+    zval rv;
+    zval *message = zend_read_property(ce, exception, "message", sizeof("message") - 1, 1, &rv);
+    zend_string *text = message != NULL && Z_TYPE_P(message) == IS_STRING ? zend_string_copy(Z_STR_P(message)) : NULL;
+
+    zend_clear_exception();
+
+    if (text == NULL) {
+        zend_throw_exception(class_AS_Exceptions_InvalidBaseModelException, "The model declaration is invalid.", 0);
+        return;
+    }
+
+    zend_throw_exception_ex(class_AS_Exceptions_InvalidBaseModelException, 0, "%s", ZSTR_VAL(text));
+    zend_string_release(text);
+}

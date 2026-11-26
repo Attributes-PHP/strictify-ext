@@ -35,4 +35,17 @@ static const zend_function_entry class_AS_Exceptions_ValidationException_methods
 void as_register_all_exception_classes(void);
 void as_throw_validation_exception(zval *errors);
 
+/*
+ * Rewrites a pending TypeError or ValueError into
+ * InvalidBaseModelException, keeping the message.
+ *
+ * Attribute arguments are part of the model declaration: a constructor that
+ * rejects one — an engine TypeError for the stub signature, a ValueError from
+ * a nested attribute or from a custom argument rule — reports a malformed
+ * model, not a bad call. Called at the attribute-evaluation choke points, so
+ * plain `new Size('x')` in userland keeps the engine's TypeError. Any other
+ * pending exception (an autoloader error, a userland Error) is left alone.
+ */
+void as_convert_attribute_exception(void);
+
 #endif /* AS_EXCEPTION_H */

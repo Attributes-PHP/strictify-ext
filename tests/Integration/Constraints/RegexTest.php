@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Regex;
 use TypeError;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -72,7 +72,7 @@ describe('Regex validation', function () {
         // The pattern is validated at compile time, so validate() raises no
         // PCRE warning and the malformed model fails with a ValueError.
         expect(fn () => validate(['value' => 'x'], $model))->toThrow(
-            ValueError::class,
+            InvalidBaseModelException::class,
             '::$value: the pattern does not compile: missing closing parenthesis at offset 1.',
         );
     });

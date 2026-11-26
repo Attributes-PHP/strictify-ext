@@ -46,7 +46,8 @@ static bool is_valid_union_arm(zval *value)
 /*
  * A string arm must name a loadable class, interface or enum: a missing
  * name autoloads, and a name that still cannot be resolved throws a
- * ValueError (an autoloader error propagates as-is).
+ * ValueError (an autoloader error propagates as-is). Read from a declaration
+ * the ValueError reaches the caller as InvalidBaseModelException.
  */
 static bool is_resolvable_class_name(zval *value, uint32_t arg_num)
 {

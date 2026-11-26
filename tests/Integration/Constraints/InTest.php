@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\In;
 use TypeError;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -66,7 +66,7 @@ describe('In validation', function () {
         };
 
         expect(fn () => validate(['value' => 'a'], $model))->toThrow(
-            ValueError::class,
+            InvalidBaseModelException::class,
             '::$value: at least one value must be declared.',
         );
     });

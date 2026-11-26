@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Between;
 use Attributes\Strictify\Fields\Constraints\Email;
@@ -17,7 +18,6 @@ use Attributes\Strictify\Fields\Constraints\Regex;
 use Attributes\Strictify\Fields\Constraints\Size;
 use Attributes\Strictify\Fields\Constraints\StartsWith;
 use Attributes\Strictify\Fields\Constraints\Url;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -52,7 +52,7 @@ describe('constraint attribute argument rules', function () {
             },
         };
 
-        expect(fn () => validate(['value' => 5], $model))->toThrow(ValueError::class);
+        expect(fn () => validate(['value' => 5], $model))->toThrow(InvalidBaseModelException::class);
     })->with(['between-inverted', 'between-nan', 'max-nan', 'min-nan', 'multiple-of-nan']);
 
     it('rejects inverted and negative size bounds', function (string $attribute) {
@@ -71,7 +71,7 @@ describe('constraint attribute argument rules', function () {
             },
         };
 
-        expect(fn () => validate(['value' => 'abc'], $model))->toThrow(ValueError::class);
+        expect(fn () => validate(['value' => 'abc'], $model))->toThrow(InvalidBaseModelException::class);
     })->with(['inverted', 'negative-min', 'negative-max']);
 
     it('rejects an empty declared value list', function (string $attribute) {
@@ -90,7 +90,10 @@ describe('constraint attribute argument rules', function () {
             },
         };
 
-        expect(fn () => validate(['value' => 'abc'], $model))->toThrow(ValueError::class, 'must be declared.');
+        expect(fn () => validate(['value' => 'abc'], $model))->toThrow(
+            InvalidBaseModelException::class,
+            'must be declared.',
+        );
     })->with(['in', 'starts-with', 'ends-with']);
 
     it('rejects an empty prefix or suffix, which matches every value', function () {
@@ -104,11 +107,11 @@ describe('constraint attribute argument rules', function () {
         };
 
         expect(fn () => validate(['value' => 'abc'], $starts))->toThrow(
-            ValueError::class,
+            InvalidBaseModelException::class,
             'an empty string matches every value',
         )
             ->and(fn () => validate(['value' => 'abc'], $ends))
-            ->toThrow(ValueError::class, 'an empty string matches every value');
+            ->toThrow(InvalidBaseModelException::class, 'an empty string matches every value');
     });
 
     it('rejects a pattern that does not compile, without raising a PHP warning', function (string $pattern) {
@@ -143,7 +146,7 @@ describe('constraint attribute argument rules', function () {
                 },
             };
 
-            expect(fn () => validate(['value' => 'abc'], $broken))->toThrow(ValueError::class);
+            expect(fn () => validate(['value' => 'abc'], $broken))->toThrow(InvalidBaseModelException::class);
             expect($warnings)->toBeEmpty();
         } finally {
             restore_error_handler();
@@ -170,7 +173,7 @@ describe('constraint attribute argument rules', function () {
             },
         };
 
-        expect(fn () => validate(['value' => 'a@b.com'], $model))->toThrow(ValueError::class);
+        expect(fn () => validate(['value' => 'a@b.com'], $model))->toThrow(InvalidBaseModelException::class);
     })->with(['email-list', 'email-string', 'url-string', 'url-lists']);
 
     it('keeps rejecting the same model on every call', function () {
@@ -180,13 +183,13 @@ describe('constraint attribute argument rules', function () {
         };
 
         expect(fn () => validate(['value' => 5], $model))->toThrow(
-            ValueError::class,
+            InvalidBaseModelException::class,
             '$min (99) must be less than or equal to $max (18).',
         )
             ->and(fn () => validate(['value' => 5], $model))
-            ->toThrow(ValueError::class)
+            ->toThrow(InvalidBaseModelException::class)
             ->and(fn () => validate(['value' => 5], $model))
-            ->toThrow(ValueError::class);
+            ->toThrow(InvalidBaseModelException::class);
     });
 
     it('accepts the degenerate-but-satisfiable arguments', function () {

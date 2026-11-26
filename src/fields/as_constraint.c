@@ -500,8 +500,9 @@ static bool as_check_regex_args(zval *instance, as_property_info *property)
 
 /*
  * Runs the argument rules of a compiled constraint instance. Returns false
- * with a pending ValueError when an argument makes the constraint
- * unsatisfiable (or a no-op); userland constraints and the constraints
+ * with a pending ValueError (rewritten into InvalidBaseModelException by the
+ * compile step) when an argument makes the constraint unsatisfiable (or a
+ * no-op); userland constraints and the constraints
  * whose arguments are always meaningful return true.
  */
 bool as_validate_constraint_attribute_args(zval *constraint, as_property_info *property)

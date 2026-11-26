@@ -25,11 +25,11 @@ class User extends BaseModel
 
 Constraints compose: every constraint declared on a property runs, and each failing one reports its own error under the resolved field name (the `Alias` name, when one is declared). `ModelConfigs(stopAtFirstError: true)` aborts the run at the first error, as with type errors.
 
-Attribute constructor arguments are type-checked at construction — an argument the constructor signature rejects (`#[Between('a', 'b')]`) throws a `TypeError` on the first `validate()` call and keeps throwing on every call until the attribute is fixed. Arguments that satisfy the signature but can never behave usefully throw a `ValueError` instead, see below.
+Attribute constructor arguments are type-checked at construction — an argument the constructor signature rejects (`#[Between('a', 'b')]`) throws an `InvalidBaseModelException` on the first `validate()` call and keeps throwing on every call until the attribute is fixed. Arguments that satisfy the signature but can never behave usefully throw the same exception, see below.
 
 ## Malformed constraint arguments
 
-A constraint whose declared arguments make it unsatisfiable, or silently turn it into a no-op, is a malformed model definition: `validate()` throws a `ValueError` naming the attribute, the model class and the property, and keeps throwing on every call until the attribute is fixed.
+A constraint whose declared arguments make it unsatisfiable, or silently turn it into a no-op, is a malformed model definition: `validate()` throws an `InvalidBaseModelException` naming the attribute, the model class and the property, and keeps throwing on every call until the attribute is fixed.
 
 ```php
 <?php
@@ -40,7 +40,7 @@ class User extends BaseModel
 }
 
 validate(['age' => 5], new User());
-// ValueError: Attribute "Attributes\Strictify\Fields\Constraints\Between" on User::$age:
+// InvalidBaseModelException: Attribute "Attributes\Strictify\Fields\Constraints\Between" on User::$age:
 //   $min (99) must be less than or equal to $max (18).
 ```
 
@@ -57,7 +57,7 @@ validate(['age' => 5], new User());
 
 Degenerate-but-satisfiable arguments are accepted: `Between(5, 5)`, `Between(-INF, INF)`, `Size` with no bounds, `MultipleOf(0)`, `MultipleOf(-5)`, and a pattern with every supported modifier (`/^[a-z]+$/iDSUXn`).
 
-Because the rule runs during the field's first compile, the check is per model class: the `ValueError` fires even when the payload has no value for the property, and it never caches a partial result.
+Because the rule runs during the field's first compile, the check is per model class: the `InvalidBaseModelException` fires even when the payload has no value for the property, and it never caches a partial result.
 
 ## Built-in constraints at a glance
 
@@ -158,7 +158,7 @@ class Account extends BaseModel
 
 Passes: `'user-name'`, `'bbbaaabb'` (partial match). Fails: `'User Name'`, `'bbb'`, strings when the pattern fails to compile, and non-string values.
 
-The pattern is validated when the property's field is compiled, so a typo surfaces as a `ValueError` naming the attribute, the model and the property — never as a PHP warning. Supported modifiers are `i`, `m`, `s`, `x`, `A`, `D`, `U`, `J`, `n`, `u` and `r`; `S` and `X` are accepted no-ops. See [malformed constraint arguments](#malformed-constraint-arguments).
+The pattern is validated when the property's field is compiled, so a typo surfaces as an `InvalidBaseModelException` naming the attribute, the model and the property — never as a PHP warning. Supported modifiers are `i`, `m`, `s`, `x`, `A`, `D`, `U`, `J`, `n`, `u` and `r`; `S` and `X` are accepted no-ops. See [malformed constraint arguments](#malformed-constraint-arguments).
 
 ### `StartsWith`
 
@@ -779,7 +779,7 @@ Passes: `['y']`, `[1, 'y']`, `'say hello'`. Fails: `['a', 'b']`, `'nope'`, and a
 - **Numeric constraints** (`Between`, `Max`, `Min`, `MultipleOf`, `Even`, `Odd`, `Positive`, `Negative`, `PrimeNumber`) apply to `int` and `float` values; any other type fails. `MultipleOf` compares integer pairs with integer modulo and float pairs with `fmod` plus a small tolerance, so `0.3` counts as a multiple of `0.1`. Only `0` is a multiple of `0`, and a negative divisor is allowed.
 - **String constraints** (`AlphaDash`, `Ascii`, `Regex`, `StartsWith`, `EndsWith`, `Ulid`, `Uuid`, `Email`, `Url`, `Domain`, `Ip`, `Iban`, `Isbn`, `CreditCard`, `Version`, `MacAddress`, `Alnum`, `Alpha`, `Digit`, `Xdigit`, `Slug`, `Base64`, `Json`, `HexRgbColor`) fail for non-string values. `StartsWith`/`EndsWith` accept numeric declared values and match them by their string representation.
 - **Membership constraints** (`In`, `Contains`) compare strictly: `In('1')` rejects the integer `1`. On arrays, `Contains` requires every declared value to be present; on strings, every declared value must appear as a substring. `ContainsAny` is the "at least one match" variant of the same check.
-- **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, an invalid timezone name throws a `ValueError` at construction, and a date that does not exist (`1994-02-30`) is rejected instead of rolling over.
+- **`DateTime`** parses with the date extension in the declared format and timezone. `DateTimeInterface` instances pass as-is, an invalid timezone name throws an `InvalidBaseModelException` as a declaration argument (a `ValueError` when the object is built directly), and a date that does not exist (`1994-02-30`) is rejected instead of rolling over.
 - **`Size`** measures strings in bytes and arrays in element count. With only one bound declared, only that bound applies; with neither, every value passes.
 - **`null` skips every constraint** on the property, exactly like a missing key: `#[Regex('/^[a-z]+$/')] public ?string $name = null` accepts `['name' => null]` and `[]`. A non-null value is checked as usual.
 - **The empty string** is accepted by `Alnum`, `Alpha`, `Ascii` and `Base64`, and rejected by `Digit`, `Xdigit`, `Slug` and `HexRgbColor`. Length-based rules reject it through their bound (`Size(min: 1)`).

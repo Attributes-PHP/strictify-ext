@@ -45,9 +45,9 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 | Exception | Thrown when |
 | --------- | ----------- |
 | `Attributes\Strictify\Exceptions\ValidationException` | Any field fails validation. Call `getErrors()` for the error list — see [Exceptions](/exceptions/). |
-| `Attributes\Strictify\Exceptions\InvalidBaseModelException` | The model declaration is malformed, for example a `#[ModelConfigs]` option with an unknown value or the wrong type. |
+| `Attributes\Strictify\Exceptions\InvalidBaseModelException` | The model declaration is malformed, for example an attribute argument with the wrong type (`#[Min('fifteen')]`), an unresolvable class arm, or a `#[ModelConfigs]` option with an unknown value or the wrong type. |
 | `Attributes\Strictify\Exceptions\MaxDepthException` | The payload nests models deeper than `$maxDepth` (512 by default). |
-| `ValueError` | An attribute spec is malformed, for example an unresolvable class-name arm, an unsupported `Type` value in an array attribute, or a `Dict` key type outside integer and string. |
+| `ValueError` | A call argument is unusable: `$maxDepth` below 1, or a translator returning something other than `?string`. |
 
 ## Validation rules at a glance
 

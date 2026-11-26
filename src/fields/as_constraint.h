@@ -29,7 +29,8 @@ bool as_validate_userland_constraint(zval *constraint, as_field *field, as_prope
  * field compile: rejects the arguments that would make the constraint
  * unsatisfiable or a no-op (inverted or NAN bounds, empty value lists,
  * invalid regex patterns, empty domain lists). Returns false with a
- * pending ValueError. */
+ * pending ValueError, which the compile step rewrites into
+ * InvalidBaseModelException: the arguments belong to the model declaration. */
 bool as_validate_constraint_attribute_args(zval *constraint, as_property_info *property);
 
 #endif /* AS_FIELDS_Constraint_H */

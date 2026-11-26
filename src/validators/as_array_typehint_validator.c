@@ -1,4 +1,5 @@
 #include "as_array_typehint_validator.h"
+#include "../as_exception.h"
 #include "../as_globals.h"
 #include "../as_base_model.h"
 #include "../as_type.h"
@@ -103,8 +104,8 @@ typedef enum {
 /*
  * Attributes that may be declared directly on an array property.
  * Union is deliberately absent: a Union on an array property is a usage
- * error (compile-time ValueError for array-only hints, runtime ValueError
- * otherwise) — element specs go inside Sequence(of: new Union(...)) or
+ * error (an InvalidBaseModelException at compile time for array-only hints,
+ * at runtime otherwise) — element specs go inside Sequence(of: new Union(...)) or
  * Dict(of: ...). Union objects remain valid nested arms via
  * is_array_attribute_ce().
  */
@@ -1549,7 +1550,25 @@ void as_clear_array_spec_cache(void)
     }
 }
 
+static bool validate_array_typehint(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors);
+
 bool as_validate_array_typehint_cached(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors)
+{
+    if (validate_array_typehint(field, cf, prop_info, properties, errors)) {
+        return true;
+    }
+
+    /* The spec belongs to the model declaration: a rejected argument (an
+     * unknown Type, a class name that does not resolve, a nested constraint
+     * that fails its own constructor) reports a malformed model, not a bad
+     * call. A plain validation failure has no pending exception: the
+     * conversion is a no-op. */
+    as_convert_attribute_exception();
+
+    return false;
+}
+
+static bool validate_array_typehint(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors)
 {
     if (cf->array_state == AS_ARRAY_ABSENT) {
         return true;

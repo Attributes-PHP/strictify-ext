@@ -181,8 +181,11 @@ static zend_string *resolve_field_name(as_property_info *property_info, zend_str
             zval attr_value;
             if (zend_get_attribute_value(&attr_value, alias_attr, 0, property_info->model_ce) == SUCCESS) {
                 if (UNEXPECTED(Z_TYPE(attr_value) != IS_STRING)) {
+                    zend_throw_exception_ex(
+                        class_AS_Exceptions_InvalidBaseModelException, 0, "The #[Alias] name of %s::$%s must be a string, %s given.", ZSTR_VAL(property_info->model_ce->name), ZSTR_VAL(property_info->property->name),
+                        zend_zval_type_name(&attr_value)
+                    );
                     zval_ptr_dtor(&attr_value);
-                    zend_argument_type_error(1, "must be of type string, %s given", zend_zval_type_name(&attr_value));
                     return NULL;
                 }
                 field_name = zend_string_copy(Z_STR(attr_value));
@@ -449,6 +452,7 @@ static bool compile_field_constraints(as_compiled_field *cf, as_property_info *p
                 zval_ptr_dtor(&constraints[i].instance);
             }
             efree(constraints);
+            as_convert_attribute_exception();
             return false;
         }
 
@@ -465,6 +469,7 @@ static bool compile_field_constraints(as_compiled_field *cf, as_property_info *p
                 zval_ptr_dtor(&constraints[i].instance);
             }
             efree(constraints);
+            as_convert_attribute_exception();
             return false;
         }
 
