@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration;
 
 use ArgumentCountError;
-use Attributes\Strictify\Exceptions\CallException;
+use Attributes\Strictify\Exceptions\CallCountException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\MaxDepthException;
 use Attributes\Strictify\Exceptions\StrictifyThrowable;
@@ -65,8 +65,8 @@ it('throws MaxDepthException from the Error branch', function () {
         ->toBe('Testing');
 });
 
-it('throws CallException from the ArgumentCountError branch', function () {
-    $exception = new CallException('Testing');
+it('throws CallCountException from the ArgumentCountError branch', function () {
+    $exception = new CallCountException('Testing');
 
     expect($exception)->toBeInstanceOf(ArgumentCountError::class)
         ->and($exception)

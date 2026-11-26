@@ -122,7 +122,7 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 - Attribute: no
 
-### `Attributes\Strictify\Exceptions\CallException` — class extends `\ArgumentCountError` implements StrictifyThrowable
+### `Attributes\Strictify\Exceptions\CallCountException` — class extends `\ArgumentCountError` implements StrictifyThrowable
 
 - Attribute: no
 

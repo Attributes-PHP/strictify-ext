@@ -7,7 +7,7 @@ namespace Attributes\Strictify\Tests\Integration;
 use ArrayAccess;
 use ArrayObject;
 use Attributes\Strictify\BaseModel;
-use Attributes\Strictify\Exceptions\CallException;
+use Attributes\Strictify\Exceptions\CallCountException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Alias;
 use Attributes\Strictify\Fields\Sequence;
@@ -302,14 +302,14 @@ describe('call function dependencies', function () {
         expect($result)->toBe('xdefault');
     });
 
-    it('throws a CallException when a required dependency is missing', function () {
+    it('throws a CallCountException when a required dependency is missing', function () {
         call(
             'Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies',
             [],
             ['first' => new stdClass],
         );
     })->throws(
-        CallException::class,
+        CallCountException::class,
         'No value provided for parameter $second of Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies().',
     );
 
@@ -437,7 +437,7 @@ describe('call function argument building', function () {
 
     it('names the parameter of an internal function that misses a required argument', function () {
         call('str_repeat', [], ['x']);
-    })->throws(CallException::class, 'No value provided for parameter $times of str_repeat().');
+    })->throws(CallCountException::class, 'No value provided for parameter $times of str_repeat().');
 });
 
 describe('call function sensitive parameters', function () {
@@ -485,8 +485,8 @@ describe('call function sensitive parameters', function () {
                 [],
                 ['user' => 'andre'],
             );
-            expect(false)->toBeTrue('CallException expected');
-        } catch (CallException $e) {
+            expect(false)->toBeTrue('CallCountException expected');
+        } catch (CallCountException $e) {
             expect($e->getMessage())->toBe(
                 'No value provided for parameter 2 of Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required().',
             );
@@ -501,7 +501,7 @@ describe('call function sensitive parameters', function () {
             ['first' => new stdClass],
         );
     })->throws(
-        CallException::class,
+        CallCountException::class,
         'No value provided for parameter $second of Attributes\\Strictify\\Tests\\Integration\\call_function_takes_two_dependencies().',
     );
 });

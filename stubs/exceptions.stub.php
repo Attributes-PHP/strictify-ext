@@ -13,5 +13,5 @@ namespace Attributes\Strictify\Exceptions {
 
     class MaxDepthException extends \Error implements StrictifyThrowable {}
 
-    class CallException extends \ArgumentCountError implements StrictifyThrowable {}
+    class CallCountException extends \ArgumentCountError implements StrictifyThrowable {}
 }
