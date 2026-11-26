@@ -142,10 +142,6 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
     alias_generator_name[0] = '\0';
     extra_name[0] = '\0';
 
-    /* Options this class declares itself: the others come from the parent
-     * class (see the inheritance step below). */
-    uint32_t declared = 0;
-
     if (model_configs_attr != NULL) {
         /* Parse attribute arguments */
         for (uint32_t i = 0; i < model_configs_attr->argc; i++) {
@@ -159,8 +155,6 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
                 zval_ptr_dtor(&arg_val);
                 return;
             }
-
-            declared |= 1u << index;
 
             switch (index) {
                 case 0: /* aliasGenerator */
@@ -226,49 +220,6 @@ static void as_parse_model_configs(zend_class_entry *model_ce, as_model_configs_
                     return;
             }
             zval_ptr_dtor(&arg_val);
-        }
-    }
-
-    /*
-     * Inheritance: ModelConfigs is inherited through the class hierarchy
-     * only, option by option. A child that declares #[ModelConfigs] to
-     * change one option keeps the parent's value for every option it does
-     * not name, instead of silently falling back to the built-in defaults.
-     */
-    const uint32_t all_options = (1u << 7) - 1;
-    if (model_ce->parent != NULL && declared != all_options) {
-        bool failed = false;
-        as_model_configs_cache_entry *parent = get_configs_entry(model_ce->parent, &failed);
-        if (parent == NULL) {
-            if (failed) {
-                return;
-            }
-        } else {
-            if (!(declared & (1u << 0)) && parent->properties.alias_generator != false) {
-                properties->alias_generator = parent->properties.alias_generator;
-                memcpy(alias_generator_name, parent->alias_generator_name, sizeof(parent->alias_generator_name));
-            }
-            if (!(declared & (1u << 1))) {
-                properties->str_to_lower = parent->properties.str_to_lower;
-            }
-            if (!(declared & (1u << 2))) {
-                properties->str_to_upper = parent->properties.str_to_upper;
-            }
-            if (!(declared & (1u << 3))) {
-                properties->strip_whitespace = parent->properties.strip_whitespace;
-            }
-            /* Only an explicitly declared extra is inherited: a null one keeps
-             * resolving against this class's own #[AllowDynamicProperties]. */
-            if (!(declared & (1u << 4)) && parent->properties.extra != '\0') {
-                properties->extra = parent->properties.extra;
-                memcpy(extra_name, parent->extra_name, sizeof(parent->extra_name));
-            }
-            if (!(declared & (1u << 5))) {
-                properties->strict = parent->properties.strict;
-            }
-            if (!(declared & (1u << 6))) {
-                properties->stop_first_error = parent->properties.stop_first_error;
-            }
         }
     }
 

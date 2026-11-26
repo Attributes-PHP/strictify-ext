@@ -510,16 +510,13 @@ describe('ModelConfigs inheritance', function () {
             ->toBe('john'); // strToLower is inherited too
     });
 
-    it('lets a child class override a single option and inherit the rest', function () {
-        // the child only re-enables strict mode: strToLower and the snake_case
-        // generator still come from the parent class
-        $result = validate(['count' => 5, 'label' => 'ABC', 'first_name' => 'John'], new OptionsStrictChildModel);
-        expect($result->label)->toBe('abc')
-            ->and($result->firstName)
-            ->toBe('john');
+    it('lets a child class override the parent ModelConfigs entirely', function () {
+        // the child's own attribute wins: strict mode back on, no generator, no strToLower
+        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel);
+        expect($result->label)->toBe('ABC');
 
         try {
-            validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John'], new OptionsStrictChildModel);
+            validate(['count' => '5', 'label' => 'ABC', 'firstName' => 'John'], new OptionsStrictChildModel);
             expect(false)->toBeTrue('ValidationException expected');
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe(['count' => ['Must be integer']]);
@@ -631,23 +628,26 @@ describe('ModelConfigs option types', function () {
     });
 });
 
-describe('ModelConfigs partial inheritance', function () {
-    it('keeps the parent options a child does not declare', function () {
+describe('ModelConfigs inheritance scope', function () {
+    it('does not merge the options a child omits from its own declaration', function () {
+        // the child declares extra only: strict/lowercase/snake keys of the
+        // parent are not carried over, the defaults apply
         $child = new
             #[ModelConfigs(extra: 'forbid')]
             class extends OptionsConfigParentModel {
                 public string $label2;
             };
 
-        $result = validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John', 'label2' => 'XYZ'], $child);
+        expect(fn () => validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John', 'label2' => 'XYZ'], $child))
+            ->toThrow(ValidationException::class);
 
-        expect($result->count)->toBe(5)
-            ->and($result->label)
-            ->toBe('abc')
+        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John', 'label2' => 'XYZ'], $child);
+
+        expect($result->label)->toBe('ABC')
             ->and($result->firstName)
-            ->toBe('john')
+            ->toBe('John')
             ->and($result->label2)
-            ->toBe('xyz');
+            ->toBe('XYZ');
     });
 
     it('inherits an extra the parent declared explicitly', function () {

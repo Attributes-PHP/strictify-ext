@@ -5,7 +5,7 @@ description: "Reference for the #[ModelConfigs] attribute: every option, its def
 
 # ModelConfigs
 
-Declare `#[ModelConfigs(...)]` on the model class to change how `validate()` resolves and checks input. Every option is optional, and a child class inherits its parent's options:
+Declare `#[ModelConfigs(...)]` on the model class to change how `validate()` resolves and checks input. Every option is optional, and a child class inherits its parent's `ModelConfigs` unless it declares its own:
 
 ```php
 <?php
@@ -20,11 +20,11 @@ class ParentModel extends BaseModel
 
 class ChildModel extends ParentModel {} // inherits strict: false
 
-#[ModelConfigs(strToLower: true)] // inherits strict: false, overrides nothing else
+#[ModelConfigs(strToLower: true)] // its own attribute wins: strict is back to the default true
 class OtherChildModel extends ParentModel {}
 ```
 
-Inheritance is **per option**: a child resolves each option it does not declare from the closest ancestor that declares `#[ModelConfigs]`, so `#[ModelConfigs(strToLower: true)]` on a child of `#[ModelConfigs(strict: false, stripWhitespace: true)]` keeps `strict: false` and `stripWhitespace: true`.
+Inheritance is all-or-nothing: a child without its own `#[ModelConfigs]` uses the closest ancestor's declaration as a whole, and a child that declares one uses **only** that declaration — the options it omits fall back to the defaults in the table below, not to the parent's values.
 
 !!! note "Inheritance is class-based only"
     `ModelConfigs` is inherited **only through the class hierarchy** (a child class from its parent class). A nested model — a `BaseModel` used as a property of another model — **never** inherits the enclosing model's configs: each model class resolves its own `#[ModelConfigs]` (or its parent class's), so `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` apply per model class.
@@ -111,7 +111,7 @@ Controls what happens with input keys that resolve to no property of the model:
 - `'allow'`: unknown keys are stored as dynamic properties on the model instance. Integer keys have no property name and keys naming a declared property (e.g. the raw property name when `aliasGenerator` renames the expected key) are never stored.
 - `'forbid'`: every unknown key produces an error keyed by the raw key (dot path for nested models), with the default message `Extra inputs are not permitted`, translatable under the `extra` key. Keys produced by `aliasGenerator`/`Alias` count as known, integer keys are reported under their numeric name, and `stopAtFirstError` reports only the first one.
 
-Each model validates with its own class's configs: a `null` extra is resolved per model class at validation time, against that class's own `#[\AllowDynamicProperties]`, and a non-null `extra` declared on an enclosing model never applies to its nested models. An explicitly declared `extra` is inherited by subclasses like every other option; when no ancestor declares it, it stays `null` and each class resolves it against its own `#[\AllowDynamicProperties]` flag.
+Each model validates with its own class's configs: a `null` extra is resolved per model class at validation time, against that class's own `#[\AllowDynamicProperties]`, and a non-null `extra` declared on an enclosing model never applies to its nested models. A subclass without its own `#[ModelConfigs]` inherits the ancestor's `extra` along with the rest of the declaration; when nothing in the chain declares it, it stays `null` and each class resolves it against its own `#[\AllowDynamicProperties]` flag.
 
 ```php
 <?php
