@@ -1,5 +1,6 @@
 #include "as_call_function.h"
 #include "as_base_model.h"
+#include "as_compiled_model.h"
 #include "as_exception.h"
 #include "as_validate_function.h"
 #include "as_globals.h"
@@ -376,25 +377,22 @@ ZEND_FUNCTION(call)
     zval *function;
     zval *params;
     zval *dependencies = NULL;
-    zend_long max_depth = 0;
-    bool max_depth_is_null = false;
-
-    const bool max_depth_given = ZEND_NUM_ARGS() >= 4;
+    zend_long max_depth = AS_MAX_VALIDATION_DEPTH;
 
     ZEND_PARSE_PARAMETERS_START(2, 4)
     Z_PARAM_ZVAL(function)
     Z_PARAM_ARRAY(params)
     Z_PARAM_OPTIONAL
     Z_PARAM_ZVAL(dependencies)
-    Z_PARAM_LONG_OR_NULL(max_depth, max_depth_is_null)
+    Z_PARAM_LONG(max_depth)
     ZEND_PARSE_PARAMETERS_END();
 
-    if (max_depth_given && !max_depth_is_null && max_depth < 1) {
+    if (max_depth < 1) {
         zend_argument_value_error(4, "must be greater than 0, " ZEND_LONG_FMT " given", max_depth);
         RETURN_THROWS();
     }
 
-    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth_given && !max_depth_is_null, max_depth);
+    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth);
     as_call_with_arguments(INTERNAL_FUNCTION_PARAM_PASSTHRU, function, params, dependencies);
     as_restore_validation_depth_limit(previous_limit);
 }

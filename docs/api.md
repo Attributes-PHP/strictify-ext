@@ -14,8 +14,8 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 | Function | Signature |
 | -------- | --------- |
-| `validate()` | `function validate(array $rawData, BaseModel $model): BaseModel` |
-| `call()` | `function call(string|callable $function, array $params, array|\ArrayAccess $dependencies = []): mixed` |
+| `validate()` | `function validate(array $rawData, BaseModel $model, int $maxDepth = 512): BaseModel` |
+| `call()` | `function call(string|callable $function, array $params, array|\ArrayAccess $dependencies = [], int $maxDepth = 512): mixed` |
 
 ### `Attributes\Strictify\BaseModel` — abstract class
 

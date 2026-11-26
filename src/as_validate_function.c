@@ -78,24 +78,21 @@ ZEND_FUNCTION(validate)
 {
     zval *raw_data;
     zval *model;
-    zend_long max_depth = 0;
-    bool max_depth_is_null = false;
-
-    const bool max_depth_given = ZEND_NUM_ARGS() >= 3;
+    zend_long max_depth = AS_MAX_VALIDATION_DEPTH;
 
     ZEND_PARSE_PARAMETERS_START(2, 3)
     Z_PARAM_ARRAY(raw_data)
     Z_PARAM_OBJECT_OF_CLASS(model, AS_BaseModel_ce)
     Z_PARAM_OPTIONAL
-    Z_PARAM_LONG_OR_NULL(max_depth, max_depth_is_null)
+    Z_PARAM_LONG(max_depth)
     ZEND_PARSE_PARAMETERS_END();
 
-    if (max_depth_given && !max_depth_is_null && max_depth < 1) {
+    if (max_depth < 1) {
         zend_argument_value_error(3, "must be greater than 0, " ZEND_LONG_FMT " given", max_depth);
         RETURN_THROWS();
     }
 
-    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth_given && !max_depth_is_null, max_depth);
+    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth);
     zend_result result = as_hydrate_model(raw_data, model);
     as_restore_validation_depth_limit(previous_limit);
 
@@ -111,13 +108,11 @@ ZEND_FUNCTION(validate)
  * calls validate() again starts from the default unless it passes its own
  * $maxDepth.
  */
-uint32_t as_apply_validation_depth_limit(bool has_limit, zend_long limit)
+uint32_t as_apply_validation_depth_limit(zend_long limit)
 {
     const uint32_t previous = AS_G(validation_depth_limit);
 
-    if (has_limit) {
-        AS_G(validation_depth_limit) = (uint32_t)limit;
-    }
+    AS_G(validation_depth_limit) = (uint32_t)limit;
 
     return previous;
 }

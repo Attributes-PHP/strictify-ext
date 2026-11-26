@@ -9,6 +9,7 @@ use Attributes\Strictify\Exceptions\BaseException;
 use Attributes\Strictify\Exceptions\MaxDepthException;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Type;
+use TypeError;
 use ValueError;
 
 use function Attributes\Strictify\call;
@@ -95,11 +96,23 @@ describe('validation nesting depth parameter', function () {
         );
     });
 
-    it('keeps the default limit when $maxDepth is null', function () {
-        expect(fn () => validate(depth_payload(512), new DepthNode, maxDepth: null))->toThrow(
-            BaseException::class,
-            'Maximum validation nesting depth of 512 exceeded',
-        );
+    it('defaults $maxDepth to 512 on both functions', function () {
+        $parameters = [
+            'validate' => (new \ReflectionFunction('Attributes\\Strictify\\validate'))->getParameters()[2],
+            'call' => (new \ReflectionFunction('Attributes\\Strictify\\call'))->getParameters()[3],
+        ];
+
+        foreach ($parameters as $function => $parameter) {
+            expect($parameter->getName())->toBe('maxDepth')
+                ->and($parameter->getType()->getName())
+                ->toBe('int')
+                ->and($parameter->getDefaultValue())
+                ->toBe(512);
+        }
+    });
+
+    it('rejects null for $maxDepth', function () {
+        expect(fn () => validate(depth_payload(1), new DepthNode, maxDepth: null))->toThrow(TypeError::class);
     });
 
     it('restores the default limit after a limited run', function () {
