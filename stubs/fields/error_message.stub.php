@@ -24,8 +24,35 @@ namespace Attributes\Strictify\Fields {
       public string $starts_with = 'Must start with one of: {expected}';
       public string $ulid = 'Must be a valid ULID';
       public string $uuid = 'Must be a valid UUID';
+      public string $email = 'Must be a valid email address';
+      public string $email_domain = 'Must be an email address on an allowed domain: {expected}';
+      public string $url = 'Must be a valid URL';
+      public string $url_protocol = 'Must be a URL using an allowed protocol: {expected}';
+      public string $url_domain = 'Must be a URL on an allowed domain: {expected}';
+      public string $domain = 'Must be a valid domain name';
+      public string $ip = 'Must be a valid IP address';
+      public string $iban = 'Must be a valid IBAN';
+      public string $isbn = 'Must be a valid ISBN';
+      public string $credit_card = 'Must be a valid credit card number';
+      public string $version = 'Must be a valid version string';
+      public string $mac_address = 'Must be a valid MAC address';
+      public string $alnum = 'Must contain only letters and numbers';
+      public string $alpha = 'Must contain only letters';
+      public string $digit = 'Must contain only digits';
+      public string $xdigit = 'Must contain only hexadecimal digits';
+      public string $slug = 'Must be a valid slug';
+      public string $base64 = 'Must be valid base64';
+      public string $json = 'Must be valid JSON';
+      public string $hex_rgb_color = 'Must be a valid hex RGB color';
+      public string $even = 'Must be an even number';
+      public string $odd = 'Must be an odd number';
+      public string $positive = 'Must be a positive number';
+      public string $negative = 'Must be a negative number';
+      public string $prime_number = 'Must be a prime number';
+      public string $contains_any = 'Must contain at least one of: {expected}';
       public string $union = 'Must be {expected}';
       public string $sequence_keys = 'Must be a sequential list (keys 0, 1, 2, ...)';
+      public string $unique_values = 'Must contain only unique values';
 
       public function __construct(
          string $required = 'Field is required',
@@ -48,8 +75,35 @@ namespace Attributes\Strictify\Fields {
          string $starts_with = 'Must start with one of: {expected}',
          string $ulid = 'Must be a valid ULID',
          string $uuid = 'Must be a valid UUID',
+         string $email = 'Must be a valid email address',
+         string $email_domain = 'Must be an email address on an allowed domain: {expected}',
+         string $url = 'Must be a valid URL',
+         string $url_protocol = 'Must be a URL using an allowed protocol: {expected}',
+         string $url_domain = 'Must be a URL on an allowed domain: {expected}',
+         string $domain = 'Must be a valid domain name',
+         string $ip = 'Must be a valid IP address',
+         string $iban = 'Must be a valid IBAN',
+         string $isbn = 'Must be a valid ISBN',
+         string $credit_card = 'Must be a valid credit card number',
+         string $version = 'Must be a valid version string',
+         string $mac_address = 'Must be a valid MAC address',
+         string $alnum = 'Must contain only letters and numbers',
+         string $alpha = 'Must contain only letters',
+         string $digit = 'Must contain only digits',
+         string $xdigit = 'Must contain only hexadecimal digits',
+         string $slug = 'Must be a valid slug',
+         string $base64 = 'Must be valid base64',
+         string $json = 'Must be valid JSON',
+         string $hex_rgb_color = 'Must be a valid hex RGB color',
+         string $even = 'Must be an even number',
+         string $odd = 'Must be an odd number',
+         string $positive = 'Must be a positive number',
+         string $negative = 'Must be a negative number',
+         string $prime_number = 'Must be a prime number',
+         string $contains_any = 'Must contain at least one of: {expected}',
          string $union = 'Must be {expected}',
          string $sequence_keys = 'Must be a sequential list (keys 0, 1, 2, ...)',
+         string $unique_values = 'Must contain only unique values',
       ) {}
    }
 }
