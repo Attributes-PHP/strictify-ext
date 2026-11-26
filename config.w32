@@ -36,7 +36,7 @@ if (PHP_ATTRIBUTES_STRICTIFY != "no") {
 	// php-windows-builder reads ADD_EXTENSION_DEP as "build this module too",
 	// which would send it looking for a separate `date` extension.
 
-	EXTENSION("attributes_strictify", "strictify.c \
+	var as_sources = "strictify.c \
 		src/as_validate_function.c src/as_compiled_model.c src/as_call_function.c \
 		src/as_base_model.c src/as_exception.c src/as_model_configs.c src/as_error_translator.c \
 		src/as_type.c src/helpers/as_wrappers.c src/helpers/as_options.c src/helpers/as_string.c \
@@ -65,5 +65,34 @@ if (PHP_ATTRIBUTES_STRICTIFY != "no") {
 		src/fields/constraints/as_even.c src/fields/constraints/as_odd.c \
 		src/fields/constraints/as_positive.c src/fields/constraints/as_negative.c src/fields/constraints/as_prime_number.c \
 		src/fields/constraints/as_contains_any.c src/validators/as_typehint_validator.c \
-		src/validators/as_array_typehint_validator.c");
+		src/validators/as_array_typehint_validator.c";
+
+	// confutils mirrors a source subdirectory into the object directory but, in
+	// phpize mode, never creates it, so cl.exe fails with C1083 writing
+	// x64\Release\src\*.obj. Create them here, shallowest first, from the list
+	// above so a new subdirectory needs no extra bookkeeping.
+	if (MODE_PHPIZE) {
+		var as_dirs = [];
+		var as_files = as_sources.split(/\s+/);
+
+		for (var as_f = 0; as_f < as_files.length; as_f++) {
+			for (var as_slash = as_files[as_f].indexOf("/"); as_slash > 0; as_slash = as_files[as_f].indexOf("/", as_slash + 1)) {
+				as_dirs[as_dirs.length] = as_files[as_f].substring(0, as_slash);
+			}
+		}
+
+		as_dirs.sort(function (a, b) { return a.length - b.length; });
+
+		var as_fso = WScript.CreateObject("Scripting.FileSystemObject");
+
+		for (var as_d = 0; as_d < as_dirs.length; as_d++) {
+			var as_target = get_define("BUILD_DIR") + "\\" + as_dirs[as_d].replace(new RegExp("/", "g"), "\\");
+
+			if (!as_fso.FolderExists(as_target)) {
+				as_fso.CreateFolder(as_target);
+			}
+		}
+	}
+
+	EXTENSION("attributes_strictify", as_sources);
 }
