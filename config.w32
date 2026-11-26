@@ -14,16 +14,24 @@ if (PHP_ATTRIBUTES_STRICTIFY != "no") {
 		ERROR("attributes-strictify requires PHP 8.2 or later");
 	}
 
-	// Referencing this token is what makes the Windows builder pass
-	// --enable-attributes-strictify=shared, i.e. produce a loadable
-	// php_attributes_strictify.dll rather than a static module.
+	// phpize-driven builds (PIE, PECL, php-windows-builder) pass a plain
+	// --enable-attributes-strictify. confutils then leaves
+	// PHP_ATTRIBUTES_STRICTIFY_SHARED unset, so EXTENSION() would link the
+	// module statically and no php_attributes_strictify.dll would appear.
+	// A plain enable means shared; =static still builds statically.
+	if (PHP_ATTRIBUTES_STRICTIFY == "yes") {
+		PHP_ATTRIBUTES_STRICTIFY_SHARED = true;
+	}
+
 	if (PHP_ATTRIBUTES_STRICTIFY_SHARED) {
 		AC_DEFINE('ATTRIBUTES_STRICTIFY_SHARED', 1, 'Define to 1 if attributes-strictify is built as a shared module.');
 	}
 
-	// Mirrors PHP_ADD_EXTENSION_DEP in config.m4: the DateTime coercion calls
-	// date_create_from_format(), so ext/date must be present.
-	ADD_EXTENSION_DEP("attributes_strictify", "date");
+	// config.m4 declares PHP_ADD_EXTENSION_DEP(attributes_strictify, date): the
+	// DateTime coercion calls date_create_from_format(). There is no Windows
+	// counterpart on purpose — ext/date is always compiled in, and
+	// php-windows-builder reads ADD_EXTENSION_DEP as "build this module too",
+	// which would send it looking for a separate `date` extension.
 
 	EXTENSION("attributes_strictify", "strictify.c \
 		src/as_validate_function.c src/as_compiled_model.c src/as_call_function.c \

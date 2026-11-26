@@ -31,7 +31,12 @@
         "illuminate/translation": "^12.0 || ^13.0"
     },
     "php-ext": {
-        "extension-name": "attributes-strictify"
+        "extension-name": "attributes-strictify",
+        "configure-options": [
+            {
+                "name": "enable-attributes-strictify"
+            }
+        ]
     },
     "prefer-stable": true,
     "config": {
