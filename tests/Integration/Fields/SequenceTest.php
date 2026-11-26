@@ -246,8 +246,8 @@ describe('Sequence sequential key validation', function () {
         }
     });
 
-    it('translates the sequence_keys error key', function () {
-        ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequence_keys' ? 'Deve ser uma lista sequencial' : null);
+    it('translates the sequenceKeys error key', function () {
+        ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequenceKeys' ? 'Deve ser uma lista sequencial' : null);
 
         $model = new class extends BaseModel {
             #[Sequence(Type::int)]

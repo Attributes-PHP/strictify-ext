@@ -10,12 +10,12 @@ extern zend_class_entry *AS_Fields_ErrorMessage_ce;
 /*
  * #[ErrorMessage] arguments: one constructor argument per default error
  * catalog key, in as_error_type enum order (so positional arguments map to the
- * enum index). Each entry is (C identifier, error type, PHP-visible name):
- * the PHP name is the camelCase property / named argument, while the catalog
- * key exposed to the translator stays snake_case (see as_error_type_names).
- * The C identifier differs from the PHP name only for `union`, a C keyword.
- * The `extra` key is discarded: extra inputs have no owning property, so the
- * extra error bypasses per-property overrides.
+ * enum index). Each entry is (C identifier, error type, PHP-visible name): the
+ * PHP name is the camelCase property / named argument, the same string as the
+ * catalog key handed to the translator (see as_error_type_names). The C
+ * identifier differs from the PHP name only for `union`, a C keyword. The
+ * `extra` key is discarded: extra inputs have no owning property, so the extra
+ * error bypasses per-property overrides.
  */
 #define AS_ERROR_MESSAGE_KEYS(X)                                  \
     X(required, AS_ERROR_REQUIRED, "required")                    \

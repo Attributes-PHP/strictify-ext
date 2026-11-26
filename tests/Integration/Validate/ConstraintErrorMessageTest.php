@@ -506,7 +506,7 @@ describe('constraint error messages', function () {
 
         $unexpected = [];
         foreach (ConstraintMessageKeys::KEYS as $key) {
-            $expected = ['translated:'.$key];
+            $expected = ['translated:'.lcfirst(str_replace('_', '', ucwords($key, '_')))];
             if (($errors[constraint_message_path($key)] ?? null) !== $expected) {
                 $unexpected[$key] = $errors[constraint_message_path($key)] ?? null;
             }

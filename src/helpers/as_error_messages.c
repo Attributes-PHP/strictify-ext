@@ -2,6 +2,7 @@
 #include "as_type_names.h"
 #include "as_wrappers.h"
 #include "../as_globals.h"
+#include "../fields/as_error_message.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_compile.h"
@@ -70,61 +71,19 @@ const char *as_default_error_type_messages[] = {
 
 /*
  * Stable message keys, one per error type, handed to the translator registered
- * via ErrorTranslator::set() as its first argument. A custom #[ErrorMessage]
- * value has no key: the translator then receives null as key and the
- * attribute value as the message.
+ * via ErrorTranslator::set() as its first argument, and the names the
+ * #[ErrorMessage] attribute exposes: both read the same macro, so the
+ * translator key and the attribute argument cannot drift. camelCase, like every
+ * PHP-facing name in the extension. A custom #[ErrorMessage] value has no key:
+ * the translator then receives null as key and the attribute value as the
+ * message.
  */
 const char *as_error_type_names[] = {
-    [AS_ERROR_REQUIRED] = "required",
-    [AS_ERROR_TYPE] = "type",
-    [AS_ERROR_ALPHA_DASH] = "alpha_dash",
-    [AS_ERROR_ALPHA_DASH_TYPE] = "alpha_dash_type",
-    [AS_ERROR_ASCII] = "ascii",
-    [AS_ERROR_ASCII_TYPE] = "ascii_type",
-    [AS_ERROR_BETWEEN] = "between",
-    [AS_ERROR_BETWEEN_TYPE] = "between_type",
-    [AS_ERROR_CONTAINS] = "contains",
-    [AS_ERROR_DATETIME] = "datetime",
-    [AS_ERROR_ENDS_WITH] = "ends_with",
-    [AS_ERROR_IN] = "in",
-    [AS_ERROR_MAX] = "max",
-    [AS_ERROR_MIN] = "min",
-    [AS_ERROR_MULTIPLE_OF] = "multiple_of",
-    [AS_ERROR_REGEX] = "regex",
-    [AS_ERROR_SIZE] = "size",
-    [AS_ERROR_STARTS_WITH] = "starts_with",
-    [AS_ERROR_ULID] = "ulid",
-    [AS_ERROR_UUID] = "uuid",
-    [AS_ERROR_EMAIL] = "email",
-    [AS_ERROR_EMAIL_DOMAIN] = "email_domain",
-    [AS_ERROR_URL] = "url",
-    [AS_ERROR_URL_PROTOCOL] = "url_protocol",
-    [AS_ERROR_URL_DOMAIN] = "url_domain",
-    [AS_ERROR_DOMAIN] = "domain",
-    [AS_ERROR_IP] = "ip",
-    [AS_ERROR_IBAN] = "iban",
-    [AS_ERROR_ISBN] = "isbn",
-    [AS_ERROR_CREDIT_CARD] = "credit_card",
-    [AS_ERROR_VERSION] = "version",
-    [AS_ERROR_MAC_ADDRESS] = "mac_address",
-    [AS_ERROR_ALNUM] = "alnum",
-    [AS_ERROR_ALPHA] = "alpha",
-    [AS_ERROR_DIGIT] = "digit",
-    [AS_ERROR_XDIGIT] = "xdigit",
-    [AS_ERROR_SLUG] = "slug",
-    [AS_ERROR_BASE64] = "base64",
-    [AS_ERROR_JSON] = "json",
-    [AS_ERROR_HEX_RGB_COLOR] = "hex_rgb_color",
-    [AS_ERROR_EVEN] = "even",
-    [AS_ERROR_ODD] = "odd",
-    [AS_ERROR_POSITIVE] = "positive",
-    [AS_ERROR_NEGATIVE] = "negative",
-    [AS_ERROR_PRIME_NUMBER] = "prime_number",
-    [AS_ERROR_CONTAINS_ANY] = "contains_any",
-    [AS_ERROR_UNION] = "union",
-    [AS_ERROR_SEQUENCE_KEYS] = "sequence_keys",
-    [AS_ERROR_UNIQUE_VALUES] = "unique_values",
+    /* extra inputs have no owning property, so no #[ErrorMessage] argument */
     [AS_ERROR_EXTRA] = "extra",
+#define AS_ERROR_TYPE_NAME(c_name, error_type, str_name) [error_type] = str_name,
+    AS_ERROR_MESSAGE_KEYS(AS_ERROR_TYPE_NAME)
+#undef AS_ERROR_TYPE_NAME
 };
 
 /*
@@ -505,42 +464,14 @@ static zend_always_inline bool attribute_argument_name_equals(const zend_string 
 }
 
 /*
- * Catalog keys are snake_case (the stable keys handed to the translator); the
- * matching #[ErrorMessage] argument is their camelCase form, so the attribute
- * exposes PHP-style names while the translation key stays unchanged
- * (sequence_keys -> sequenceKeys). Writes into `buffer`, which must hold
- * 2 * strlen(key) + 1 bytes, and returns it.
- */
-static const char *error_message_argument_name(const char *key, char *buffer)
-{
-    char *out = buffer;
-    bool upper_next = false;
-
-    for (const char *in = key; *in != '\0'; in++) {
-        if (*in == '_') {
-            upper_next = true;
-            continue;
-        }
-
-        const bool uppercase = upper_next && *in >= 'a' && *in <= 'z';
-        *out++ = uppercase ? (char)(*in - 'a' + 'A') : *in;
-        upper_next = false;
-    }
-
-    *out = '\0';
-
-    return buffer;
-}
-
-/*
  * Resolves the raw error message template for the given error type from
  * the #[ErrorMessage] attribute, or NULL when the property declares no
  * template for it (the caller falls back to the default). The attribute
- * declares one argument per catalog key, named after the camelCase argument
- * (sequence_keys is sequenceKeys) and positionally in enum order. The extra
- * key is discarded: extra inputs have no owning property, so the extra error
- * never uses a per-property override. Throws when an argument value cannot be
- * evaluated or is not a string.
+ * declares one argument per catalog key, named after the key (both tables are
+ * camelCase) and positionally in enum order. The extra key is discarded: extra
+ * inputs have no owning property, so the extra error never uses a per-property
+ * override. Throws when an argument value cannot be evaluated or is not a
+ * string.
  */
 static zend_string *resolve_error_template(as_error_type type, as_property_info *property)
 {
@@ -553,8 +484,7 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
         return NULL;
     }
 
-    char argument_buffer[2 * 16 + 1];
-    const char *argument_name = error_message_argument_name(as_error_type_names[type], argument_buffer);
+    const char *argument_name = as_error_type_names[type];
     size_t argument_length = strlen(argument_name);
     uint32_t argument_position = (uint32_t)type;
 
