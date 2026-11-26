@@ -36,7 +36,7 @@ Non-model parameters take their values from `$dependencies` (an array or any `Ar
 - Matched by parameter name first, then in positional order.
 - Internal functions (whose signatures cannot declare models) receive them positionally: `call('str_repeat', [], ['x', 3])` returns `xxx`.
 - A missing value for an optional parameter lets the engine apply the declared default.
-- A missing value for a required parameter throws an `Error`: `No value provided for parameter $second of registerUser().`
+- A missing value for a required parameter throws a `CallException` (a `BaseException` subclass): `No value provided for parameter $second of registerUser().`
 - Variadic targets receive the leftover positional dependencies.
 
 ```php

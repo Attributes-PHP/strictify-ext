@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration;
 
 use Attributes\Strictify\Exceptions\BaseException;
+use Attributes\Strictify\Exceptions\CallException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 
@@ -46,5 +47,19 @@ it('InvalidBaseModelException exists, extends BaseException and can be thrown', 
 
     expect($exception)->not->toBeNull();
     expect($exception)->toBeInstanceOf(InvalidBaseModelException::class);
+    expect($exception->getMessage())->toBe('Testing');
+});
+
+it('CallException exists, extends BaseException and can be thrown', function () {
+    $exception = null;
+
+    try {
+        throw new CallException('Testing');
+    } catch (BaseException $e) {
+        $exception = $e;
+    }
+
+    expect($exception)->not->toBeNull();
+    expect($exception)->toBeInstanceOf(CallException::class);
     expect($exception->getMessage())->toBe('Testing');
 });

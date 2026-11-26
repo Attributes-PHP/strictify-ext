@@ -8,6 +8,7 @@ extern zend_class_entry *class_AS_Exceptions_BaseException;
 extern zend_class_entry *class_AS_Exceptions_ValidationException;
 extern zend_class_entry *class_AS_Exceptions_InvalidBaseModelException;
 extern zend_class_entry *class_AS_Exceptions_MaxDepthException;
+extern zend_class_entry *class_AS_Exceptions_CallException;
 
 /* Method declaration */
 ZEND_METHOD(AS_Exceptions_ValidationException, __construct);
@@ -26,6 +27,8 @@ static const zend_function_entry class_AS_Exceptions_BaseException_methods[] = {
 static const zend_function_entry class_AS_Exceptions_InvalidBaseModelException_methods[] = {ZEND_FE_END};
 
 static const zend_function_entry class_AS_Exceptions_MaxDepthException_methods[] = {ZEND_FE_END};
+
+static const zend_function_entry class_AS_Exceptions_CallException_methods[] = {ZEND_FE_END};
 
 static const zend_function_entry class_AS_Exceptions_ValidationException_methods[] = {ZEND_ME(AS_Exceptions_ValidationException, __construct, arginfo_class_AS_Exceptions_ValidationException___construct, ZEND_ACC_PUBLIC)
                                                                                           ZEND_ME(AS_Exceptions_ValidationException, getErrors, arginfo_class_AS_Exceptions_ValidationException_getErrors, ZEND_ACC_PUBLIC)

@@ -1,6 +1,6 @@
 ---
 title: "Exceptions"
-description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException, MaxDepthException, ValueError cases and the BaseException root."
+description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException, MaxDepthException, CallException, and the ValueError/TypeError cases left to the engine."
 ---
 
 # Exceptions
@@ -12,12 +12,13 @@ description: "Reference for the exceptions Strictify throws: ValidationException
 | `ValidationException` | `BaseException` | a field fails validation: missing key, wrong type, failing constraint, `Sequence`/`Dict` shape errors, unknown keys under `extra: 'forbid'`. Carries `getErrors()` |
 | `InvalidBaseModelException` | `BaseException` | the model declaration is malformed: any attribute argument the declaration rejects — a wrong argument type (`#[Union(1.5)]`), an unresolvable class arm, an unsupported `Type` value, a `Dict` key type outside the permitted ones, empty `Sequence`/`Dict` arguments, an invalid `Sequence(sorted:)`, a timezone or `Ip`/`DateTime` argument, a constraint argument that is unsatisfiable (inverted/`NAN` bounds, empty lists, a pattern that does not compile) — plus `Union` on an `array` property or with arms that differ from its hint, `Sequence`/`Dict`/`Intersection` on a non-array-like property, an empty `#[Alias]`, two properties resolving to the same key, and a `#[ModelConfigs]` option with an unknown value or the wrong type |
 | `MaxDepthException` | `BaseException` | the payload nests models deeper than the limit (512 by default, or `$maxDepth`) |
-| `BaseException` | `\Exception` | nothing directly — catch it for every extension error of the three above |
+| `CallException` | `BaseException` | `call()` cannot build the argument list: a required parameter has no dependency (`No value provided for parameter $x of f().`) |
+| `BaseException` | `\Exception` | nothing directly — catch it for every extension error of the four above |
 | `ValueError` | `\ValueError` | a call argument is unusable (`$maxDepth` below 1), or an `ErrorTranslator` callable returns something other than `?string` |
 | `TypeError` | `\TypeError` | `call()` receives a `$dependencies` value that is neither `array` nor `ArrayAccess`, registering a non-callable translator, or an attribute object is constructed directly in userland with a wrong argument type |
-| `Error` | `\Error` | `call()` cannot build the argument list: a required parameter has no dependency (`No value provided for parameter $x of f().`) |
+| `Error` | `\Error` | nothing raised by the extension itself — an `Error` thrown inside the callable or inside a dependency container propagates as-is |
 
-`catch (BaseException $e)` covers every error caused by a malformed model — including the argument errors the attribute constructors raise, which are rewritten into `InvalidBaseModelException` when the attribute is read from a declaration. `ValueError`, `TypeError` and `Error` cover bad call arguments and plain `new Email(...)` construction in userland.
+`catch (BaseException $e)` covers every error the extension raises on purpose: malformed models (`InvalidBaseModelException`, including the argument errors the attribute constructors raise, rewritten when the attribute is read from a declaration), failed validation, an exceeded nesting limit and an unbuildable `call()` argument list. `ValueError` and `TypeError` remain for bad call arguments and plain `new Email(...)` construction in userland; `Error` only appears when user code throws one.
 
 ## ValidationException
 
@@ -99,9 +100,21 @@ validate($deepPayload, new Node(), maxDepth: 10);
 
 The default limit is 512; [`validate()`](/validate/) and [`call()`](/call/) take a `$maxDepth` argument to override it per run, and the message reports the limit that fired. Depth is counted per run and unwound on the way out, including when the deep run fails with a `ValidationException`, so a caught failure does not affect the next call. Only nesting counts — siblings do not — so a long list is fine while a deep chain is not. The limit turns an otherwise unbounded recursion (a self-referencing model fed a deep payload) into a catchable error instead of a stack overflow.
 
+## CallException
+
+`Attributes\Strictify\Exceptions\CallException` extends `BaseException` and is thrown by [`call()`](/call/) when the argument list cannot be built — a required parameter has neither a dependency nor a model value:
+
+```php
+<?php
+call(registerUser(...), ['name' => 'John']);
+// CallException: No value provided for parameter $email of registerUser().
+```
+
+Optional parameters never reach it: the engine applies their declared defaults. A `#[\SensitiveParameter]` parameter is reported positionally (`parameter 2`), so the message does not disclose its name. Exceptions thrown inside the callable or inside a dependency container propagate as-is — they are not wrapped.
+
 ## BaseException
 
-`Attributes\Strictify\Exceptions\BaseException` is the extension's own exception root: `ValidationException`, `InvalidBaseModelException` and `MaxDepthException` extend it, so `catch (BaseException $e)` handles every error the extension raises on purpose. It is not thrown on its own.
+`Attributes\Strictify\Exceptions\BaseException` is the extension's own exception root: `ValidationException`, `InvalidBaseModelException`, `MaxDepthException` and `CallException` extend it, so `catch (BaseException $e)` handles every error the extension raises on purpose. It is not thrown on its own.
 
 ## See also
 
