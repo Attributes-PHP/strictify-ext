@@ -329,9 +329,9 @@ static bool build_call_arguments(zend_function *function, zval *params, as_depen
         /* A #[\SensitiveParameter] parameter is reported positionally: the
          * named message would disclose the parameter name in the error. */
         if (parameter_name != NULL && !parameter_is_sensitive(function, i)) {
-            zend_throw_exception_ex(class_AS_Exceptions_CallCountException, 0, "No value provided for parameter $%s of %s().", parameter_name, callable_name);
+            zend_throw_exception_ex(class_AS_Exceptions_CallException, 0, "No value provided for parameter $%s of %s().", parameter_name, callable_name);
         } else {
-            zend_throw_exception_ex(class_AS_Exceptions_CallCountException, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
+            zend_throw_exception_ex(class_AS_Exceptions_CallException, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
         }
         result = false;
         break;

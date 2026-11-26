@@ -11,14 +11,14 @@ All notable changes to Strictify are documented here, newest first. Install the 
 
 ### Added
 
-- `CallCountException`: a new exception class. `call()` throws it when a required parameter has no dependency. It extends `\ArgumentCountError` and implements `StrictifyThrowable`. The message is `No value provided for parameter $x of f().` It replaces the previous plain `Error`, so `catch (StrictifyThrowable $e)` now covers the whole call path. Errors thrown inside the callable or inside a dependency container still propagate unwrapped.
+- `CallException`: a new exception class. `call()` throws it when a required parameter has no dependency. It extends `\ArgumentCountError` and implements `StrictifyThrowable`. The message is `No value provided for parameter $x of f().` It replaces the previous plain `Error`, so `catch (StrictifyThrowable $e)` now covers the whole call path. Errors thrown inside the callable or inside a dependency container still propagate unwrapped.
 
   ```php
   function hello(string $name): string { return "Hi $name"; }
 
   try {
       call('hello', []);
-  } catch (CallCountException $e) {
+  } catch (CallException $e) {
       // No value provided for parameter $name of hello().
   }
   ```
@@ -102,7 +102,7 @@ All notable changes to Strictify are documented here, newest first. Install the 
 
 ### Changed
 
-- **BC note:** the exception hierarchy now follows PHP's split between data and programming errors. `ValidationException` extends `\Exception`. `InvalidBaseModelException` and `MaxDepthException` extend `\Error`. `CallCountException` extends `\ArgumentCountError`. `BaseException` is removed. `Attributes\Strictify\Exceptions\StrictifyThrowable` is the new marker interface all four implement, so `catch (StrictifyThrowable $e)` replaces `catch (BaseException $e)`. A `catch (\Exception $e)` no longer swallows a malformed model.
+- **BC note:** the exception hierarchy now follows PHP's split between data and programming errors. `ValidationException` extends `\Exception`. `InvalidBaseModelException` and `MaxDepthException` extend `\Error`. `CallException` extends `\ArgumentCountError`. `BaseException` is removed. `Attributes\Strictify\Exceptions\StrictifyThrowable` is the new marker interface all four implement, so `catch (StrictifyThrowable $e)` replaces `catch (BaseException $e)`. A `catch (\Exception $e)` no longer swallows a malformed model.
 
   ```php
   use Attributes\Strictify\Exceptions\StrictifyThrowable;
@@ -110,7 +110,7 @@ All notable changes to Strictify are documented here, newest first. Install the 
   try {
       validate($payload, new User());
   } catch (StrictifyThrowable $e) {
-      // ValidationException, InvalidBaseModelException, MaxDepthException or CallCountException
+      // ValidationException, InvalidBaseModelException, MaxDepthException or CallException
   }
   ```
 

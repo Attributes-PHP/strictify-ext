@@ -1,6 +1,6 @@
 ---
 title: "Exceptions"
-description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException, MaxDepthException, CallCountException, and the ValueError/TypeError cases left to the engine."
+description: "Reference for the exceptions Strictify throws: ValidationException and its getErrors() structure, InvalidBaseModelException, MaxDepthException, CallException, and the ValueError/TypeError cases left to the engine."
 ---
 
 # Exceptions
@@ -12,7 +12,7 @@ description: "Reference for the exceptions Strictify throws: ValidationException
 | `ValidationException` | `\Exception` | a field fails validation: missing key, wrong type, failing constraint, `Sequence`/`Dict` shape errors, unknown keys under `extra: 'forbid'`. Carries `getErrors()` |
 | `InvalidBaseModelException` | `\Error` | the model declaration is malformed: any attribute argument the declaration rejects — a wrong argument type (`#[Union(1.5)]`), an unresolvable class arm, an unsupported `Type` value, a `Dict` key type outside the permitted ones, empty `Sequence`/`Dict` arguments, an invalid `Sequence(sorted:)`, a timezone or `Ip`/`DateTime` argument, a constraint argument that is unsatisfiable (inverted/`NAN` bounds, empty lists, a pattern that does not compile) — plus `Union` on an `array` property or with arms that differ from its hint, `Sequence`/`Dict`/`Intersection` on a non-array-like property, an empty `#[Alias]`, two properties resolving to the same key, and a `#[ModelConfigs]` option with an unknown value or the wrong type |
 | `MaxDepthException` | `\Error` | the payload nests models deeper than the limit (512 by default, or `$maxDepth`) |
-| `CallCountException` | `\ArgumentCountError` | `call()` cannot build the argument list: a required parameter has no dependency (`No value provided for parameter $x of f().`) |
+| `CallException` | `\ArgumentCountError` | `call()` cannot build the argument list: a required parameter has no dependency (`No value provided for parameter $x of f().`) |
 | `StrictifyThrowable` | `\Throwable` | an interface, not a class: the four above implement it, so one catch covers every extension error |
 | `ValueError` | `\ValueError` | a call argument is unusable (`$maxDepth` below 1), or a constraint constructor called directly in userland rejects an argument as a value |
 | `TypeError` | `\TypeError` | `call()` receives a `$dependencies` value that is neither `array` nor `ArrayAccess`, registering a non-callable translator, an `ErrorTranslator` callable that returns something other than `?string`, a non-string `#[ErrorMessage]` value, or an attribute object constructed directly in userland with a wrong argument type |
@@ -113,21 +113,21 @@ validate($deepPayload, new Node(), maxDepth: 10);
 
 The default limit is 512; [`validate()`](/validate/) and [`call()`](/call/) take a `$maxDepth` argument to override it per run, and the message reports the limit that fired. Depth is counted per run and unwound on the way out, including when the deep run fails with a `ValidationException`, so a caught failure does not affect the next call. Only nesting counts — siblings do not — so a long list is fine while a deep chain is not. The limit turns an otherwise unbounded recursion (a self-referencing model fed a deep payload) into a catchable error instead of a stack overflow.
 
-## CallCountException
+## CallException
 
-`Attributes\Strictify\Exceptions\CallCountException` extends `\ArgumentCountError` and is thrown by [`call()`](/call/) when the argument list cannot be built — a required parameter has neither a dependency nor a model value:
+`Attributes\Strictify\Exceptions\CallException` extends `\ArgumentCountError` and is thrown by [`call()`](/call/) when the argument list cannot be built — a required parameter has neither a dependency nor a model value:
 
 ```php
 <?php
 call(registerUser(...), ['name' => 'John']);
-// CallCountException: No value provided for parameter $email of registerUser().
+// CallException: No value provided for parameter $email of registerUser().
 ```
 
 Optional parameters never reach it: the engine applies their declared defaults. A `#[\SensitiveParameter]` parameter is reported positionally (`parameter 2`), so the message does not disclose its name. Exceptions thrown inside the callable or inside a dependency container propagate as-is — they are not wrapped.
 
 ## StrictifyThrowable
 
-`Attributes\Strictify\Exceptions\StrictifyThrowable` is an interface extending `\Throwable`, implemented by all four classes, so `catch (StrictifyThrowable $e)` handles every error the extension raises on purpose. It has no methods and no parent class of its own: `ValidationException` extends `\Exception`, while `InvalidBaseModelException`, `MaxDepthException` and `CallCountException` extend `\Error`, `\Error` and `\ArgumentCountError`.
+`Attributes\Strictify\Exceptions\StrictifyThrowable` is an interface extending `\Throwable`, implemented by all four classes, so `catch (StrictifyThrowable $e)` handles every error the extension raises on purpose. It has no methods and no parent class of its own: `ValidationException` extends `\Exception`, while `InvalidBaseModelException`, `MaxDepthException` and `CallException` extend `\Error`, `\Error` and `\ArgumentCountError`.
 
 ## See also
 
