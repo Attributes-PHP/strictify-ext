@@ -10,4 +10,6 @@ namespace Attributes\Strictify\Exceptions {
     }
 
     class InvalidBaseModelException extends BaseException {}
+
+    class MaxDepthException extends BaseException {}
 }

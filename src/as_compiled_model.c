@@ -1214,7 +1214,7 @@ bool as_compiled_validate_model(zval *raw_data, zval *model, as_model_configs_pr
     const uint32_t limit = AS_G(validation_depth_limit);
 
     if (UNEXPECTED(AS_G(validation_depth) >= limit)) {
-        zend_throw_exception_ex(class_AS_Exceptions_BaseException, 0, "Maximum validation nesting depth of %u exceeded: the payload nests models or arrays too deeply.", limit);
+        zend_throw_exception_ex(class_AS_Exceptions_MaxDepthException, 0, "Maximum validation nesting depth of %u exceeded: the payload nests models or arrays too deeply.", limit);
         return false;
     }
 

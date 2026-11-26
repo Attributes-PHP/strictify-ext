@@ -6,6 +6,7 @@ namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Exceptions\BaseException;
+use Attributes\Strictify\Exceptions\MaxDepthException;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Type;
 use ValueError;
@@ -129,5 +130,27 @@ describe('validation nesting depth parameter', function () {
             ValueError::class,
             'must be greater than 0',
         );
+    });
+});
+
+describe('MaxDepthException', function () {
+    it('is a BaseException of its own class', function () {
+        expect(fn () => validate(depth_payload(600), new DepthNode))->toThrow(
+            MaxDepthException::class,
+            'Maximum validation nesting depth of 512 exceeded',
+        )
+            ->and(new MaxDepthException('x'))
+            ->toBeInstanceOf(BaseException::class);
+    });
+
+    it('reports the limit that was passed to validate()', function () {
+        expect(fn () => validate(depth_payload(10), new DepthNode, maxDepth: 4))->toThrow(
+            MaxDepthException::class,
+            'Maximum validation nesting depth of 4 exceeded',
+        );
+    });
+
+    it('propagates out of call() as the same class', function () {
+        expect(fn () => call(depth_target(...), depth_payload(10), maxDepth: 4))->toThrow(MaxDepthException::class);
     });
 });

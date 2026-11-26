@@ -7,16 +7,19 @@
 zend_class_entry *class_AS_Exceptions_BaseException;
 zend_class_entry *class_AS_Exceptions_ValidationException;
 zend_class_entry *class_AS_Exceptions_InvalidBaseModelException;
+zend_class_entry *class_AS_Exceptions_MaxDepthException;
 
 static void register_BaseException_class(void);
 static void register_ValidationException_class(void);
 static void register_InvalidBaseModelException_class(void);
+static void register_MaxDepthException_class(void);
 
 void as_register_all_exception_classes(void)
 {
     register_BaseException_class();
     register_ValidationException_class();
     register_InvalidBaseModelException_class();
+    register_MaxDepthException_class();
     ZEND_ASSERT(class_AS_Exceptions_BaseException != NULL && class_AS_Exceptions_ValidationException != NULL && class_AS_Exceptions_InvalidBaseModelException != NULL);
 }
 
@@ -41,6 +44,13 @@ static void register_InvalidBaseModelException_class(void)
     zend_class_entry ce;
     INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Exceptions", "InvalidBaseModelException", class_AS_Exceptions_InvalidBaseModelException_methods);
     class_AS_Exceptions_InvalidBaseModelException = zend_register_internal_class_ex(&ce, class_AS_Exceptions_BaseException);
+}
+
+static void register_MaxDepthException_class(void)
+{
+    zend_class_entry ce;
+    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Exceptions", "MaxDepthException", class_AS_Exceptions_MaxDepthException_methods);
+    class_AS_Exceptions_MaxDepthException = zend_register_internal_class_ex(&ce, class_AS_Exceptions_BaseException);
 }
 
 static void register_ValidationException_class(void)
