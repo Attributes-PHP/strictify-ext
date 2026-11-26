@@ -13,7 +13,8 @@ ZEND_END_ARG_INFO()
 
 ZEND_METHOD(AS_Fields_Constraints_ContainsAny, __construct);
 
-static const zend_function_entry class_AS_Fields_Constraints_ContainsAny_methods[] = {ZEND_ME(AS_Fields_Constraints_ContainsAny, __construct, arginfo_class_AS_Fields_Constraints_ContainsAny___construct, ZEND_ACC_PUBLIC) ZEND_FE_END};
+static const zend_function_entry class_AS_Fields_Constraints_ContainsAny_methods[] = {ZEND_ME(AS_Fields_Constraints_ContainsAny, __construct, arginfo_class_AS_Fields_Constraints_ContainsAny___construct, ZEND_ACC_PUBLIC)
+                                                                                          ZEND_FE_END};
 
 /* Validation logic: returns true when the field value satisfies the
  * constraint, false after appending the constraint error message. */
