@@ -38,7 +38,6 @@ All notable changes to Strictify are documented here, newest first. Install the 
 - Validator fixes: `MultipleOf(0.0)` accepts `0.0` (not only the integer `0`); `DateTime` rejects a date that does not exist (`1994-02-30`, `2023-02-29`) instead of accepting the rolled-over date; `Iban` accepts either letter case; `Ulid` requires a first character in `0`-`7` (the 128-bit range); `Email` requires a top-level domain of at least two characters, like `Domain`; a `Regex` pattern containing a NUL byte is stored and matched in full.
 - Constraints are skipped for an explicit `null`, exactly like a missing key (`#[Regex(...)] public ?string $name = null` accepts `['name' => null]`).
 - Error messages render floats at full round-trip precision (`0.30000000000000004` instead of `0.3`), and `call()` names the parameter of an internal function in its `No value provided` messages.
-- `extra: 'allow'` stores unknown keys as dynamic properties without triggering PHP 8.2's `Creation of dynamic property ... is deprecated` notice.
 
 ## Recent history
 

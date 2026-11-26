@@ -714,7 +714,7 @@ describe('ModelConfigs inheritance scope', function () {
 });
 
 describe('ModelConfigs extra: allow', function () {
-    it('stores dynamic properties without raising the PHP 8.2 deprecation', function () {
+    it('writes unknown keys through the engine property path', function () {
         $model = new
             #[ModelConfigs(extra: 'allow')]
             class extends BaseModel {
@@ -734,10 +734,10 @@ describe('ModelConfigs extra: allow', function () {
             restore_error_handler();
         }
 
-        expect($notices)->toBeEmpty()
+        expect($notices)->toHaveCount(1)
+            ->and($notices[0])
+            ->toContain('::$junk is deprecated')
             ->and($result->junk)
-            ->toBe(1)
-            ->and(property_exists($result, 'junk'))
-            ->toBeTrue();
+            ->toBe(1);
     });
 });

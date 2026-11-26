@@ -971,25 +971,6 @@ static void as_transform_field_value(as_compiled_field *cf, as_field *field, con
 }
 
 /*
- * Stores an unknown input key as a dynamic property. The standard write path
- * (zend_update_property) raises the PHP 8.2+ "Creation of dynamic property"
- * deprecation on classes that do not declare #[\AllowDynamicProperties], but
- * extra:'allow' is an explicit request to store these keys: write into the
- * object's dynamic-properties table directly, the state the engine itself
- * keeps once the class allows them.
- */
-static void as_write_dynamic_property(zend_object *object, zend_string *name, zval *value)
-{
-    HashTable *properties = zend_std_get_properties(object);
-    if (UNEXPECTED(properties == NULL)) {
-        return;
-    }
-
-    Z_TRY_ADDREF_P(value);
-    zend_hash_update(properties, name, value);
-}
-
-/*
  * ModelConfigs extra: 'forbid' reports every input key that resolves to no
  * property of the model. 'allow' stores unknown keys as dynamic properties
  * on the model instance; the auto-resolved 'allow' only happens for classes
@@ -1043,7 +1024,10 @@ static void as_check_extra_fields(zval *raw_data, zval *model, as_compiled_model
                 continue;
             }
 
-            as_write_dynamic_property(Z_OBJ_P(model), key, entry);
+            zend_update_property(ce, Z_OBJ_P(model), ZSTR_VAL(key), ZSTR_LEN(key), entry);
+            if (UNEXPECTED(EG(exception) != NULL)) {
+                return;
+            }
             continue;
         }
 
