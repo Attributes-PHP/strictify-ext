@@ -38,20 +38,13 @@ void as_init_typehint_validator()
     datetime_interface_ce = zend_lookup_class_ex(datetime_interface_str, NULL, ZEND_FETCH_CLASS_NO_AUTOLOAD);
     zend_string_release(datetime_interface_str);
 
-    if (!datetime_ce || !datetime_interface_ce) {
-        zend_throw_error(NULL, "DateTime or DateTimeInterface class not available. Ensure the datetime extension is loaded.");
-        return;
-    }
-
+    /* ext/date is part of every PHP build and declared as a dependency in
+     * config.m4/config.w32, so these lookups cannot fail. */
     as_datetime_format = zend_string_init("X-m-d\\TH:i:sP", sizeof("X-m-d\\TH:i:sP") - 1, 0);
 
     zend_string *fn_name = zend_string_init("date_create_from_format", sizeof("date_create_from_format") - 1, 0);
     as_date_create_from_format_fn = zend_hash_find_ptr(EG(function_table), fn_name);
     zend_string_release(fn_name);
-
-    if (as_date_create_from_format_fn == NULL) {
-        zend_throw_error(NULL, "date_create_from_format not available. Ensure the datetime extension is loaded.");
-    }
 }
 
 void as_shutdown_typehint_validator(void)

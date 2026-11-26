@@ -20,8 +20,19 @@ ZEND_METHOD(AS_ErrorTranslator, set)
     Z_PARAM_ZVAL(translator)
     ZEND_PARSE_PARAMETERS_END();
 
-    if (!zend_is_callable(translator, 0, NULL)) {
-        zend_throw_exception_ex(zend_ce_type_error, 0, "Argument 1 passed to Attributes\\Strictify\\ErrorTranslator::set() must be callable");
+    /* The engine does not verify a `callable` arginfo type at the call site,
+     * so the reason has to come from the fcall init, as in Z_PARAM_FUNC. */
+    zend_fcall_info fci;
+    zend_fcall_info_cache fcc;
+    char *error = NULL;
+
+    if (zend_fcall_info_init(translator, 0, &fci, &fcc, NULL, &error) != SUCCESS) {
+        zend_argument_type_error(1, "must be a valid callback, %s", error != NULL ? error : "no array or string given");
+
+        if (error != NULL) {
+            efree(error);
+        }
+
         RETURN_THROWS();
     }
 

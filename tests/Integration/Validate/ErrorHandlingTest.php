@@ -24,7 +24,7 @@ use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwentyValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
 use Attributes\Strictify\Type;
-use ValueError;
+use TypeError;
 
 use function Attributes\Strictify\validate;
 
@@ -688,7 +688,7 @@ describe('custom ErrorMessage attribute messages', function () {
 
     it('invalid ErrorMessage arguments', function (BaseModel $model, array $input) {
         validate($input, $model);
-    })->throws(ValueError::class)
+    })->throws(TypeError::class)
         ->with([
             'invalid required' => [
                 'model' => new class extends BaseModel {

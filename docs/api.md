@@ -99,11 +99,11 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 ## `Attributes\Strictify\Exceptions`
 
-### `Attributes\Strictify\Exceptions\BaseException` — class extends `\Exception`
+### `Attributes\Strictify\Exceptions\StrictifyThrowable` — interface extends `\Throwable`
 
 - Attribute: no
 
-### `Attributes\Strictify\Exceptions\ValidationException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\ValidationException` — class extends `\Exception` implements StrictifyThrowable
 
 - Attribute: no
 
@@ -114,15 +114,15 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public function __construct(array $allErrors)` |
 | `public function getErrors(): array` |
 
-### `Attributes\Strictify\Exceptions\InvalidBaseModelException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\InvalidBaseModelException` — class extends `\Error` implements StrictifyThrowable
 
 - Attribute: no
 
-### `Attributes\Strictify\Exceptions\MaxDepthException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\MaxDepthException` — class extends `\Error` implements StrictifyThrowable
 
 - Attribute: no
 
-### `Attributes\Strictify\Exceptions\CallException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\CallException` — class extends `\ArgumentCountError` implements StrictifyThrowable
 
 - Attribute: no
 
@@ -240,6 +240,7 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public string $union` | `'Must be {expected}'` |
 | `public string $sequenceKeys` | `'Must be a sequential list (keys 0, 1, 2, ...)'` |
 | `public string $uniqueValues` | `'Must contain only unique values'` |
+
 ### `Attributes\Strictify\Fields\Field` — interface
 
 - Attribute: no

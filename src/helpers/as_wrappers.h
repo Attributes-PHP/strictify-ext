@@ -48,7 +48,7 @@
 #define as_zval_update_constant_ex(zv, scope)                             zval_update_constant_ex(zv, scope)
 #define as_get_attribute_str(attributes, str, len)                        zend_get_attribute_str(attributes, str, len)
 #define as_get_attribute_value(ret, attribute, arg_num, scope)            zend_get_attribute_value(ret, attribute, arg_num, scope)
-#define as_throw_value_error(message)                                     zend_throw_exception_ex(zend_ce_value_error, 0, "%s", message)
+#define as_throw_type_error(message)                                      zend_throw_exception_ex(zend_ce_type_error, 0, "%s", message)
 #define as_binary_strcasecmp(s1, len1, s2, len2)                          zend_binary_strcasecmp(s1, len1, s2, len2)
 #define as_hash_init(ht, size, dtor, persistent)                          zend_hash_init(ht, size, NULL, dtor, persistent)
 #define as_hash_destroy(ht)                                               zend_hash_destroy(ht)
@@ -95,7 +95,7 @@ zend_result as_zval_update_constant_ex(zval *zv, zend_class_entry *scope);
  * void * so the mockable declarations stay free of Zend attribute types. */
 void *as_get_attribute_str(HashTable *attributes, const char *str, size_t len);
 zend_result as_get_attribute_value(zval *ret, void *attribute, uint32_t arg_num, zend_class_entry *scope);
-void as_throw_value_error(const char *message);
+void as_throw_type_error(const char *message);
 int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 
 /* Additional wrappers used by the per-property error templates cache in

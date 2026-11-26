@@ -11,7 +11,7 @@ All notable changes to Strictify are documented here, newest first. Install the 
 
 ### Added
 
-- `CallException`: a new `BaseException` subclass. `call()` throws it when a required parameter has no dependency. The message is `No value provided for parameter $x of f().` It replaces the previous plain `Error`, so `catch (BaseException $e)` now covers the whole call path. Errors thrown inside the callable or inside a dependency container still propagate unwrapped.
+- `CallException`: a new exception class. `call()` throws it when a required parameter has no dependency. It extends `\ArgumentCountError` and implements `StrictifyThrowable`. The message is `No value provided for parameter $x of f().` It replaces the previous plain `Error`, so `catch (StrictifyThrowable $e)` now covers the whole call path. Errors thrown inside the callable or inside a dependency container still propagate unwrapped.
 
   ```php
   function hello(string $name): string { return "Hi $name"; }
@@ -93,7 +93,7 @@ All notable changes to Strictify are documented here, newest first. Install the 
   #[Alias('id')] public int $b; // InvalidBaseModelException
   ```
 
-- New nesting depth guard. A payload nesting models more than 512 levels deep throws a catchable `MaxDepthException` (a new `BaseException` subclass) instead of exhausting the C stack. Siblings do not add depth. The counter unwinds on every exit path, including a failing deep run.
+- New nesting depth guard. A payload nesting models more than 512 levels deep throws a catchable `MaxDepthException` (a new `\Error` subclass) instead of exhausting the C stack. Siblings do not add depth. The counter unwinds on every exit path, including a failing deep run.
 - `validate()` and `call()` accept an `int $maxDepth` argument (default `512`) to override the nesting limit for one run. Raise it for legitimately deep payloads, or lower it to reject deep nesting earlier. A value below 1 throws a `ValueError`. The exception message reports the limit that fired.
 
   ```php
@@ -102,13 +102,35 @@ All notable changes to Strictify are documented here, newest first. Install the 
 
 ### Changed
 
+- **BC note:** the exception hierarchy now follows PHP's split between data and programming errors. `ValidationException` extends `\Exception`. `InvalidBaseModelException` and `MaxDepthException` extend `\Error`. `CallException` extends `\ArgumentCountError`. `BaseException` is removed. `Attributes\Strictify\Exceptions\StrictifyThrowable` is the new marker interface all four implement, so `catch (StrictifyThrowable $e)` replaces `catch (BaseException $e)`. A `catch (\Exception $e)` no longer swallows a malformed model.
+
+  ```php
+  use Attributes\Strictify\Exceptions\StrictifyThrowable;
+
+  try {
+      validate($payload, new User());
+  } catch (StrictifyThrowable $e) {
+      // ValidationException, InvalidBaseModelException, MaxDepthException or CallException
+  }
+  ```
+
+- **BC note:** two run-time errors move from `ValueError` to `TypeError`, where PHP reports a wrong type or a wrong return value: an `ErrorTranslator` callable that returns something other than `?string`, and a non-string `#[ErrorMessage]` argument. `ErrorTranslator::set()` now uses the engine's wording for a non-callable argument.
+
+  ```php
+  ErrorTranslator::set('nope');
+  // TypeError: Attributes\Strictify\ErrorTranslator::set(): Argument #1 ($translator)
+  //   must be a valid callback, function "nope" not found or invalid function name
+  ```
+
+- The build declares `ext/date` as a dependency in `config.m4` and `config.w32`. The extension no longer checks for it at startup.
+
 - **BC note:** error catalog keys are camelCase everywhere: the `#[ErrorMessage]` arguments and properties, and the key handed to `ErrorTranslator::set()` (`alphaDash`, `sequenceKeys`, `urlProtocol`, `uniqueValues`, ...). A translator registered under a snake_case key (`'sequence_keys'`) no longer matches.
 
   ```php
   ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequenceKeys' ? 'Bad order' : null);
   ```
 
-- **BC note:** a malformed model declaration now always throws `InvalidBaseModelException`, never a `ValueError` or `TypeError`. Covered: arguments rejected by a constructor signature (`#[Union(1.5)]`, `#[Min('fifteen')]`), unresolvable class arms, unsupported `Type` values, unsupported `Dict` key types, empty `Sequence`/`Dict` arguments, an invalid `Sequence(sorted:)`, a `DateTime` timezone argument, and the constraint argument rules above. Messages are unchanged; the rule just moved onto the extension's exception hierarchy, so `catch (BaseException $e)` covers every malformed model. `ValueError` and `TypeError` remain for call arguments (`$maxDepth` below 1, the translator, `call()` dependencies) and for constructing an attribute object directly in userland.
+- **BC note:** a malformed model declaration now always throws `InvalidBaseModelException`, never a `ValueError` or `TypeError`. Covered: arguments rejected by a constructor signature (`#[Union(1.5)]`, `#[Min('fifteen')]`), unresolvable class arms, unsupported `Type` values, unsupported `Dict` key types, empty `Sequence`/`Dict` arguments, an invalid `Sequence(sorted:)`, a `DateTime` timezone argument, and the constraint argument rules above. Messages are unchanged; the rule just moved onto the extension's exception hierarchy, so `catch (StrictifyThrowable $e)` covers every malformed model. `ValueError` and `TypeError` remain for call arguments (`$maxDepth` below 1, the translator, `call()` dependencies) and for constructing an attribute object directly in userland.
 
   ```php
   #[Min('fifteen')] public int $age; // InvalidBaseModelException, not TypeError

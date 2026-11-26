@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Fields;
 
 use Attributes\Strictify\BaseModel;
-use Attributes\Strictify\Exceptions\BaseException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;

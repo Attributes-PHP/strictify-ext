@@ -21,6 +21,10 @@ if (PHP_ATTRIBUTES_STRICTIFY != "no") {
 		AC_DEFINE('ATTRIBUTES_STRICTIFY_SHARED', 1, 'Define to 1 if attributes-strictify is built as a shared module.');
 	}
 
+	// Mirrors PHP_ADD_EXTENSION_DEP in config.m4: the DateTime coercion calls
+	// date_create_from_format(), so ext/date must be present.
+	ADD_EXTENSION_DEP("attributes_strictify", "date");
+
 	EXTENSION("attributes_strictify", "strictify.c \
 		src/as_validate_function.c src/as_compiled_model.c src/as_call_function.c \
 		src/as_base_model.c src/as_exception.c src/as_model_configs.c src/as_error_translator.c \

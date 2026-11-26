@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration;
 
 use Attributes\Strictify\BaseModel;
-use Attributes\Strictify\Exceptions\BaseException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
+use Attributes\Strictify\Exceptions\StrictifyThrowable;
 use Attributes\Strictify\Fields\Constraints\Between;
 use Attributes\Strictify\Fields\Constraints\Email;
 use Attributes\Strictify\Fields\Constraints\In;
@@ -94,7 +94,7 @@ describe('invalid model declarations', function () {
         try {
             validate(['email' => 'a@b.com'], $model);
             expect(false)->toBeTrue('InvalidBaseModelException expected');
-        } catch (BaseException $e) {
+        } catch (StrictifyThrowable $e) {
             expect($e)->toBeInstanceOf(InvalidBaseModelException::class);
         }
     });

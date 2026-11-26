@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
-use Attributes\Strictify\Exceptions\BaseException;
 use Attributes\Strictify\Exceptions\MaxDepthException;
+use Attributes\Strictify\Exceptions\StrictifyThrowable;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Type;
 use TypeError;
@@ -54,13 +54,13 @@ describe('validation nesting depth', function () {
 
     it('throws a catchable exception past the limit instead of crashing', function (int $depth) {
         expect(fn () => validate(depth_payload($depth), new DepthNode))->toThrow(
-            BaseException::class,
+            MaxDepthException::class,
             'Maximum validation nesting depth of 512 exceeded',
         );
     })->with([512, 1000, 5000]);
 
     it('unwinds the depth counter after a deep failure', function () {
-        expect(fn () => validate(depth_payload(600), new DepthNode))->toThrow(BaseException::class)
+        expect(fn () => validate(depth_payload(600), new DepthNode))->toThrow(MaxDepthException::class)
             ->and(validate(depth_payload(3), new DepthNode)->label)
             ->toBe('n2');
     });
@@ -91,7 +91,7 @@ describe('validation nesting depth parameter', function () {
 
     it('stops at the depth passed to validate()', function () {
         expect(fn () => validate(depth_payload(10), new DepthNode, maxDepth: 10))->toThrow(
-            BaseException::class,
+            MaxDepthException::class,
             'Maximum validation nesting depth of 10 exceeded',
         );
     });
@@ -116,11 +116,11 @@ describe('validation nesting depth parameter', function () {
     });
 
     it('restores the default limit after a limited run', function () {
-        expect(fn () => validate(depth_payload(3), new DepthNode, maxDepth: 2))->toThrow(BaseException::class)
+        expect(fn () => validate(depth_payload(3), new DepthNode, maxDepth: 2))->toThrow(MaxDepthException::class)
             ->and(validate(depth_payload(5), new DepthNode)->label)
             ->toBe('n4')
             ->and(fn () => validate(depth_payload(512), new DepthNode))
-            ->toThrow(BaseException::class, 'Maximum validation nesting depth of 512 exceeded');
+            ->toThrow(MaxDepthException::class, 'Maximum validation nesting depth of 512 exceeded');
     });
 
     it('rejects a depth below one', function (int $maxDepth) {
@@ -135,7 +135,7 @@ describe('validation nesting depth parameter', function () {
         // payload is the raw data of the DepthNode argument
         expect(call(depth_target(...), depth_payload(4), maxDepth: 10))->toBe('n3')
             ->and(fn () => call(depth_target(...), depth_payload(10), maxDepth: 10))
-            ->toThrow(BaseException::class, 'Maximum validation nesting depth of 10 exceeded');
+            ->toThrow(MaxDepthException::class, 'Maximum validation nesting depth of 10 exceeded');
     });
 
     it('rejects a depth below one for call() too', function () {
@@ -147,13 +147,13 @@ describe('validation nesting depth parameter', function () {
 });
 
 describe('MaxDepthException', function () {
-    it('is a BaseException of its own class', function () {
+    it('is a StrictifyThrowable of its own class', function () {
         expect(fn () => validate(depth_payload(600), new DepthNode))->toThrow(
             MaxDepthException::class,
             'Maximum validation nesting depth of 512 exceeded',
         )
             ->and(new MaxDepthException('x'))
-            ->toBeInstanceOf(BaseException::class);
+            ->toBeInstanceOf(StrictifyThrowable::class);
     });
 
     it('reports the limit that was passed to validate()', function () {

@@ -134,9 +134,9 @@ zend_result as_get_attribute_value(zval *ret, void *attribute, uint32_t arg_num,
     return zend_get_attribute_value(ret, (const zend_attribute *)attribute, arg_num, scope);
 }
 
-void as_throw_value_error(const char *message)
+void as_throw_type_error(const char *message)
 {
-    zend_throw_exception_ex(zend_ce_value_error, 0, "%s", message);
+    zend_throw_exception_ex(zend_ce_type_error, 0, "%s", message);
 }
 
 int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len2)
@@ -263,6 +263,6 @@ zend_string *as_translate_error(const char *key, size_t key_len, const char *mes
     }
 
     zval_ptr_dtor(&retval);
-    as_throw_value_error("The default error messages translator must return ?string");
+    as_throw_type_error("The default error messages translator must return ?string");
     return NULL;
 }

@@ -514,7 +514,7 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
         }
 
         if (Z_TYPE_P(&value) != IS_UNDEF) {
-            as_throw_value_error("Only string arguments are valid for Attributes\\Strictify\\Fields\\ErrorMessage::construct(...)");
+            as_throw_type_error("Only string arguments are valid for Attributes\\Strictify\\Fields\\ErrorMessage::construct(...)");
             return NULL;
         }
 
