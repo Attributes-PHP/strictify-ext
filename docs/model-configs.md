@@ -29,7 +29,7 @@ Inheritance is all-or-nothing: a child without its own `#[ModelConfigs]` uses th
 !!! note "Inheritance is class-based only"
     `ModelConfigs` is inherited **only through the class hierarchy** (a child class from its parent class). A nested model — a `BaseModel` used as a property of another model — **never** inherits the enclosing model's configs: each model class resolves its own `#[ModelConfigs]` (or its parent class's), so `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` apply per model class.
 
-An invalid option value throws a `ValueError` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
+An invalid option value throws an `InvalidBaseModelException` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
 
 ## Options
 
@@ -45,7 +45,7 @@ An invalid option value throws a `ValueError` listing the valid options (e.g. `a
 
 Error message translation is not a `ModelConfigs` option: it is a static callable on the dedicated `ErrorTranslator` class, set with `ErrorTranslator::set()` and read back with `ErrorTranslator::get()` (null until set) — see [Error messages](/guides/error-messages/).
 
-Option values are read from the attribute arguments and checked against the types above: a `bool` option only accepts `true`/`false`, a `?string` option only a string (at most 127 characters) or `null`. A wrong type throws a `ValueError` instead of being cast, so `#[ModelConfigs(strict: 1)]` or `#[ModelConfigs(strToLower: 'yes')]` never silently flips a flag:
+Option values are read from the attribute arguments and checked against the types above: a `bool` option only accepts `true`/`false`, a `?string` option only a string (at most 127 characters) or `null`. A wrong type throws an `InvalidBaseModelException` instead of being cast, so `#[ModelConfigs(strict: 1)]` or `#[ModelConfigs(strToLower: 'yes')]` never silently flips a flag:
 
 ```php
 <?php
@@ -53,11 +53,11 @@ Option values are read from the attribute arguments and checked against the type
 class User extends BaseModel {}
 
 validate([], new User());
-// ValueError: Attributes\Strictify\ModelConfigs::__construct():
+// InvalidBaseModelException: Attributes\Strictify\ModelConfigs::__construct():
 //   Argument #6 ($strict) must be of type bool, int given
 ```
 
-An unknown value for an enumerated option (`aliasGenerator`, `extra`) throws a `ValueError` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
+An unknown value for an enumerated option (`aliasGenerator`, `extra`) throws an `InvalidBaseModelException` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
 
 ## aliasGenerator
 

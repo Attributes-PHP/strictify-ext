@@ -118,6 +118,10 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 - Attribute: no
 
+### `Attributes\Strictify\Exceptions\MaxDepthException` — class extends `BaseException`
+
+- Attribute: no
+
 ## `Attributes\Strictify\Fields`
 
 ### `Attributes\Strictify\Fields\Alias` — readonly class implements Field

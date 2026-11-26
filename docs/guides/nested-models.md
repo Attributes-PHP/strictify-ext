@@ -195,11 +195,11 @@ Arguments of a composed `new` expression are validated at construction: an unsup
 
 ## Recursion and the depth limit
 
-A self-referencing model (`public ?Node $child`) validates as deep as the payload goes. To keep a hostile payload from exhausting the C stack, `validate()` stops 512 nested model levels deep and throws a catchable `Attributes\Strictify\Exceptions\BaseException`:
+A self-referencing model (`public ?Node $child`) validates as deep as the payload goes. To keep a hostile payload from exhausting the C stack, `validate()` stops 512 nested model levels deep and throws a catchable `Attributes\Strictify\Exceptions\MaxDepthException`:
 
 ```php
 <?php
-// BaseException: Maximum validation nesting depth of 512 exceeded:
+// MaxDepthException: Maximum validation nesting depth of 512 exceeded:
 //   the payload nests models or arrays too deeply.
 ```
 
