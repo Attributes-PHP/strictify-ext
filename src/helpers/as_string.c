@@ -30,76 +30,56 @@ STATIC_ZEND_INLINE bool is_alphanumeric(char c)
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9');
 }
 
-STATIC_INLINE void to_pascal_case(as_string *input, as_string *output)
+/*
+ * The four alias generators differ in two knobs only: word boundaries are
+ * either dropped with the next letter capitalized (pascal/camel) or folded
+ * into a separator (snake/kebab), and the first letter is upper-, lower-
+ * cased or left alone.
+ */
+typedef enum {
+    AS_CASE_PASCAL,
+    AS_CASE_CAMEL,
+    AS_CASE_SNAKE,
+    AS_CASE_KEBAB,
+} as_case;
+
+STATIC_INLINE void to_case(as_string *input, as_string *output, as_case mode)
 {
-    bool next_upper = true;
-    for (size_t i = 0; i < input->length; i++) {
-        char c = input->value[i];
-
-        if (c == '_' || c == '-' || c == ' ') {
-            next_upper = true;
-            continue;
-        }
-
-        if (next_upper && is_lowercase(c)) {
-            output->value[output->length++] = toupper(c);
-            next_upper = false;
-        } else if (next_upper && is_uppercase(c)) {
-            output->value[output->length++] = c;
-            next_upper = false;
-        } else {
-            output->value[output->length++] = c;
-        }
-    }
-
-    output->value[output->length] = '\0';
-}
-
-STATIC_INLINE void to_camel_case(as_string *input, as_string *output)
-{
-    bool next_upper = false;
+    const bool word_boundary = mode == AS_CASE_PASCAL || mode == AS_CASE_CAMEL;
+    const char separator = mode == AS_CASE_SNAKE ? '_' : '-';
+    bool next_upper = mode == AS_CASE_PASCAL;
     bool first_char = true;
 
     for (size_t i = 0; i < input->length; i++) {
-        char c = input->value[i];
+        const char c = input->value[i];
 
         if (c == '_' || c == '-' || c == ' ') {
-            next_upper = true;
+            if (word_boundary) {
+                next_upper = true;
+            } else {
+                output->value[output->length++] = separator;
+            }
             continue;
         }
 
-        if (first_char) {
-            output->value[output->length++] = tolower(c);
+        if (word_boundary) {
+            if (first_char && mode == AS_CASE_CAMEL) {
+                output->value[output->length++] = tolower(c);
+            } else if (next_upper) {
+                output->value[output->length++] = is_lowercase(c) ? toupper(c) : c;
+            } else {
+                output->value[output->length++] = c;
+            }
+
             first_char = false;
             next_upper = false;
-        } else if (next_upper && is_lowercase(c)) {
-            output->value[output->length++] = toupper(c);
-            next_upper = false;
-        } else if (next_upper && is_uppercase(c)) {
-            output->value[output->length++] = c;
-            next_upper = false;
-        } else {
-            output->value[output->length++] = c;
-        }
-    }
-
-    output->value[output->length] = '\0';
-}
-
-STATIC_INLINE void to_snake_case(as_string *input, as_string *output)
-{
-    for (size_t i = 0; i < input->length; i++) {
-        char c = input->value[i];
-
-        if (c == '-' || c == ' ') {
-            output->value[output->length++] = '_';
             continue;
         }
 
         if (is_uppercase(c)) {
-            // Add underscore before uppercase letter (except at start)
-            if (output->length > 0 && output->value[output->length - 1] != '_') {
-                output->value[output->length++] = '_';
+            // Add the separator before an uppercase letter, except at the start
+            if (output->length > 0 && output->value[output->length - 1] != separator) {
+                output->value[output->length++] = separator;
             }
             output->value[output->length++] = tolower(c);
         } else {
@@ -110,28 +90,24 @@ STATIC_INLINE void to_snake_case(as_string *input, as_string *output)
     output->value[output->length] = '\0';
 }
 
-STATIC_INLINE void to_kebab_case(as_string *input, as_string *output)
+/*
+ * Converts a property name to the requested naming convention. Worst case
+ * is two bytes per input byte (a separator inserted before every letter),
+ * which every mode fits in.
+ */
+static zend_string *as_to_case(zend_string *str, as_case mode)
 {
-    for (size_t i = 0; i < input->length; i++) {
-        char c = input->value[i];
+    as_string input, output;
+    input.value = ZSTR_VAL(str);
+    input.length = ZSTR_LEN(str);
 
-        if (c == '_' || c == ' ') {
-            output->value[output->length++] = '-';
-            continue;
-        }
+    output.value = as_emalloc(input.length * 2 + 1);
+    output.length = 0;
 
-        if (is_uppercase(c)) {
-            // Add dash before uppercase letter (except at start)
-            if (output->length > 0 && output->value[output->length - 1] != '-') {
-                output->value[output->length++] = '-';
-            }
-            output->value[output->length++] = tolower(c);
-        } else {
-            output->value[output->length++] = c;
-        }
-    }
-
-    output->value[output->length] = '\0';
+    to_case(&input, &output, mode);
+    zend_string *result = as_string_init(output.value, output.length, 0);
+    as_efree(output.value);
+    return result;
 }
 
 /**
@@ -140,18 +116,7 @@ STATIC_INLINE void to_kebab_case(as_string *input, as_string *output)
  */
 zend_string *as_to_pascal_case(zend_string *str)
 {
-    as_string input, output;
-    input.value = ZSTR_VAL(str);
-    input.length = ZSTR_LEN(str);
-
-    // Worst case: same length as input
-    output.value = as_emalloc(input.length + 1);
-    output.length = 0;
-
-    to_pascal_case(&input, &output);
-    zend_string *result = as_string_init(output.value, output.length, 0);
-    as_efree(output.value);
-    return result;
+    return as_to_case(str, AS_CASE_PASCAL);
 }
 
 /**
@@ -160,18 +125,7 @@ zend_string *as_to_pascal_case(zend_string *str)
  */
 zend_string *as_to_camel_case(zend_string *str)
 {
-    as_string input, output;
-    input.value = ZSTR_VAL(str);
-    input.length = ZSTR_LEN(str);
-
-    // Worst case: same length as input
-    output.value = as_emalloc(input.length + 1);
-    output.length = 0;
-
-    to_camel_case(&input, &output);
-    zend_string *result = as_string_init(output.value, output.length, 0);
-    as_efree(output.value);
-    return result;
+    return as_to_case(str, AS_CASE_CAMEL);
 }
 
 /**
@@ -180,18 +134,7 @@ zend_string *as_to_camel_case(zend_string *str)
  */
 zend_string *as_to_snake_case(zend_string *str)
 {
-    as_string input, output;
-    input.value = ZSTR_VAL(str);
-    input.length = ZSTR_LEN(str);
-
-    // Worst case: each character becomes 2 (char + underscore)
-    output.value = as_emalloc(input.length * 2 + 1);
-    output.length = 0;
-
-    to_snake_case(&input, &output);
-    zend_string *result = as_string_init(output.value, output.length, 0);
-    as_efree(output.value);
-    return result;
+    return as_to_case(str, AS_CASE_SNAKE);
 }
 
 /**
@@ -200,18 +143,7 @@ zend_string *as_to_snake_case(zend_string *str)
  */
 zend_string *as_to_kebab_case(zend_string *str)
 {
-    as_string input, output;
-    input.value = ZSTR_VAL(str);
-    input.length = ZSTR_LEN(str);
-
-    // Worst case scenario: each character becomes 2 (char + dash)
-    output.value = as_emalloc(input.length * 2 + 1);
-    output.length = 0;
-
-    to_kebab_case(&input, &output);
-    zend_string *result = as_string_init(output.value, output.length, 0);
-    as_efree(output.value);
-    return result;
+    return as_to_case(str, AS_CASE_KEBAB);
 }
 
 /**

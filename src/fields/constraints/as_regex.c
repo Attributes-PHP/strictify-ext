@@ -61,23 +61,12 @@ ZEND_METHOD(AS_Fields_Constraints_Regex, __construct)
     Z_PARAM_STR(regex)
     ZEND_PARSE_PARAMETERS_END();
 
-    zend_update_property_string(AS_Fields_Constraints_Regex_ce, Z_OBJ_P(getThis()), "regex", sizeof("regex") - 1, ZSTR_VAL(regex));
+    /* zend_update_property_str (not _string): a pattern may legitimately
+     * carry bytes that strlen would cut at, and truncating it would change
+     * the pattern reported by the error message. */
+    zend_update_property_str(AS_Fields_Constraints_Regex_ce, Z_OBJ_P(getThis()), "regex", sizeof("regex") - 1, regex);
 }
 
-void as_register_Regex_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Regex", class_AS_Fields_Constraints_Regex_methods);
-    AS_Fields_Constraints_Regex_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Regex_ce != NULL);
-    AS_Fields_Constraints_Regex_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Regex_ce, 1, AS_Fields_Field_ce);
-
-    as_declare_typed_property(AS_Fields_Constraints_Regex_ce, "regex", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING));
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Regex_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(
+    Regex, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS, as_declare_typed_property(AS_Fields_Constraints_Regex_ce, "regex", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING));
+)

@@ -12,7 +12,6 @@ use Attributes\Strictify\Fields\Constraints\Min;
 use Attributes\Strictify\Fields\ErrorMessage;
 use RuntimeException;
 use TypeError;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -200,7 +199,7 @@ describe('error message translation', function () {
         validate([], $model);
     })->throws(RuntimeException::class, 'boom required');
 
-    it('throws ValueError when the translator returns a non-string', function () {
+    it('throws TypeError when the translator returns a non-string', function () {
         ErrorTranslator::set(fn (?string $key, string $message): mixed => 42);
 
         $model = new class extends BaseModel {
@@ -208,11 +207,11 @@ describe('error message translation', function () {
         };
 
         validate([], $model);
-    })->throws(ValueError::class, 'must return ?string');
+    })->throws(TypeError::class, 'must return ?string');
 
     it('throws TypeError when registering a non-callable translator', function () {
         ErrorTranslator::set('not a callable');
-    })->throws(TypeError::class, 'must be callable');
+    })->throws(TypeError::class, 'must be a valid callback');
 
     it('does not translate userland constraint messages', function () {
         $seen = [];

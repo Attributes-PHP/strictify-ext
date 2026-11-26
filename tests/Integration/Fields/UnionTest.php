@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Fields;
 
 use Attributes\Strictify\BaseModel;
-use Attributes\Strictify\Exceptions\BaseException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;
@@ -146,7 +145,9 @@ describe('Union attribute array data validation', function () {
         $model = new
             #[ModelConfigs(strict: false)]
             class extends BaseModel {
-                #[Sequence(of: new Union(T_BOOL, new Intersection(CountableInterface::class, IterableInterface::class)))]
+                #[Sequence(
+                    of: new Union(T_BOOL, new Intersection(CountableInterface::class, IterableInterface::class)),
+                )]
                 public array $items;
             };
 
@@ -222,7 +223,7 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 42], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint (integer or float); got (integer).'
+        'must contain the same type-hints as the native union hint (integer or float); got (integer).',
     );
 
     it('throws InvalidBaseModelException when the arms add a type the hint does not have', function () {
@@ -234,7 +235,7 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 42], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint (integer or float); got (integer, float or string).'
+        'must contain the same type-hints as the native union hint (integer or float); got (integer, float or string).',
     );
 
     it('requires T_NULL in the arms of a nullable hint', function () {
@@ -246,15 +247,17 @@ describe('Union declared directly on a non-array property', function () {
         validate(['example' => 'a'], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint (string or null); got (string).'
+        'must contain the same type-hints as the native union hint (string or null); got (string).',
     );
 
     it('reports the hint and arm union types in the full error message', function () {
         try {
-            validate(['example' => 1], new UnionHintMismatch());
+            validate(['example' => 1], new UnionHintMismatch);
             expect(false)->toBeTrue();
         } catch (InvalidBaseModelException $e) {
-            expect($e->getMessage())->toBe('Union attribute on property Attributes\\Strictify\\Tests\\Integration\\Fields\\UnionHintMismatch::$example must contain the same type-hints as the native union hint (integer or float); got (integer).');
+            expect($e->getMessage())->toBe(
+                'Union attribute on property Attributes\\Strictify\\Tests\\Integration\\Fields\\UnionHintMismatch::$example must contain the same type-hints as the native union hint (integer or float); got (integer).',
+            );
         }
     });
 
@@ -343,7 +346,7 @@ describe('Union declared directly on a non-array property', function () {
         };
 
         expect(validate(['example' => new stdClass], $model)->example)->toBeInstanceOf(stdClass::class)
-            ->and(validate(['example' => new DateTimeImmutable()], $model)->example)
+            ->and(validate(['example' => new DateTimeImmutable], $model)->example)
             ->toBeInstanceOf(DateTimeImmutable::class);
     });
 
@@ -353,10 +356,10 @@ describe('Union declared directly on a non-array property', function () {
             public stdClass|DateTimeImmutable $example;
         };
 
-        validate(['example' => new stdClass()], $model);
+        validate(['example' => new stdClass], $model);
     })->throws(
         InvalidBaseModelException::class,
-        'must contain the same type-hints as the native union hint (stdClass or DateTimeImmutable); got (stdClass).'
+        'must contain the same type-hints as the native union hint (stdClass or DateTimeImmutable); got (stdClass).',
     );
 
     it('joins the arm names in the error message', function () {
@@ -403,7 +406,10 @@ describe('array attribute placement rules', function () {
         };
 
         validate(['count' => 5], $model);
-    })->throws(InvalidBaseModelException::class, 'Sequence/Dict can only be declared on array-like properties');
+    })->throws(
+        InvalidBaseModelException::class,
+        'Sequence/Dict/Intersection can only be declared on array-like properties',
+    );
 
     it('throws a ValueError for Dict on a union property without an array arm', function () {
         $model = new class extends BaseModel {
@@ -412,7 +418,10 @@ describe('array attribute placement rules', function () {
         };
 
         validate(['ratio' => 1.5], $model);
-    })->throws(InvalidBaseModelException::class, 'Sequence/Dict can only be declared on array-like properties');
+    })->throws(
+        InvalidBaseModelException::class,
+        'Sequence/Dict/Intersection can only be declared on array-like properties',
+    );
 
     it('reports Must be array for a non-array value on a mixed property with Sequence', function () {
         $model = new class extends BaseModel {

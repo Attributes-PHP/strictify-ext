@@ -19,12 +19,17 @@ class ParentModel extends BaseModel
 }
 
 class ChildModel extends ParentModel {} // inherits strict: false
+
+#[ModelConfigs(strToLower: true)] // its own attribute wins: strict is back to the default true
+class OtherChildModel extends ParentModel {}
 ```
+
+Inheritance is all-or-nothing: a child without its own `#[ModelConfigs]` uses the closest ancestor's declaration as a whole, and a child that declares one uses **only** that declaration — the options it omits fall back to the defaults in the table below, not to the parent's values.
 
 !!! note "Inheritance is class-based only"
     `ModelConfigs` is inherited **only through the class hierarchy** (a child class from its parent class). A nested model — a `BaseModel` used as a property of another model — **never** inherits the enclosing model's configs: each model class resolves its own `#[ModelConfigs]` (or its parent class's), so `aliasGenerator`, `strict`, `extra`, the string normalizations and `stopAtFirstError` apply per model class.
 
-An invalid option value throws a `ValueError` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
+An invalid option value throws an `InvalidBaseModelException` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
 
 ## Options
 
@@ -39,6 +44,20 @@ An invalid option value throws a `ValueError` listing the valid options (e.g. `a
 | `stripWhitespace` | `bool` | `false` | trim string values before validation |
 
 Error message translation is not a `ModelConfigs` option: it is a static callable on the dedicated `ErrorTranslator` class, set with `ErrorTranslator::set()` and read back with `ErrorTranslator::get()` (null until set) — see [Error messages](/guides/error-messages/).
+
+Option values are read from the attribute arguments and checked against the types above: a `bool` option only accepts `true`/`false`, a `?string` option only a string (at most 127 characters) or `null`. A wrong type throws an `InvalidBaseModelException` instead of being cast, so `#[ModelConfigs(strict: 1)]` or `#[ModelConfigs(strToLower: 'yes')]` never silently flips a flag:
+
+```php
+<?php
+#[ModelConfigs(strict: 1)]
+class User extends BaseModel {}
+
+validate([], new User());
+// InvalidBaseModelException: Attributes\Strictify\ModelConfigs::__construct():
+//   Argument #6 ($strict) must be of type bool, int given
+```
+
+An unknown value for an enumerated option (`aliasGenerator`, `extra`) throws an `InvalidBaseModelException` listing the valid options (e.g. `aliasGenerator` accepts `pascal, camel, snake, kebab`).
 
 ## aliasGenerator
 
@@ -92,7 +111,7 @@ Controls what happens with input keys that resolve to no property of the model:
 - `'allow'`: unknown keys are stored as dynamic properties on the model instance. Integer keys have no property name and keys naming a declared property (e.g. the raw property name when `aliasGenerator` renames the expected key) are never stored.
 - `'forbid'`: every unknown key produces an error keyed by the raw key (dot path for nested models), with the default message `Extra inputs are not permitted`, translatable under the `extra` key. Keys produced by `aliasGenerator`/`Alias` count as known, integer keys are reported under their numeric name, and `stopAtFirstError` reports only the first one.
 
-Each model validates with its own class's configs: a `null` extra is resolved per model class at validation time, against that class's own `#[\\AllowDynamicProperties]`, and a non-null `extra` declared on an enclosing model never applies to its nested models.
+Each model validates with its own class's configs: a `null` extra is resolved per model class at validation time, against that class's own `#[\AllowDynamicProperties]`, and a non-null `extra` declared on an enclosing model never applies to its nested models. A subclass without its own `#[ModelConfigs]` inherits the ancestor's `extra` along with the rest of the declaration; when nothing in the chain declares it, it stays `null` and each class resolves it against its own `#[\AllowDynamicProperties]` flag.
 
 ```php
 <?php
@@ -126,6 +145,8 @@ class User extends BaseModel
 
 validate(['name' => '  JOHN DOE  ', 'age' => 30], new User())->name; // "john doe"
 ```
+
+Case conversion is byte-wise ASCII: `'ÄNDRE'` lowercases to `'Ändre'`, not `'ändre'`, and no locale rule applies. Array elements are never normalized — only the string value bound to a property is, so a `string` property holding a serialized list keeps its inner casing. The normalized value is what the constraints and the type check see.
 
 ## Resolved-config getters
 

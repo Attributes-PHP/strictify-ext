@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\DateTime;
 use DateTimeZone;
@@ -85,7 +86,7 @@ describe('DateTime constraint constructor argument validation', function () {
         expect(fn () => new DateTime(timezone: $timezone))
             ->toThrow(
                 ValueError::class,
-                "Argument #2 (\$timezone) must be a valid timezone identifier, '$timezone' given",
+                "Argument #2 (\$timezone) must be a valid timezone identifier, '{$timezone}' given",
             );
     })->with([
         'Nope/Nope',
@@ -169,5 +170,5 @@ describe('DateTime validation', function () {
         };
 
         validate(['value' => '2026-10-16'], $model);
-    })->throws(ValueError::class, 'Argument #2 ($timezone) must be a valid timezone identifier');
+    })->throws(InvalidBaseModelException::class, 'Argument #2 ($timezone) must be a valid timezone identifier');
 });

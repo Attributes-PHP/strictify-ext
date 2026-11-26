@@ -9,7 +9,6 @@ typedef struct {
     char *class_name;
     char *method_name;
     int parameter_number;
-    char *name;
 } as_invalid_method_parameter;
 
 /* Registration function */

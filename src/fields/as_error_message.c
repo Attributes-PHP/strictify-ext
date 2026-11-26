@@ -40,6 +40,11 @@ ZEND_METHOD(AS_Fields_ErrorMessage, __construct)
         AS_Fields_ErrorMessage_ce, str_name, sizeof(str_name) - 1, as_default_error_type_messages[error_type], strlen(as_default_error_type_messages[error_type]), ZEND_ACC_PUBLIC | ZEND_ACC_READONLY \
     );
 
+/* Kept out of the header: as_error_messages.c includes it and would otherwise
+ * carry a relocation to this constructor in an object file that does not
+ * define it, which fails to link in the Ceedling unit-test build. */
+static const zend_function_entry class_AS_Fields_ErrorMessage_methods[] = {ZEND_ME(AS_Fields_ErrorMessage, __construct, arginfo_class_AS_Fields_ErrorMessage___construct, ZEND_ACC_PUBLIC) ZEND_FE_END};
+
 void as_register_ErrorMessage_class(void)
 {
     zend_class_entry ce;

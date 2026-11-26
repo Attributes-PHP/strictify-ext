@@ -14,8 +14,8 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 | Function | Signature |
 | -------- | --------- |
-| `validate()` | `function validate(array $rawData, BaseModel $model): BaseModel` |
-| `call()` | `function call(string|callable $function, array $params, array|\ArrayAccess $dependencies = []): mixed` |
+| `validate()` | `function validate(array $rawData, BaseModel $model, int $maxDepth = 512): BaseModel` |
+| `call()` | `function call(string|callable $function, array $params, array|\ArrayAccess $dependencies = [], int $maxDepth = 512): mixed` |
 
 ### `Attributes\Strictify\BaseModel` — abstract class
 
@@ -99,11 +99,11 @@ description: "Generated API reference for the Strictify extension: functions, cl
 
 ## `Attributes\Strictify\Exceptions`
 
-### `Attributes\Strictify\Exceptions\BaseException` — class extends `\Exception`
+### `Attributes\Strictify\Exceptions\StrictifyThrowable` — interface extends `\Throwable`
 
 - Attribute: no
 
-### `Attributes\Strictify\Exceptions\ValidationException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\ValidationException` — class extends `\Exception` implements StrictifyThrowable
 
 - Attribute: no
 
@@ -114,7 +114,15 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | `public function __construct(array $allErrors)` |
 | `public function getErrors(): array` |
 
-### `Attributes\Strictify\Exceptions\InvalidBaseModelException` — class extends `BaseException`
+### `Attributes\Strictify\Exceptions\InvalidBaseModelException` — class extends `\Error` implements StrictifyThrowable
+
+- Attribute: no
+
+### `Attributes\Strictify\Exceptions\MaxDepthException` — class extends `\Error` implements StrictifyThrowable
+
+- Attribute: no
+
+### `Attributes\Strictify\Exceptions\CallException` — class extends `\ArgumentCountError` implements StrictifyThrowable
 
 - Attribute: no
 
@@ -185,26 +193,53 @@ description: "Generated API reference for the Strictify extension: functions, cl
 | -------- | ------- |
 | `public string $required` | `'Field is required'` |
 | `public string $type` | `'Must be {expected}'` |
-| `public string $alpha_dash` | `'Must only contain letters, numbers, dashes and underscores'` |
-| `public string $alpha_dash_type` | `'Must be a string containing only letters, numbers, dashes and underscores'` |
+| `public string $alphaDash` | `'Must only contain letters, numbers, dashes and underscores'` |
+| `public string $alphaDashType` | `'Must be a string containing only letters, numbers, dashes and underscores'` |
 | `public string $ascii` | `'Must only contain ASCII characters'` |
-| `public string $ascii_type` | `'Must be a string containing only ASCII characters'` |
+| `public string $asciiType` | `'Must be a string containing only ASCII characters'` |
 | `public string $between` | `'Must be between {expected}'` |
-| `public string $between_type` | `'Must be a number between {expected}'` |
+| `public string $betweenType` | `'Must be a number between {expected}'` |
 | `public string $contains` | `'Must contain {expected}'` |
 | `public string $datetime` | `'Must be a datetime in the format {expected}'` |
-| `public string $ends_with` | `'Must end with one of: {expected}'` |
+| `public string $endsWith` | `'Must end with one of: {expected}'` |
 | `public string $in` | `'Must be one of: {expected}'` |
 | `public string $max` | `'Must be at most {expected}'` |
 | `public string $min` | `'Must be at least {expected}'` |
-| `public string $multiple_of` | `'Must be a multiple of {expected}'` |
+| `public string $multipleOf` | `'Must be a multiple of {expected}'` |
 | `public string $regex` | `'Must match the pattern {expected}'` |
 | `public string $size` | `'Must have a size {expected}'` |
-| `public string $starts_with` | `'Must start with one of: {expected}'` |
+| `public string $startsWith` | `'Must start with one of: {expected}'` |
 | `public string $ulid` | `'Must be a valid ULID'` |
 | `public string $uuid` | `'Must be a valid UUID'` |
+| `public string $email` | `'Must be a valid email address'` |
+| `public string $emailDomain` | `'Must be an email address on an allowed domain: {expected}'` |
+| `public string $url` | `'Must be a valid URL'` |
+| `public string $urlProtocol` | `'Must be a URL using an allowed protocol: {expected}'` |
+| `public string $urlDomain` | `'Must be a URL on an allowed domain: {expected}'` |
+| `public string $domain` | `'Must be a valid domain name'` |
+| `public string $ip` | `'Must be a valid IP address'` |
+| `public string $iban` | `'Must be a valid IBAN'` |
+| `public string $isbn` | `'Must be a valid ISBN'` |
+| `public string $creditCard` | `'Must be a valid credit card number'` |
+| `public string $version` | `'Must be a valid version string'` |
+| `public string $macAddress` | `'Must be a valid MAC address'` |
+| `public string $alnum` | `'Must contain only letters and numbers'` |
+| `public string $alpha` | `'Must contain only letters'` |
+| `public string $digit` | `'Must contain only digits'` |
+| `public string $xdigit` | `'Must contain only hexadecimal digits'` |
+| `public string $slug` | `'Must be a valid slug'` |
+| `public string $base64` | `'Must be valid base64'` |
+| `public string $json` | `'Must be valid JSON'` |
+| `public string $hexRgbColor` | `'Must be a valid hex RGB color'` |
+| `public string $even` | `'Must be an even number'` |
+| `public string $odd` | `'Must be an odd number'` |
+| `public string $positive` | `'Must be a positive number'` |
+| `public string $negative` | `'Must be a negative number'` |
+| `public string $primeNumber` | `'Must be a prime number'` |
+| `public string $containsAny` | `'Must contain at least one of: {expected}'` |
 | `public string $union` | `'Must be {expected}'` |
-| `public string $sequence_keys` | `'Must be a sequential list (keys 0, 1, 2, ...)'` |
+| `public string $sequenceKeys` | `'Must be a sequential list (keys 0, 1, 2, ...)'` |
+| `public string $uniqueValues` | `'Must contain only unique values'` |
 
 ### `Attributes\Strictify\Fields\Field` — interface
 

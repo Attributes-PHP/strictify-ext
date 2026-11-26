@@ -55,20 +55,6 @@ ZEND_METHOD(AS_Fields_Constraints_Max, __construct)
     zend_update_property(AS_Fields_Constraints_Max_ce, Z_OBJ_P(getThis()), "value", sizeof("value") - 1, value);
 }
 
-void as_register_Max_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Max", class_AS_Fields_Constraints_Max_methods);
-    AS_Fields_Constraints_Max_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Max_ce != NULL);
-    AS_Fields_Constraints_Max_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Max_ce, 1, AS_Fields_Field_ce);
-
-    as_declare_typed_property(AS_Fields_Constraints_Max_ce, "value", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_LONG | MAY_BE_DOUBLE));
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Max_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(
+    Max, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS, as_declare_typed_property(AS_Fields_Constraints_Max_ce, "value", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_LONG | MAY_BE_DOUBLE));
+)

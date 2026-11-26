@@ -35,6 +35,9 @@ literal-named-argument = { enabled = false }
 halstead = { enabled = false }
 single-class-per-file = { enabled = false }
 file-name = { enabled = false }
+# The error-message fixtures declare one property per catalog key, so their
+# count is data, not design bloat.
+too-many-properties = { threshold = 50 }
 
 [analyzer]
 plugins = []

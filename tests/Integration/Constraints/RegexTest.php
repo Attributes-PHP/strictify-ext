@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Regex;
 use TypeError;
@@ -62,24 +63,17 @@ describe('Regex validation', function () {
         }
     });
 
-    it('reports an error for an invalid pattern, like preg_match', function () {
+    it('rejects a pattern that does not compile when the field is first compiled', function () {
         $model = new class extends BaseModel {
             #[Regex('/(/')]
             public string $value;
         };
 
-        // The PCRE compilation warning is part of the behavior: swallow it
-        // so PHPUnit does not turn it into a test warning.
-        set_error_handler(static fn (): bool => true);
-        try {
-            try {
-                validate(['value' => 'x'], $model);
-                expect(false)->toBeTrue();
-            } catch (ValidationException $e) {
-                expect($e->getErrors())->toBe(['value' => ["Must match the pattern '/(/'"]]);
-            }
-        } finally {
-            restore_error_handler();
-        }
+        // The pattern is validated at compile time, so validate() raises no
+        // PCRE warning and the malformed model fails with a ValueError.
+        expect(fn () => validate(['value' => 'x'], $model))->toThrow(
+            InvalidBaseModelException::class,
+            '::$value: the pattern does not compile: missing closing parenthesis at offset 1.',
+        );
     });
 });

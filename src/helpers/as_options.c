@@ -2,8 +2,10 @@
 #include <string.h>
 #include "Zend/zend_API.h"
 #include "Zend/zend_exceptions.h"
+#include "Zend/zend_smart_str.h"
 #include "ext/spl/spl_exceptions.h"
 #include "as_wrappers.h"
+#include "../as_exception.h"
 
 bool as_validate_method_parameter(char *option, char **all_valid_options, size_t length, as_invalid_method_parameter *invalid_parameter_error)
 {
@@ -19,23 +21,19 @@ bool as_validate_method_parameter(char *option, char **all_valid_options, size_t
 
 STATIC_INLINE void throw_invalid_parameter_exception(char *option, char **all_options, size_t length, as_invalid_method_parameter *invalid_option_error)
 {
-    // Create list of valid options
-    char options_list[256] = "";
-    size_t pos = 0;
+    smart_str options_list = {0};
+
     for (size_t i = 0; i < length; i++) {
         if (i > 0) {
-            if (pos + 2 < sizeof(options_list)) {
-                options_list[pos++] = ',';
-                options_list[pos++] = ' ';
-            }
+            smart_str_appends(&options_list, ", ");
         }
-        size_t opt_len = strlen(all_options[i]);
-        if (pos + opt_len < sizeof(options_list)) {
-            memcpy(options_list + pos, all_options[i], opt_len);
-            pos += opt_len;
-        }
+        smart_str_appendl(&options_list, all_options[i], strlen(all_options[i]));
     }
-    options_list[pos] = '\0';
 
-    zend_value_error("%s::%s: Argument #%d must be of one of the following options: %s", invalid_option_error->class_name, invalid_option_error->method_name, invalid_option_error->parameter_number, options_list);
+    smart_str_0(&options_list);
+    zend_throw_exception_ex(
+        class_AS_Exceptions_InvalidBaseModelException, 0, "%s::%s: Argument #%d must be of one of the following options: %s", invalid_option_error->class_name, invalid_option_error->method_name,
+        invalid_option_error->parameter_number, ZSTR_VAL(options_list.s)
+    );
+    smart_str_free(&options_list);
 }

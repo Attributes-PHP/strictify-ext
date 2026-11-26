@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\ModelConfigs;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -163,7 +163,7 @@ describe('validate function model configs handling', function () {
 
         validate(['name' => 'test'], $model);
     })->throws(
-        ValueError::class,
+        InvalidBaseModelException::class,
         'Attributes\Strictify\ModelConfigs::__construct(): Argument #1 must be of one of the following options: pascal, camel, snake, kebab',
     );
 });

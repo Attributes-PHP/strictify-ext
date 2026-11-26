@@ -2,12 +2,16 @@
 /** @generate-class-entries */
 
 namespace Attributes\Strictify\Exceptions {
-    class BaseException extends \Exception {}
+    interface StrictifyThrowable extends \Throwable {}
 
-    class ValidationException extends BaseException {
+    class ValidationException extends \Exception implements StrictifyThrowable {
        public function __construct(array $allErrors) {}
        public function getErrors(): array {}
     }
 
-    class InvalidBaseModelException extends BaseException {}
+    class InvalidBaseModelException extends \Error implements StrictifyThrowable {}
+
+    class MaxDepthException extends \Error implements StrictifyThrowable {}
+
+    class CallException extends \ArgumentCountError implements StrictifyThrowable {}
 }

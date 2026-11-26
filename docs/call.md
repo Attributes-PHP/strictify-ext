@@ -12,7 +12,7 @@ Calls a function or callable with validated models: `BaseModel` parameters hydra
 <?php
 namespace Attributes\Strictify;
 
-function call(string|callable $function, array $params, array|ArrayAccess $dependencies = []): mixed
+function call(string|callable $function, array $params, array|ArrayAccess $dependencies = [], int $maxDepth = 512): mixed
 ```
 
 ```php
@@ -29,6 +29,7 @@ $result = call(myFunction(...), $rawData, $dependencies);
 | `$function` | `string\|callable` | The function name or callable to invoke. |
 | `$params` | `array` | The raw data array, hydrated into every `BaseModel` parameter exactly like [validate()](/validate/). |
 | `$dependencies` | `array\|ArrayAccess` | Values for the non-model parameters, matched by parameter name first and then positionally. Defaults to `[]`. |
+| `$maxDepth` | `int` | Nesting limit for this run: how many models deep the hydrated parameters may nest before a `MaxDepthException` is thrown. Defaults to 512; the value must be greater than 0. |
 
 ## Model hydration
 
@@ -63,7 +64,7 @@ Non-model parameters take their values from `$dependencies`:
 - Matched by parameter name first, then in positional order.
 - Internal functions (whose signatures cannot declare models) receive them positionally: `call('str_repeat', [], ['x', 3])` returns `xxx`.
 - A missing value for an optional parameter lets the engine apply the declared default.
-- A missing value for a required parameter throws an `Error`: `No value provided for parameter $second of registerUser().`.
+- A missing value for a required parameter throws a `CallException` (an `ArgumentCountError` subclass): `No value provided for parameter $second of registerUser().`.
 - Variadic targets receive the leftover positional dependencies.
 
 ## Lazy ArrayAccess containers

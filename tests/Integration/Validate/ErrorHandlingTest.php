@@ -24,7 +24,7 @@ use Attributes\Strictify\Tests\Models\Enums\EnumStrThreeValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwentyValues;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
 use Attributes\Strictify\Type;
-use ValueError;
+use TypeError;
 
 use function Attributes\Strictify\validate;
 
@@ -622,7 +622,7 @@ describe('custom ErrorMessage attribute messages', function () {
 
     it('overrides the sequence_keys template', function () {
         $model = new class extends BaseModel {
-            #[ErrorMessage(sequence_keys: 'Keys must be 0, 1, 2, ...')]
+            #[ErrorMessage(sequenceKeys: 'Keys must be 0, 1, 2, ...')]
             #[Sequence(Type::int)]
             public array $values;
         };
@@ -671,10 +671,12 @@ describe('custom ErrorMessage attribute messages', function () {
     });
 
     it('discards the extra key from ErrorMessage', function () {
-        $model = new #[ModelConfigs(extra: 'forbid')] class extends BaseModel {
-            #[ErrorMessage(extra: 'NOPE')]
-            public string $name;
-        };
+        $model = new
+            #[ModelConfigs(extra: 'forbid')]
+            class extends BaseModel {
+                #[ErrorMessage(extra: 'NOPE')]
+                public string $name;
+            };
 
         try {
             validate(['name' => 'x', 'junk' => 1], $model);
@@ -686,7 +688,7 @@ describe('custom ErrorMessage attribute messages', function () {
 
     it('invalid ErrorMessage arguments', function (BaseModel $model, array $input) {
         validate($input, $model);
-    })->throws(ValueError::class)
+    })->throws(TypeError::class)
         ->with([
             'invalid required' => [
                 'model' => new class extends BaseModel {

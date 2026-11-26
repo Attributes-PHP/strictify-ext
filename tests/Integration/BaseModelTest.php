@@ -9,7 +9,6 @@ use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Alias;
 use Attributes\Strictify\Fields\Constraints\DateTime;
 use Attributes\Strictify\ModelConfigs;
-use DateTimeZone;
 
 use function Attributes\Strictify\validate;
 

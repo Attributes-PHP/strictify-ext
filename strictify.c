@@ -179,6 +179,8 @@ PHP_RINIT_FUNCTION(strictify)
 {
     // Initialize DateTime classes (must run after all MINITs)
     as_init_typehint_validator();
+    // Default nesting limit; validate()/call() override it per run
+    AS_G(validation_depth_limit) = AS_MAX_VALIDATION_DEPTH;
     return SUCCESS;
 }
 

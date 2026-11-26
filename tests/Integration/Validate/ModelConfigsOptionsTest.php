@@ -6,11 +6,11 @@ namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\ErrorTranslator;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Regex;
 use Attributes\Strictify\ModelConfigs;
 use DateTime;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -23,6 +23,14 @@ class OptionsInnerModel extends BaseModel
 class OptionsForbidInnerModel extends BaseModel
 {
     public string $street;
+}
+
+#[ModelConfigs(extra: 'allow')]
+class OptionsAllowParentModel extends BaseModel
+{
+    public int $count;
+    public string $label;
+    public string $firstName;
 }
 
 class OptionsPlainInnerModel extends BaseModel
@@ -63,7 +71,7 @@ describe('ModelConfigs extra option', function () {
 
         $result = validate(['name' => 'John', 'junk' => 1], $model);
         expect($result->name)->toBe('John')
-            ->and(isset($result->junk))
+            ->and(property_exists($result, 'junk'))
             ->toBeFalse();
     });
 
@@ -92,7 +100,7 @@ describe('ModelConfigs extra option', function () {
 
         $result = validate(['name' => 'John', 'junk' => 1], $model);
         expect($result->name)->toBe('John')
-            ->and(isset($result->junk))
+            ->and(property_exists($result, 'junk'))
             ->toBeFalse();
     });
 
@@ -122,7 +130,7 @@ describe('ModelConfigs extra option', function () {
         expect($result->firstName)->toBe('John')
             ->and($result->junk)
             ->toBe(1)
-            ->and(isset($result->{'5'}))
+            ->and(property_exists($result, '5'))
             ->toBeFalse();
     });
 
@@ -188,7 +196,7 @@ describe('ModelConfigs extra option', function () {
 
             $result = validate(['name' => 'J', 'junk' => 1, 'addr' => ['street' => 's', 'zip' => '1']], $model);
             expect($result->junk)->toBe(1)
-                ->and(isset($result->addr->zip))
+                ->and(property_exists($result->addr, 'zip'))
                 ->toBeFalse();
         },
     );
@@ -339,7 +347,7 @@ describe('ModelConfigs extra option', function () {
         }
     });
 
-    it('throws ValueError for an invalid extra value', function () {
+    it('throws InvalidBaseModelException for an invalid extra value', function () {
         $model = new
             #[ModelConfigs(extra: 'invalid')]
             class extends BaseModel {
@@ -347,11 +355,13 @@ describe('ModelConfigs extra option', function () {
             };
 
         validate(['name' => 'John'], $model);
-    })->throws(ValueError::class, 'ignore, forbid, allow');
+    })->throws(InvalidBaseModelException::class, 'ignore, forbid, allow');
 
     it('translates the extra error with the "extra" key', function () {
         ErrorTranslator::set(
-            fn (?string $key, string $message): ?string => $key === 'extra' ? 'Campo extra não permitido: {field}' : null,
+            fn (?string $key, string $message): ?string => $key === 'extra'
+                ? 'Campo extra não permitido: {field}'
+                : null,
         );
 
         $model = new
@@ -546,5 +556,194 @@ describe('ModelConfigs inheritance', function () {
         } catch (ValidationException $e) {
             expect($e->getErrors())->toBe(['inner.firstName' => ['Field is required']]);
         }
+    });
+});
+
+describe('ModelConfigs option types', function () {
+    it('rejects a non-boolean value for strict', function () {
+        $model = new
+            #[ModelConfigs(strict: 1)]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(InvalidBaseModelException::class, 'Argument #6 ($strict) must be of type bool, int given');
+    });
+
+    it('rejects a truthy string for strToLower', function () {
+        $model = new
+            #[ModelConfigs(strToLower: 'yes')]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(InvalidBaseModelException::class, 'Argument #2 ($strToLower) must be of type bool, string given');
+    });
+
+    it('rejects a falsy integer for stopAtFirstError', function () {
+        $model = new
+            #[ModelConfigs(stopAtFirstError: 0)]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(
+                InvalidBaseModelException::class,
+                'Argument #7 ($stopAtFirstError) must be of type bool, int given',
+            );
+    });
+
+    it('rejects a non-string value for aliasGenerator', function () {
+        $model = new
+            #[ModelConfigs(aliasGenerator: 1)]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(
+                InvalidBaseModelException::class,
+                'Argument #1 ($aliasGenerator) must be of type ?string, int given',
+            );
+    });
+
+    it('rejects a boolean for extra', function () {
+        $model = new
+            #[ModelConfigs(extra: true)]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(InvalidBaseModelException::class, 'Argument #5 ($extra) must be of type ?string, bool given');
+    });
+
+    it('keeps failing on a bad option instead of caching a partial parse', function () {
+        $model = new
+            #[ModelConfigs(strict: 'false')]
+            class extends BaseModel {
+                public string $value = '';
+            };
+
+        expect(fn () => validate(['value' => 'x'], $model))->toThrow(InvalidBaseModelException::class)
+            ->and(fn () => validate(['value' => 'x'], $model))
+            ->toThrow(InvalidBaseModelException::class);
+    });
+});
+
+describe('ModelConfigs inheritance scope', function () {
+    it('does not merge the options a child omits from its own declaration', function () {
+        // the child declares extra only: strict/lowercase/snake keys of the
+        // parent are not carried over, the defaults apply
+        $child = new
+            #[ModelConfigs(extra: 'forbid')]
+            class extends OptionsConfigParentModel {
+                public string $label2;
+            };
+
+        expect(fn () => validate(['count' => '5', 'label' => 'ABC', 'first_name' => 'John', 'label2' => 'XYZ'], $child))
+            ->toThrow(ValidationException::class);
+
+        $result = validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John', 'label2' => 'XYZ'], $child);
+
+        expect($result->label)->toBe('ABC')
+            ->and($result->firstName)
+            ->toBe('John')
+            ->and($result->label2)
+            ->toBe('XYZ');
+    });
+
+    it('inherits an extra the parent declared explicitly', function () {
+        $seenExtra = null;
+        $model = new class($seenExtra) extends OptionsAllowParentModel {
+            public function __construct(
+                protected mixed &$captured,
+            ) {}
+
+            protected function beforeValidation(array $rawData, ModelConfigs $configs): array
+            {
+                $this->captured = $configs->getExtra();
+
+                return $rawData;
+            }
+        };
+
+        validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], $model);
+
+        expect($seenExtra)->toBe('allow');
+    });
+
+    it('resolves a null extra against the child class own #[AllowDynamicProperties] flag', function () {
+        $seenExtra = null;
+        $model = new
+            #[\AllowDynamicProperties]
+            class($seenExtra) extends OptionsConfigParentModel {
+                public function __construct(
+                    protected mixed &$captured,
+                ) {}
+
+                protected function beforeValidation(array $rawData, ModelConfigs $configs): array
+                {
+                    $this->captured = $configs->getExtra();
+
+                    return $rawData;
+                }
+            };
+
+        validate(['count' => 5, 'label' => 'ABC', 'first_name' => 'John'], $model);
+
+        expect($seenExtra)->toBe('allow');
+    });
+
+    it('resolves extra per class when no ancestor declared it', function () {
+        $seenExtra = null;
+        $model = new class($seenExtra) extends OptionsPlainInnerModel {
+            public function __construct(
+                protected mixed &$captured,
+            ) {}
+
+            protected function beforeValidation(array $rawData, ModelConfigs $configs): array
+            {
+                $this->captured = $configs->getExtra();
+
+                return $rawData;
+            }
+        };
+
+        validate(['count' => 5, 'label' => 'ABC', 'firstName' => 'John'], $model);
+
+        expect($seenExtra)->toBe('ignore');
+    });
+});
+
+describe('ModelConfigs extra: allow', function () {
+    it('writes unknown keys through the engine property path', function () {
+        $model = new
+            #[ModelConfigs(extra: 'allow')]
+            class extends BaseModel {
+                public string $name;
+            };
+
+        $notices = [];
+        set_error_handler(function (int $no, string $message) use (&$notices) {
+            $notices[] = $message;
+
+            return true;
+        });
+
+        try {
+            $result = validate(['name' => 'John', 'junk' => 1], $model);
+        } finally {
+            restore_error_handler();
+        }
+
+        expect($notices)->toHaveCount(1)
+            ->and($notices[0])
+            ->toContain('::$junk is deprecated')
+            ->and($result->junk)
+            ->toBe(1);
     });
 });

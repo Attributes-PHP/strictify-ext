@@ -11,7 +11,7 @@ Validates a raw data array against the type hints and attributes of a `BaseModel
 <?php
 namespace Attributes\\Strictify;
 
-function validate(array $rawData, BaseModel $model): BaseModel
+function validate(array $rawData, BaseModel $model, int $maxDepth = 512): BaseModel
 ```
 
 ```php
@@ -29,6 +29,7 @@ New to Strictify? Start with the [Quickstart](/quickstart/), then the [guides](/
 | --------- | ---- | ----------- |
 | `$rawData` | `array` | The input data, keyed by property name (or by [alias](/guides/aliases/)). Missing keys fail validation unless the property is nullable or declares a default value. |
 | `$model` | `BaseModel` | The model instance to hydrate. Its public property type hints and attribute declarations define the validation schema. |
+| `$maxDepth` | `int` | Nesting limit for this run: how many models deep the payload may nest before a `MaxDepthException` is thrown. Defaults to 512; the value must be greater than 0. The limit only applies to this call — a nested `validate()` from a hook starts from the default again. |
 
 ## Return value
 
@@ -44,7 +45,9 @@ Returns the passed `$model` instance with every property populated from `$rawDat
 | Exception | Thrown when |
 | --------- | ----------- |
 | `Attributes\Strictify\Exceptions\ValidationException` | Any field fails validation. Call `getErrors()` for the error list — see [Exceptions](/exceptions/). |
-| `ValueError` | An attribute spec is malformed, for example an unresolvable class-name arm, an unsupported `Type` value in an array attribute, or a `Dict` key type outside integer and string. |
+| `Attributes\Strictify\Exceptions\InvalidBaseModelException` | The model declaration is malformed, for example an attribute argument with the wrong type (`#[Min('fifteen')]`), an unresolvable class arm, or a `#[ModelConfigs]` option with an unknown value or the wrong type. |
+| `Attributes\Strictify\Exceptions\MaxDepthException` | The payload nests models deeper than `$maxDepth` (512 by default). |
+| `ValueError` | A call argument is unusable: `$maxDepth` below 1, or a translator returning something other than `?string`. |
 
 ## Validation rules at a glance
 

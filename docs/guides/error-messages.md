@@ -15,21 +15,21 @@ Each default message has a stable translation key passed as the first argument t
 | --- | --- |
 | `required` | `Field is required` |
 | `type` | `Must be {expected}` |
-| `alpha_dash` / `alpha_dash_type` | `Must only contain letters, numbers, dashes and underscores` |
-| `ascii` / `ascii_type` | `Must only contain ASCII characters` |
-| `between` / `between_type` | `Must be between {expected}` |
+| `alphaDash` / `alphaDashType` | `Must only contain letters, numbers, dashes and underscores` |
+| `ascii` / `asciiType` | `Must only contain ASCII characters` |
+| `between` / `betweenType` | `Must be between {expected}` |
 | `contains` | `Must contain {expected}` |
 | `datetime` | `Must be a datetime in the format {expected}` |
-| `ends_with` | `Must end with one of: {expected}` |
+| `endsWith` | `Must end with one of: {expected}` |
 | `in` | `Must be one of: {expected}` |
 | `max` / `min` | `Must be at most/least {expected}` |
-| `multiple_of` | `Must be a multiple of {expected}` |
+| `multipleOf` | `Must be a multiple of {expected}` |
 | `regex` | `Must match the pattern {expected}` |
 | `size` | `Must have a size {expected}` |
-| `starts_with` | `Must start with one of: {expected}` |
+| `startsWith` | `Must start with one of: {expected}` |
 | `ulid` / `uuid` | `Must be a valid ULID/UUID` |
 | `union` | `Must be {expected}` |
-| `sequence_keys` | `Must be a sequential list (keys 0, 1, 2, ...)` (gapped or out-of-order integer key in a `#[Sequence]` array) |
+| `sequenceKeys` | `Must be a sequential list (keys 0, 1, 2, ...)` (gapped or out-of-order integer key in a `#[Sequence]` array) |
 | `extra` | `Extra inputs are not permitted` (unknown key under `extra: 'forbid'`) |
 
 See [Placeholders](#placeholders) for the `{field}`, `{value}` and `{expected}` substitutions available in every template.
@@ -48,11 +48,13 @@ Every template — the defaults, translated messages and `ErrorMessage` override
 
 ## Per-property overrides: ErrorMessage
 
-Override any of a property's templates with the `ErrorMessage` attribute — one named argument per key from the [default catalog](#default-error-messages) above (`required`, `type`, `min`, `max`, `sequence_keys`, ...), each defaulting to that key's default message:
+Override any of a property's templates with the `ErrorMessage` attribute — one named argument per key from the [default catalog](#default-error-messages) above (`required`, `type`, `min`, `max`, `sequenceKeys`, ...), each defaulting to that key's default message:
 
 ```php
 #[ErrorMessage(required: 'Name is mandatory', min: 'Too small, at least {expected}')]
 ```
+
+The catalog keys, the `#[ErrorMessage]` arguments and the keys handed to the translator are the same strings, so `#[ErrorMessage(sequenceKeys: ...)]` overrides the message reported under `sequenceKeys`.
 
 The `extra` key is discarded: extra inputs have no owning property, so that error always uses the translator or its default.
 

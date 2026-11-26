@@ -103,8 +103,10 @@ describe('built-in constraint classes', function () use ($allConstraintClasses) 
 
         foreach ($reflection->getProperties() as $property) {
             $isInternalProperty = ! $property->isPublic();
-            if ($isInternalProperty)
+
+            if ($isInternalProperty) {
                 continue;
+            }
 
             expect($property->isReadOnly())->toBeTrue()
                 ->and($property->hasType())

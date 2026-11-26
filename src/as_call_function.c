@@ -1,6 +1,9 @@
 #include "as_call_function.h"
 #include "as_base_model.h"
+#include "as_compiled_model.h"
+#include "as_exception.h"
 #include "as_validate_function.h"
+#include "as_globals.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_exceptions.h"
@@ -317,12 +320,18 @@ static bool build_call_arguments(zend_function *function, zval *params, as_depen
         }
 
         const char *callable_name = function->common.function_name != NULL ? ZSTR_VAL(function->common.function_name) : "the callable";
+        /* Internal functions keep the other arg_info layout (char* names), and
+         * a missing dependency there is named the same way userland ones are. */
+        const char *parameter_name = name != NULL ? ZSTR_VAL(name) : NULL;
+        if (parameter_name == NULL && function->common.arg_info != NULL && i < function->common.num_args) {
+            parameter_name = ((const zend_internal_arg_info *)function->common.arg_info)[i].name;
+        }
         /* A #[\SensitiveParameter] parameter is reported positionally: the
          * named message would disclose the parameter name in the error. */
-        if (name != NULL && !parameter_is_sensitive(function, i)) {
-            zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter $%s of %s().", ZSTR_VAL(name), callable_name);
+        if (parameter_name != NULL && !parameter_is_sensitive(function, i)) {
+            zend_throw_exception_ex(class_AS_Exceptions_CallException, 0, "No value provided for parameter $%s of %s().", parameter_name, callable_name);
         } else {
-            zend_throw_exception_ex(zend_ce_error, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
+            zend_throw_exception_ex(class_AS_Exceptions_CallException, 0, "No value provided for parameter %u of %s().", (unsigned)(i + 1), callable_name);
         }
         result = false;
         break;
@@ -360,19 +369,38 @@ static void release_call_arguments(zval *args, uint32_t args_count)
  * dependencies array or ArrayAccess container. Returns the callable's
  * return value.
  */
+static void as_call_with_arguments(INTERNAL_FUNCTION_PARAMETERS, zval *function, zval *params, zval *dependencies);
+
+/* Function implementation for call */
 ZEND_FUNCTION(call)
 {
     zval *function;
     zval *params;
     zval *dependencies = NULL;
+    zend_long max_depth = AS_MAX_VALIDATION_DEPTH;
 
-    ZEND_PARSE_PARAMETERS_START(2, 3)
+    ZEND_PARSE_PARAMETERS_START(2, 4)
     Z_PARAM_ZVAL(function)
     Z_PARAM_ARRAY(params)
     Z_PARAM_OPTIONAL
     Z_PARAM_ZVAL(dependencies)
+    Z_PARAM_LONG(max_depth)
     ZEND_PARSE_PARAMETERS_END();
 
+    if (max_depth < 1) {
+        zend_argument_value_error(4, "must be greater than 0, " ZEND_LONG_FMT " given", max_depth);
+        RETURN_THROWS();
+    }
+
+    uint32_t previous_limit = as_apply_validation_depth_limit(max_depth);
+    as_call_with_arguments(INTERNAL_FUNCTION_PARAM_PASSTHRU, function, params, dependencies);
+    as_restore_validation_depth_limit(previous_limit);
+}
+
+/* The $maxDepth limit is already applied: build the arguments, validate the
+ * model ones and dispatch the call. */
+static void as_call_with_arguments(INTERNAL_FUNCTION_PARAMETERS, zval *function, zval *params, zval *dependencies)
+{
     as_dependencies dependencies_source = {
         .source = dependencies,
         .is_array = dependencies != NULL && Z_TYPE_P(dependencies) == IS_ARRAY,

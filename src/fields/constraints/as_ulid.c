@@ -43,23 +43,16 @@ bool as_validate_Ulid_constraint(zval *constraint, as_field *field, as_property_
             as_add_field_error_with_prefix(AS_ERROR_ULID, field, property, errors);
             return false;
         }
+
+        /* A ULID encodes 128 bits in 26 base32 characters: the first
+         * character can only be 0-7, otherwise the value overflows. */
+        if (i == 0 && c > '7') {
+            as_add_field_error_with_prefix(AS_ERROR_ULID, field, property, errors);
+            return false;
+        }
     }
 
     return true;
 }
 
-void as_register_Ulid_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Ulid", class_AS_Fields_Constraints_Ulid_methods);
-    AS_Fields_Constraints_Ulid_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Ulid_ce != NULL);
-    AS_Fields_Constraints_Ulid_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Ulid_ce, 1, AS_Fields_Field_ce);
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Ulid_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(Ulid, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS)

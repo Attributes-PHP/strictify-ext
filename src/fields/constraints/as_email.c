@@ -66,6 +66,23 @@ bool as_validate_Email_constraint(zval *constraint, as_field *field, as_property
         return false;
     }
 
+    /* The last label is the TLD: IANA delegates only labels of two or more
+     * characters, and #[Domain] rejects one-letter TLDs already. */
+    const char *text = Z_STRVAL_P(value);
+    const size_t text_length = Z_STRLEN_P(value);
+    const char *last_dot = NULL;
+    for (size_t i = text_length; i > 0; i--) {
+        if (text[i - 1] == '.') {
+            last_dot = text + i - 1;
+            break;
+        }
+    }
+
+    if (last_dot == NULL || text_length - (size_t)(last_dot - text) - 1 < 2) {
+        as_add_field_error_with_prefix(AS_ERROR_EMAIL, field, property, errors);
+        return false;
+    }
+
     zval *domain = zend_read_property(Z_OBJCE_P(constraint), Z_OBJ_P(constraint), "domain", sizeof("domain") - 1, false, NULL);
     if (domain == NULL || Z_TYPE_P(domain) == IS_NULL) {
         return true;
@@ -111,20 +128,7 @@ bool as_validate_Email_constraint(zval *constraint, as_field *field, as_property
     return false;
 }
 
-void as_register_Email_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Email", class_AS_Fields_Constraints_Email_methods);
-    AS_Fields_Constraints_Email_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Email_ce != NULL);
-    AS_Fields_Constraints_Email_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Email_ce, 1, AS_Fields_Field_ce);
-
+AS_REGISTER_CONSTRAINT_CLASS(
+    Email, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS,
     as_declare_typed_property(AS_Fields_Constraints_Email_ce, "domain", ZEND_ACC_PUBLIC | ZEND_ACC_READONLY, (zend_type)ZEND_TYPE_INIT_MASK(MAY_BE_STRING | MAY_BE_ARRAY | MAY_BE_NULL));
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Email_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+)

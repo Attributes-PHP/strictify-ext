@@ -1,4 +1,5 @@
 #include "as_array_typehint_validator.h"
+#include "../as_exception.h"
 #include "../as_globals.h"
 #include "../as_base_model.h"
 #include "../as_type.h"
@@ -8,6 +9,7 @@
 #include "../fields/as_union.h"
 #include "../helpers/as_error_messages.h"
 #include "../helpers/as_string.h"
+#include "../helpers/as_type_names.h"
 #include "../helpers/as_wrappers.h"
 #include "as_typehint_validator.h"
 #include "Zend/zend_API.h"
@@ -96,25 +98,14 @@ typedef enum {
  * Type case values ARE the engine MAY_BE_* type masks (plus the private
  * dict bit), so an arm's basic mask needs no translation table: the case
  * value is the mask, with the dict bit folded into MAY_BE_ARRAY. The
- * basic_type_names table below names them for error messages.
+ * shared as_type_names.h table names them for error messages.
  */
-
-static const struct {
-    uint32_t mask;
-    const char *name;
-    size_t length;
-} basic_type_names[] = {
-    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
-    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
-};
-
-#define BASIC_TYPE_NAMES_SIZE (sizeof(basic_type_names) / sizeof(basic_type_names[0]))
 
 /*
  * Attributes that may be declared directly on an array property.
  * Union is deliberately absent: a Union on an array property is a usage
- * error (compile-time ValueError for array-only hints, runtime ValueError
- * otherwise) — element specs go inside Sequence(of: new Union(...)) or
+ * error (an InvalidBaseModelException at compile time for array-only hints,
+ * at runtime otherwise) — element specs go inside Sequence(of: new Union(...)) or
  * Dict(of: ...). Union objects remain valid nested arms via
  * is_array_attribute_ce().
  */
@@ -944,6 +935,20 @@ static as_spec *build_spec_from_attribute(const zend_attribute *attribute, as_sp
                 free_spec(spec);
                 return NULL;
             }
+
+            /* Attribute arguments bypass the Sequence constructor, so the
+             * supported directions are enforced here: an unknown value would
+             * otherwise be silently ignored and leave the array unsorted. */
+            if (Z_TYPE(sorted_value) != IS_NULL && (Z_TYPE(sorted_value) != IS_STRING || (!zend_string_equals_literal_ci(Z_STR(sorted_value), "asc") && !zend_string_equals_literal_ci(Z_STR(sorted_value), "desc")))) {
+                zend_throw_exception_ex(
+                    zend_ce_value_error, 0, "Attribute \"%s\" for property \"%s\" of class \"%s\" must declare $sorted as \"asc\", \"ASC\", \"desc\", \"DESC\" or null, %s given.", ZSTR_VAL(attribute->lcname),
+                    ZSTR_VAL(prop_info->property->name), ZSTR_VAL(prop_info->property->ce->name), Z_TYPE(sorted_value) == IS_STRING ? Z_STRVAL(sorted_value) : zend_zval_type_name(&sorted_value)
+                );
+                zval_ptr_dtor(&sorted_value);
+                free_spec(spec);
+                return NULL;
+            }
+
             spec->sort = sequence_sort_mode(&sorted_value);
             zval_ptr_dtor(&sorted_value);
             break;
@@ -1006,32 +1011,13 @@ static zend_string *arm_to_expected_string(const as_arm *arm)
         return zend_string_copy(arm->class_name);
     }
 
-    for (size_t i = 0; i < BASIC_TYPE_NAMES_SIZE; i++) {
-        if (arm->basic_mask == basic_type_names[i].mask) {
-            return zend_string_init(basic_type_names[i].name, basic_type_names[i].length, 0);
-        }
+    const as_type_name *basic = as_type_name_for(arm->basic_mask);
+    if (basic != NULL) {
+        return zend_string_init(basic->name, basic->length, 0);
     }
 
-    // Bitmask arms carry several type bits: render each as a union arm
-    as_arm bit_arms[BASIC_TYPE_NAMES_SIZE];
-    uint32_t bit_arms_count = 0;
-
-    for (size_t i = 0; i < BASIC_TYPE_NAMES_SIZE; i++) {
-        uint32_t bit_mask = basic_type_names[i].mask;
-        if ((arm->basic_mask & bit_mask) != bit_mask) {
-            continue;
-        }
-
-        memset(&bit_arms[bit_arms_count], 0, sizeof(as_arm));
-        bit_arms[bit_arms_count].basic_mask = bit_mask;
-        bit_arms_count++;
-    }
-
-    if (bit_arms_count > 0) {
-        return arms_to_expected_string(bit_arms, bit_arms_count, false);
-    }
-
-    return zend_string_init("mixed", sizeof("mixed") - 1, 0);
+    // Bitmask arms carry several type bits: render the union of its types
+    return as_type_mask_to_string(arm->basic_mask, true);
 }
 
 /*
@@ -1564,7 +1550,25 @@ void as_clear_array_spec_cache(void)
     }
 }
 
+static bool validate_array_typehint(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors);
+
 bool as_validate_array_typehint_cached(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors)
+{
+    if (validate_array_typehint(field, cf, prop_info, properties, errors)) {
+        return true;
+    }
+
+    /* The spec belongs to the model declaration: a rejected argument (an
+     * unknown Type, a class name that does not resolve, a nested constraint
+     * that fails its own constructor) reports a malformed model, not a bad
+     * call. A plain validation failure has no pending exception: the
+     * conversion is a no-op. */
+    as_convert_attribute_exception();
+
+    return false;
+}
+
+static bool validate_array_typehint(as_field *field, as_compiled_field *cf, as_property_info *prop_info, as_model_configs_properties *properties, zval *errors)
 {
     if (cf->array_state == AS_ARRAY_ABSENT) {
         return true;

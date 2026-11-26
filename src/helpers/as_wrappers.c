@@ -8,6 +8,7 @@
 #include "Zend/zend_interfaces.h"
 #include "Zend/zend_list.h"
 #include "Zend/zend_operators.h"
+#include "Zend/zend_strtod.h"
 #include "Zend/zend_variables.h"
 
 /*
@@ -66,11 +67,6 @@ zend_string *as_string_copy(zend_string *s)
 zend_string *as_long_to_str(zend_long num)
 {
     return zend_long_to_str(num);
-}
-
-zend_string *as_double_to_str(double num)
-{
-    return zend_double_to_str(num);
 }
 
 bool as_is_stringable(const zend_class_entry *instance_ce)
@@ -138,9 +134,9 @@ zend_result as_get_attribute_value(zval *ret, void *attribute, uint32_t arg_num,
     return zend_get_attribute_value(ret, (const zend_attribute *)attribute, arg_num, scope);
 }
 
-void as_throw_value_error(const char *message)
+void as_throw_type_error(const char *message)
 {
-    zend_throw_exception_ex(zend_ce_value_error, 0, "%s", message);
+    zend_throw_exception_ex(zend_ce_type_error, 0, "%s", message);
 }
 
 int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len2)
@@ -149,6 +145,29 @@ int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len
 }
 
 #endif /* TESTING */
+
+/*
+ * Renders a double with the shortest representation that parses back to the
+ * same value. zend_double_to_str() would render with the `precision` ini
+ * setting (14 by default) and truncate: a #[Between] bound of
+ * 0.30000000000000004 would be reported as "0.3" while the comparison uses
+ * the full value. Compiled in both modes (not a passthrough macro) so the
+ * messages always match the bound actually enforced.
+ */
+zend_string *as_double_to_str(double num)
+{
+    char buffer[ZEND_DOUBLE_MAX_LENGTH];
+
+    for (int precision = 1; precision < 17; precision++) {
+        zend_gcvt(num, precision, '.', 'E', buffer);
+        if (zend_strtod(buffer, NULL) == num) {
+            return zend_string_init(buffer, strlen(buffer), 0);
+        }
+    }
+
+    zend_gcvt(num, 17, '.', 'E', buffer);
+    return zend_string_init(buffer, strlen(buffer), 0);
+}
 
 /*
  * =============================================================================
@@ -244,6 +263,6 @@ zend_string *as_translate_error(const char *key, size_t key_len, const char *mes
     }
 
     zval_ptr_dtor(&retval);
-    as_throw_value_error("The default error messages translator must return ?string");
+    as_throw_type_error("The default error messages translator must return ?string");
     return NULL;
 }

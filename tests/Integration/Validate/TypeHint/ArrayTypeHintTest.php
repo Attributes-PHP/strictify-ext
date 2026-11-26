@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Validate\TypeHint;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;
 use Attributes\Strictify\Fields\ErrorMessage;
@@ -15,7 +16,6 @@ use Attributes\Strictify\ModelConfigs;
 use Attributes\Strictify\Type;
 use DateTime;
 use DateTimeInterface;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -118,7 +118,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
 
         // The engine has no dict mask: dict carries a private bit the
         // validator folds into the array type
-        expect(Type::dict->value)->toBe(268435456);
+        expect(Type::dict->value)->toBe(268_435_456);
     });
 
     it('accepts a bitmask union of types', function () {
@@ -216,7 +216,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
         };
 
         validate(['keyed' => []], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 
     it('accepts an empty array for a shaped property', function () {
         $model = new
@@ -813,7 +813,7 @@ describe('type-hint array attribute error messages', function () {
         }
     });
 
-    it('throws a ValueError when a class arm cannot be resolved', function () {
+    it('throws InvalidBaseModelException when a class arm cannot be resolved', function () {
         $model = new class extends BaseModel {
             #[Sequence(ArrayTypeHintNowhere::class)]
             public array $items;
@@ -822,53 +822,53 @@ describe('type-hint array attribute error messages', function () {
         try {
             validate(['items' => []], $model);
             expect(false)->toBeTrue();
-        } catch (ValueError $e) {
+        } catch (InvalidBaseModelException $e) {
             expect($e->getMessage())->toContain('ArrayTypeHintNowhere');
         }
     });
 
-    it('throws a ValueError when a Dict arm references a missing Dict attribute', function () {
+    it('throws InvalidBaseModelException when a Dict arm references a missing Dict attribute', function () {
         $model = new class extends BaseModel {
             #[Sequence(of: new Union(T_BOOL, Dict::class))]
             public array $values;
         };
 
         validate(['values' => [true]], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 
-    it('throws a ValueError when a Dict value type is an unknown Type value', function () {
+    it('throws InvalidBaseModelException when a Dict value type is an unknown Type value', function () {
         $model = new class extends BaseModel {
             #[Dict(key: Type::int, of: 512)]
             public array $keyed;
         };
 
         validate(['keyed' => []], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 
-    it('throws a ValueError when an arm type is unsupported', function () {
+    it('throws InvalidBaseModelException when an arm type is unsupported', function () {
         $model = new class extends BaseModel {
             #[Sequence(of: 3.14)]
             public array $values;
         };
 
         validate(['values' => []], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 
-    it('throws a ValueError when an Intersection arm is not a class name', function () {
+    it('throws InvalidBaseModelException when an Intersection arm is not a class name', function () {
         $model = new class extends BaseModel {
             #[Intersection(Type::int, stdClass::class)]
             public array $items;
         };
 
         validate(['items' => []], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 
-    it('throws a ValueError when a Dict key type is not an integer or string', function () {
+    it('throws InvalidBaseModelException when a Dict key type is not an integer or string', function () {
         $model = new class extends BaseModel {
             #[Dict(key: new Dict(key: Type::int, of: Type::int), of: Type::int)]
             public array $keyed;
         };
 
         validate(['keyed' => []], $model);
-    })->throws(ValueError::class);
+    })->throws(InvalidBaseModelException::class);
 });

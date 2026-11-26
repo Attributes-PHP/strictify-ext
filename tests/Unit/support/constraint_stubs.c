@@ -24,6 +24,7 @@
 #undef zend_update_property_long
 #undef zend_update_property_null
 #undef zend_update_property_string
+#undef zend_update_property_str
 #undef zend_parse_parameters
 #undef zend_argument_type_error
 #undef zend_argument_value_error
@@ -195,6 +196,15 @@ void zend_update_property_null(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object
 }
 
 void zend_update_property_string(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, const char *value)
+{
+    (void)scope;
+    (void)object;
+    (void)name;
+    (void)name_length;
+    (void)value;
+}
+
+void zend_update_property_str(AS_STUB_UPDATE_PROPERTY_SCOPE *scope, zend_object *object, const char *name, size_t name_length, zend_string *value)
 {
     (void)scope;
     (void)object;

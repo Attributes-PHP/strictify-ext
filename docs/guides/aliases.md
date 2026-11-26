@@ -32,6 +32,28 @@ $user = validate(['user_name' => 'John'], new User());
 echo $user->name, "\n"; // John
 ```
 
+### Malformed alias declarations
+
+Two alias mistakes are model-definition errors, so they throw an `InvalidBaseModelException` instead of producing a field nothing can satisfy:
+
+- `#[Alias('')]` — an empty alias would expect the empty-string key.
+- Two properties resolving to the same input key: `#[Alias('id')]` on both `$a` and `$b`, or an alias generator collapsing two names onto one key (`snake` maps `$aB` and `$a_b` to `a_b`). The message names both properties and the key.
+
+```php
+<?php
+class User extends BaseModel
+{
+    #[Alias('id')]
+    public int $userId;
+
+    #[Alias('id')]
+    public int $accountId;
+}
+
+validate(['id' => 1], new User());
+// InvalidBaseModelException: Properties User::$userId and User::$accountId both resolve to the input key "id".
+```
+
 ## The aliasGenerator option
 
 Transform every property name with one `#[ModelConfigs]` declaration:
@@ -53,6 +75,8 @@ class User extends BaseModel
 $user = validate(['first_name' => 'John', 'user2_id' => 123], new User());
 echo $user->firstName, ' ', $user->user2Id, "\n"; // John 123
 ```
+
+Names are split on case boundaries and separators, so digits stay attached (`$user2Id` → `user2_id`). Acronyms are split letter by letter: `snake` maps `$HTTPResponse` to `h_t_t_p_response`, not `http_response` — declare `#[Alias('http_response')]` when the payload uses the acronym as a word.
 
 Resolved names are also used in **error paths**, so clients see the key they sent:
 

@@ -6,7 +6,6 @@
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 
-
 zend_class_entry *AS_Fields_Constraints_Base64_ce;
 
 /*
@@ -27,20 +26,4 @@ bool as_validate_Base64_constraint(zval *constraint, as_field *field, as_propert
     return true;
 }
 
-
-void as_register_Base64_class(void)
-{
-    zend_class_entry ce;
-
-    INIT_NS_CLASS_ENTRY(ce, "Attributes\\Strictify\\Fields\\Constraints", "Base64", class_AS_Fields_Constraints_Base64_methods);
-    AS_Fields_Constraints_Base64_ce = zend_register_internal_class_ex(&ce, NULL);
-    ZEND_ASSERT(AS_Fields_Constraints_Base64_ce != NULL);
-    AS_Fields_Constraints_Base64_ce->ce_flags |= ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS;
-
-    ZEND_ASSERT(AS_Fields_Field_ce != NULL);
-    zend_class_implements(AS_Fields_Constraints_Base64_ce, 1, AS_Fields_Field_ce);
-
-
-    /* Register as an internal attribute that can be used on properties and parameters */
-    zend_internal_attribute_register(AS_Fields_Constraints_Base64_ce, ZEND_ATTRIBUTE_TARGET_PROPERTY | ZEND_ATTRIBUTE_TARGET_PARAMETER);
-}
+AS_REGISTER_CONSTRAINT_CLASS(Base64, ZEND_ACC_FINAL | ZEND_ACC_READONLY_CLASS)

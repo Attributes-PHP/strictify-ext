@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Constraints;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\In;
 use TypeError;
@@ -58,17 +59,15 @@ describe('In validation', function () {
         }
     })->with(['c', 2, '1', 'a b', 0, false]);
 
-    it('never matches when no values are declared', function () {
+    it('rejects an empty value list when the field is first compiled', function () {
         $model = new class extends BaseModel {
             #[In]
             public $value;
         };
 
-        try {
-            validate(['value' => 'a'], $model);
-            expect(false)->toBeTrue();
-        } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['value' => ['Must be one of: ']]);
-        }
+        expect(fn () => validate(['value' => 'a'], $model))->toThrow(
+            InvalidBaseModelException::class,
+            '::$value: at least one value must be declared.',
+        );
     });
 });

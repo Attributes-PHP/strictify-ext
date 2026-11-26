@@ -7,6 +7,7 @@ namespace Attributes\Strictify\Tests\Integration;
 use ArrayAccess;
 use ArrayObject;
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\Exceptions\CallException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Alias;
 use Attributes\Strictify\Fields\Sequence;
@@ -193,9 +194,7 @@ describe('call function model hydration', function () {
     });
 
     it('accepts a closure as the callable', function () {
-        $result = call(function (CallFunctionUser $user): string {
-            return $user->name;
-        }, ['name' => 'Andre', 'age' => 30]);
+        $result = call(fn (CallFunctionUser $user): string => $user->name, ['name' => 'Andre', 'age' => 30]);
         expect($result)->toBe('Andre');
     });
 
@@ -301,14 +300,14 @@ describe('call function dependencies', function () {
         expect($result)->toBe('xdefault');
     });
 
-    it('throws an Error when a required dependency is missing', function () {
+    it('throws a CallException when a required dependency is missing', function () {
         call(
             'Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies',
             [],
             ['first' => new stdClass],
         );
     })->throws(
-        Error::class,
+        CallException::class,
         'No value provided for parameter $second of Attributes\Strictify\Tests\Integration\call_function_takes_two_dependencies().',
     );
 
@@ -434,9 +433,9 @@ describe('call function argument building', function () {
         call('Attributes\\Strictify\\Tests\\Integration\\call_function_throws', []);
     })->throws(Error::class, 'callable failure');
 
-    it('reports the positional index when an internal function misses a required argument', function () {
+    it('names the parameter of an internal function that misses a required argument', function () {
         call('str_repeat', [], ['x']);
-    })->throws(Error::class, 'No value provided for parameter 2 of str_repeat().');
+    })->throws(CallException::class, 'No value provided for parameter $times of str_repeat().');
 });
 
 describe('call function sensitive parameters', function () {
@@ -484,8 +483,8 @@ describe('call function sensitive parameters', function () {
                 [],
                 ['user' => 'andre'],
             );
-            expect(false)->toBeTrue('Error expected');
-        } catch (Error $e) {
+            expect(false)->toBeTrue('CallException expected');
+        } catch (CallException $e) {
             expect($e->getMessage())->toBe(
                 'No value provided for parameter 2 of Attributes\\Strictify\\Tests\\Integration\\call_function_sensitive_required().',
             );
@@ -500,7 +499,7 @@ describe('call function sensitive parameters', function () {
             ['first' => new stdClass],
         );
     })->throws(
-        Error::class,
+        CallException::class,
         'No value provided for parameter $second of Attributes\\Strictify\\Tests\\Integration\\call_function_takes_two_dependencies().',
     );
 });

@@ -1,6 +1,8 @@
 #include "as_error_messages.h"
+#include "as_type_names.h"
 #include "as_wrappers.h"
 #include "../as_globals.h"
+#include "../fields/as_error_message.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
 #include "Zend/zend_compile.h"
@@ -69,61 +71,19 @@ const char *as_default_error_type_messages[] = {
 
 /*
  * Stable message keys, one per error type, handed to the translator registered
- * via ErrorTranslator::set() as its first argument. A custom #[ErrorMessage]
- * value has no key: the translator then receives null as key and the
- * attribute value as the message.
+ * via ErrorTranslator::set() as its first argument, and the names the
+ * #[ErrorMessage] attribute exposes: both read the same macro, so the
+ * translator key and the attribute argument cannot drift. camelCase, like every
+ * PHP-facing name in the extension. A custom #[ErrorMessage] value has no key:
+ * the translator then receives null as key and the attribute value as the
+ * message.
  */
 const char *as_error_type_names[] = {
-    [AS_ERROR_REQUIRED] = "required",
-    [AS_ERROR_TYPE] = "type",
-    [AS_ERROR_ALPHA_DASH] = "alpha_dash",
-    [AS_ERROR_ALPHA_DASH_TYPE] = "alpha_dash_type",
-    [AS_ERROR_ASCII] = "ascii",
-    [AS_ERROR_ASCII_TYPE] = "ascii_type",
-    [AS_ERROR_BETWEEN] = "between",
-    [AS_ERROR_BETWEEN_TYPE] = "between_type",
-    [AS_ERROR_CONTAINS] = "contains",
-    [AS_ERROR_DATETIME] = "datetime",
-    [AS_ERROR_ENDS_WITH] = "ends_with",
-    [AS_ERROR_IN] = "in",
-    [AS_ERROR_MAX] = "max",
-    [AS_ERROR_MIN] = "min",
-    [AS_ERROR_MULTIPLE_OF] = "multiple_of",
-    [AS_ERROR_REGEX] = "regex",
-    [AS_ERROR_SIZE] = "size",
-    [AS_ERROR_STARTS_WITH] = "starts_with",
-    [AS_ERROR_ULID] = "ulid",
-    [AS_ERROR_UUID] = "uuid",
-    [AS_ERROR_EMAIL] = "email",
-    [AS_ERROR_EMAIL_DOMAIN] = "email_domain",
-    [AS_ERROR_URL] = "url",
-    [AS_ERROR_URL_PROTOCOL] = "url_protocol",
-    [AS_ERROR_URL_DOMAIN] = "url_domain",
-    [AS_ERROR_DOMAIN] = "domain",
-    [AS_ERROR_IP] = "ip",
-    [AS_ERROR_IBAN] = "iban",
-    [AS_ERROR_ISBN] = "isbn",
-    [AS_ERROR_CREDIT_CARD] = "credit_card",
-    [AS_ERROR_VERSION] = "version",
-    [AS_ERROR_MAC_ADDRESS] = "mac_address",
-    [AS_ERROR_ALNUM] = "alnum",
-    [AS_ERROR_ALPHA] = "alpha",
-    [AS_ERROR_DIGIT] = "digit",
-    [AS_ERROR_XDIGIT] = "xdigit",
-    [AS_ERROR_SLUG] = "slug",
-    [AS_ERROR_BASE64] = "base64",
-    [AS_ERROR_JSON] = "json",
-    [AS_ERROR_HEX_RGB_COLOR] = "hex_rgb_color",
-    [AS_ERROR_EVEN] = "even",
-    [AS_ERROR_ODD] = "odd",
-    [AS_ERROR_POSITIVE] = "positive",
-    [AS_ERROR_NEGATIVE] = "negative",
-    [AS_ERROR_PRIME_NUMBER] = "prime_number",
-    [AS_ERROR_CONTAINS_ANY] = "contains_any",
-    [AS_ERROR_UNION] = "union",
-    [AS_ERROR_SEQUENCE_KEYS] = "sequence_keys",
-    [AS_ERROR_UNIQUE_VALUES] = "unique_values",
+    /* extra inputs have no owning property, so no #[ErrorMessage] argument */
     [AS_ERROR_EXTRA] = "extra",
+#define AS_ERROR_TYPE_NAME(c_name, error_type, str_name) [error_type] = str_name,
+    AS_ERROR_MESSAGE_KEYS(AS_ERROR_TYPE_NAME)
+#undef AS_ERROR_TYPE_NAME
 };
 
 /*
@@ -144,8 +104,6 @@ static zend_always_inline void add_field_error(zval *errors, zend_string *field_
 static zend_string *generate_type_name(const zend_type type);
 static zend_class_entry *resolve_enum_ce(const zend_type type);
 static zend_string *enum_case_label(zend_class_entry *ce, zend_object *case_obj);
-static uint32_t count_basic_types(uint32_t pure_mask);
-static zend_always_inline zend_string *build_union_only_basic_types(uint32_t pure_mask);
 static zend_always_inline zend_string *build_single_type_string(zend_type property_type);
 static zend_always_inline void append_union_type_part(zend_string **result, uint32_t index, uint32_t total, const char *name, size_t name_len);
 static uint32_t count_enum_type_parts(zend_class_entry *ce);
@@ -158,13 +116,6 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
 static zend_string *get_custom_error_template(as_error_type type, as_property_info *property);
 static zend_string *get_property_full_path(as_field *field);
 static zend_string *replace_placeholders(const char *template, size_t length, as_field *field, as_property_info *prop_info, const zend_string *expected_override);
-
-static const as_basic_type_mapping basic_type_mappings[] = {
-    {MAY_BE_BOOL, "boolean", sizeof("boolean") - 1}, {MAY_BE_LONG, "integer", sizeof("integer") - 1}, {MAY_BE_DOUBLE, "float", sizeof("float") - 1}, {MAY_BE_STRING, "string", sizeof("string") - 1},
-    {MAY_BE_ARRAY, "array", sizeof("array") - 1},    {MAY_BE_OBJECT, "object", sizeof("object") - 1}, {MAY_BE_NULL, "null", sizeof("null") - 1},
-};
-
-#define BASIC_TYPE_MAPPINGS_SIZE (sizeof(basic_type_mappings) / sizeof(basic_type_mappings[0]))
 
 static zend_always_inline void add_field_error_to_array(zval *errors_array, const char *error_message, size_t length)
 {
@@ -201,11 +152,10 @@ static zend_string *generate_type_name(const zend_type type)
     }
 
     uint32_t type_mask = ZEND_TYPE_PURE_MASK(type);
+    const as_type_name *basic = as_type_name_for(type_mask);
 
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (type_mask == basic_type_mappings[i].mask) {
-            return as_string_init(basic_type_mappings[i].name, basic_type_mappings[i].length, 0);
-        }
+    if (basic != NULL) {
+        return as_string_init(basic->name, basic->length, 0);
     }
 
     return as_string_init("mixed", 5, 0);
@@ -234,59 +184,6 @@ static zend_string *enum_case_label(zend_class_entry *ce, zend_object *case_obj)
     }
 
     return as_value_to_string(zend_enum_fetch_case_name(case_obj));
-}
-
-static uint32_t count_basic_types(uint32_t pure_mask)
-{
-    uint32_t total = 0;
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (pure_mask & basic_type_mappings[i].mask)
-            total += 1;
-    }
-
-    return total;
-}
-
-static zend_always_inline zend_string *build_union_only_basic_types(uint32_t pure_mask)
-{
-    size_t total = count_basic_types(pure_mask);
-    ZEND_ASSERT(total >= 1);
-
-    size_t max_string_size = 0;
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (pure_mask & basic_type_mappings[i].mask)
-            max_string_size += basic_type_mappings[i].length;
-    }
-
-    // All types but the last two are followed by ", ", the last two by " or ".
-    if (total >= 2)
-        max_string_size += (total - 2) * (sizeof(", ") - 1) + (sizeof(" or ") - 1);
-
-    zend_string *result = as_string_alloc(max_string_size, 0);
-    char *output = ZSTR_VAL(result);
-    size_t output_pos = 0;
-    size_t remaining = total;
-
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (!(pure_mask & basic_type_mappings[i].mask))
-            continue;
-
-        if (output_pos > 0) {
-            const char *separator = (remaining == 1) ? " or " : ", ";
-            size_t separator_len = (remaining == 1) ? (sizeof(" or ") - 1) : (sizeof(", ") - 1);
-            memcpy(output + output_pos, separator, separator_len);
-            output_pos += separator_len;
-        }
-
-        memcpy(output + output_pos, basic_type_mappings[i].name, basic_type_mappings[i].length);
-        output_pos += basic_type_mappings[i].length;
-        remaining -= 1;
-    }
-
-    output[output_pos] = '\0';
-
-    ZEND_ASSERT(output_pos == max_string_size);
-    return as_string_truncate(result, output_pos, 0);
 }
 
 static zend_always_inline zend_string *build_single_type_string(zend_type property_type)
@@ -384,7 +281,7 @@ static uint32_t append_enum_type_parts(zend_string **result, uint32_t index, uin
 zend_string *build_union_type_string(zend_type property_type)
 {
     uint32_t pure_mask = ZEND_TYPE_PURE_MASK(property_type);
-    uint32_t basic_total = count_basic_types(pure_mask);
+    uint32_t basic_total = as_type_mask_count(pure_mask);
 
     // Single classification pass over the named types: detects enums and
     // classes and counts the parts each named type contributes to a union
@@ -414,7 +311,7 @@ zend_string *build_union_type_string(zend_type property_type)
         if (basic_total <= 1)
             return build_single_type_string(property_type);
 
-        return build_union_only_basic_types(pure_mask);
+        return as_type_mask_to_string(pure_mask, true);
     }
 
     // Class types only: class names or-joined
@@ -452,11 +349,11 @@ zend_string *build_union_type_string(zend_type property_type)
     zend_string *result = NULL;
     uint32_t index = 0;
 
-    for (size_t i = 0; i < BASIC_TYPE_MAPPINGS_SIZE; i++) {
-        if (!(pure_mask & basic_type_mappings[i].mask))
+    for (size_t i = 0; i < AS_TYPE_NAMES_COUNT; i++) {
+        if (!(pure_mask & as_type_names[i].mask))
             continue;
 
-        append_union_type_part(&result, index, total, basic_type_mappings[i].name, basic_type_mappings[i].length);
+        append_union_type_part(&result, index, total, as_type_names[i].name, as_type_names[i].length);
         index += 1;
     }
 
@@ -570,11 +467,11 @@ static zend_always_inline bool attribute_argument_name_equals(const zend_string 
  * Resolves the raw error message template for the given error type from
  * the #[ErrorMessage] attribute, or NULL when the property declares no
  * template for it (the caller falls back to the default). The attribute
- * declares one argument per catalog key, named after the stable key and
- * positionally in enum order. The extra key is discarded: extra inputs
- * have no owning property, so the extra error never uses a per-property
- * override. Throws when an argument value cannot be evaluated or is not
- * a string.
+ * declares one argument per catalog key, named after the key (both tables are
+ * camelCase) and positionally in enum order. The extra key is discarded: extra
+ * inputs have no owning property, so the extra error never uses a per-property
+ * override. Throws when an argument value cannot be evaluated or is not a
+ * string.
  */
 static zend_string *resolve_error_template(as_error_type type, as_property_info *property)
 {
@@ -617,7 +514,7 @@ static zend_string *resolve_error_template(as_error_type type, as_property_info 
         }
 
         if (Z_TYPE_P(&value) != IS_UNDEF) {
-            as_throw_value_error("Only string arguments are valid for Attributes\\Strictify\\Fields\\ErrorMessage::construct(...)");
+            as_throw_type_error("Only string arguments are valid for Attributes\\Strictify\\Fields\\ErrorMessage::construct(...)");
             return NULL;
         }
 

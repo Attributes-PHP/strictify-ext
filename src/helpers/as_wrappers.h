@@ -35,7 +35,6 @@
 #define as_string_concat3(str1, str1_len, str2, str2_len, str3, str3_len) zend_string_concat3(str1, str1_len, str2, str2_len, str3, str3_len)
 #define as_string_copy(s)                                                 zend_string_copy(s)
 #define as_long_to_str(num)                                               zend_long_to_str(num)
-#define as_double_to_str(num)                                             zend_double_to_str(num)
 #define as_is_stringable(instance_ce)                                     instanceof_function(instance_ce, zend_ce_stringable)
 #define as_rsrc_list_get_rsrc_type(res)                                   zend_rsrc_list_get_rsrc_type(res)
 #define as_zval_ptr_dtor(zval_ptr)                                        zval_ptr_dtor(zval_ptr)
@@ -49,7 +48,7 @@
 #define as_zval_update_constant_ex(zv, scope)                             zval_update_constant_ex(zv, scope)
 #define as_get_attribute_str(attributes, str, len)                        zend_get_attribute_str(attributes, str, len)
 #define as_get_attribute_value(ret, attribute, arg_num, scope)            zend_get_attribute_value(ret, attribute, arg_num, scope)
-#define as_throw_value_error(message)                                     zend_throw_exception_ex(zend_ce_value_error, 0, "%s", message)
+#define as_throw_type_error(message)                                      zend_throw_exception_ex(zend_ce_type_error, 0, "%s", message)
 #define as_binary_strcasecmp(s1, len1, s2, len2)                          zend_binary_strcasecmp(s1, len1, s2, len2)
 #define as_hash_init(ht, size, dtor, persistent)                          zend_hash_init(ht, size, NULL, dtor, persistent)
 #define as_hash_destroy(ht)                                               zend_hash_destroy(ht)
@@ -71,7 +70,6 @@ zend_string *as_string_truncate(zend_string *s, size_t length, bool persistent);
 zend_string *as_string_concat3(const char *str1, size_t str1_len, const char *str2, size_t str2_len, const char *str3, size_t str3_len);
 zend_string *as_string_copy(zend_string *s);
 zend_string *as_long_to_str(zend_long num);
-zend_string *as_double_to_str(double num);
 bool as_is_stringable(const zend_class_entry *instance_ce);
 const char *as_rsrc_list_get_rsrc_type(zend_resource *res);
 void as_zval_ptr_dtor(zval *zval_ptr);
@@ -97,7 +95,7 @@ zend_result as_zval_update_constant_ex(zval *zv, zend_class_entry *scope);
  * void * so the mockable declarations stay free of Zend attribute types. */
 void *as_get_attribute_str(HashTable *attributes, const char *str, size_t len);
 zend_result as_get_attribute_value(zval *ret, void *attribute, uint32_t arg_num, zend_class_entry *scope);
-void as_throw_value_error(const char *message);
+void as_throw_type_error(const char *message);
 int as_binary_strcasecmp(const char *s1, size_t len1, const char *s2, size_t len2);
 
 /* Additional wrappers used by the per-property error templates cache in
@@ -118,6 +116,10 @@ bool as_has_exception(void);
  * These always remain as real functions because they contain actual logic,
  * not just passthrough to Zend functions.
  */
+
+/* Renders a double with the shortest representation that parses back to the
+ * same value, so error messages match the numbers actually compared. */
+zend_string *as_double_to_str(double num);
 
 zend_result as_call_tostring(zend_object *object, zval *retval);
 void as_zval_stringl(zval *z, const char *str, size_t len);

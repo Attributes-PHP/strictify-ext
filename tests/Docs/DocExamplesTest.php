@@ -42,7 +42,9 @@ it('runs every doctest-marked php code block in the docs', function () {
             continue;
         }
         $markdown = file_get_contents($file->getPathname());
-        if (preg_match_all('/```php\n(.*?)```/s', $markdown, $matches)) {
+        // \r?\n: the docs are LF in git, but a Windows checkout turns them into
+        // CRLF, and a literal \n would then match no fence at all.
+        if (preg_match_all('/```php\r?\n(.*?)```/s', $markdown, $matches)) {
             foreach ($matches[1] as $index => $code) {
                 if (str_contains($code, '// doctest: run') || str_contains($code, '// doctest: expect-throw')) {
                     $blocks[$file->getPathname() . ' (block #' . $index . ')'] = $code;

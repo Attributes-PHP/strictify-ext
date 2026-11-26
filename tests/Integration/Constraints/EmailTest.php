@@ -50,9 +50,12 @@ describe('Email constraint', function () {
 describe('Email $domain restriction', function () {
     it('defaults to null and keeps the argument as given', function () {
         expect((new Email)->domain)->toBeNull()
-            ->and((new Email(null))->domain)->toBeNull()
-            ->and((new Email('example.com'))->domain)->toBe('example.com')
-            ->and((new Email(['example.com', 'example.org']))->domain)->toBe(['example.com', 'example.org']);
+            ->and((new Email(null))->domain)
+            ->toBeNull()
+            ->and((new Email('example.com'))->domain)
+            ->toBe('example.com')
+            ->and((new Email(['example.com', 'example.org']))->domain)
+            ->toBe(['example.com', 'example.org']);
     });
 
     it('throws a TypeError for unsupported argument types', function (mixed $domain) {
@@ -100,7 +103,9 @@ describe('Email $domain restriction', function () {
             validate(['value' => 'andre@gmail.com'], $model);
             expect(false)->toBeTrue('expected a ValidationException');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['value' => ["Must be an email address on an allowed domain: 'example.com'"]]);
+            expect($e->getErrors())->toBe(['value' => [
+                "Must be an email address on an allowed domain: 'example.com'",
+            ]]);
         }
     });
 
@@ -114,7 +119,9 @@ describe('Email $domain restriction', function () {
             validate(['value' => 'andre@gmail.com'], $model);
             expect(false)->toBeTrue('expected a ValidationException');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['value' => ["Must be an email address on an allowed domain: 'example.com', 'example.org'"]]);
+            expect($e->getErrors())->toBe(['value' => [
+                "Must be an email address on an allowed domain: 'example.com', 'example.org'",
+            ]]);
         }
     });
 
@@ -128,7 +135,9 @@ describe('Email $domain restriction', function () {
             validate(['value' => 'andre@mail.example.com'], $model);
             expect(false)->toBeTrue('expected a ValidationException');
         } catch (ValidationException $e) {
-            expect($e->getErrors())->toBe(['value' => ["Must be an email address on an allowed domain: 'example.com'"]]);
+            expect($e->getErrors())->toBe(['value' => [
+                "Must be an email address on an allowed domain: 'example.com'",
+            ]]);
         }
     });
 
@@ -149,7 +158,7 @@ describe('Email $domain restriction', function () {
     it('overrides the domain error message with the email_domain key', function () {
         $model = new class extends BaseModel {
             #[Email(domain: 'example.com')]
-            #[ErrorMessage(email_domain: 'Use your work address')]
+            #[ErrorMessage(emailDomain: 'Use your work address')]
             public string $value;
         };
 

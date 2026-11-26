@@ -4,47 +4,87 @@ declare(strict_types=1);
 
 namespace Attributes\Strictify\Tests\Integration;
 
-use Attributes\Strictify\Exceptions\BaseException;
+use ArgumentCountError;
+use Attributes\Strictify\Exceptions\CallException;
 use Attributes\Strictify\Exceptions\InvalidBaseModelException;
+use Attributes\Strictify\Exceptions\MaxDepthException;
+use Attributes\Strictify\Exceptions\StrictifyThrowable;
 use Attributes\Strictify\Exceptions\ValidationException;
+use Error;
+use Exception;
+use ReflectionClass;
 
-it('BaseException exists and can be thrown', function () {
-    $exception = null;
+/*
+ * The hierarchy mirrors the engine's own split: a data failure extends
+ * Exception (like JsonException), a programming error extends Error (like
+ * TypeError and ValueError). StrictifyThrowable is the marker both sides
+ * share, so one catch still covers every error the extension raises.
+ */
+it('exposes StrictifyThrowable as the shared marker', function () {
+    $reflection = new ReflectionClass(StrictifyThrowable::class);
 
-    try {
-        throw new BaseException('Testing');
-    } catch (BaseException $e) {
-        $exception = $e;
-    }
-
-    expect($exception)->not->toBeNull();
-    expect($exception->getMessage())->toBe('Testing');
+    expect($reflection->isInterface())->toBeTrue()
+        ->and($reflection->implementsInterface(\Throwable::class))
+        ->toBeTrue()
+        ->and(class_exists('Attributes\Strictify\Exceptions\BaseException'))
+        ->toBeFalse();
 });
 
-it('ValidationException exists, can be thrown and has all necessary methods and properties', function () {
-    $exception = null;
+it('throws ValidationException from the Exception branch', function () {
+    $exception = new ValidationException(['number' => 'Invalid number']);
 
-    try {
-        throw new ValidationException(['number' => 'Invalid number']);
-    } catch (BaseException $e) {
-        $exception = $e;
-    }
-
-    expect($exception)->not->toBeNull();
-    expect($exception)->toBeInstanceOf(ValidationException::class);
-    expect($exception->getErrors())->toBe(['number' => 'Invalid number']);
+    expect($exception)->toBeInstanceOf(Exception::class)
+        ->and($exception)
+        ->toBeInstanceOf(StrictifyThrowable::class)
+        ->and($exception->getMessage())
+        ->toBe('Invalid data')
+        ->and($exception->getErrors())
+        ->toBe(['number' => 'Invalid number']);
 });
 
-it('InvalidBaseModelException exists, extends BaseException and can be thrown', function () {
-    $exception = null;
+it('throws InvalidBaseModelException from the Error branch', function () {
+    $exception = new InvalidBaseModelException('Testing');
+
+    expect($exception)->toBeInstanceOf(Error::class)
+        ->and($exception)
+        ->not
+        ->toBeInstanceOf(Exception::class)
+        ->and($exception)
+        ->toBeInstanceOf(StrictifyThrowable::class)
+        ->and($exception->getMessage())
+        ->toBe('Testing');
+});
+
+it('throws MaxDepthException from the Error branch', function () {
+    $exception = new MaxDepthException('Testing');
+
+    expect($exception)->toBeInstanceOf(Error::class)
+        ->and($exception)
+        ->toBeInstanceOf(StrictifyThrowable::class)
+        ->and($exception->getMessage())
+        ->toBe('Testing');
+});
+
+it('throws CallException from the ArgumentCountError branch', function () {
+    $exception = new CallException('Testing');
+
+    expect($exception)->toBeInstanceOf(ArgumentCountError::class)
+        ->and($exception)
+        ->toBeInstanceOf(StrictifyThrowable::class)
+        ->and($exception->getMessage())
+        ->toBe('Testing');
+});
+
+it('is missed by a plain Exception catch', function () {
+    $caught = null;
 
     try {
         throw new InvalidBaseModelException('Testing');
-    } catch (BaseException $e) {
-        $exception = $e;
+    } catch (Exception $e) {
+        $caught = 'exception';
+    } catch (Error $e) {
+        $caught = 'error';
     }
 
-    expect($exception)->not->toBeNull();
-    expect($exception)->toBeInstanceOf(InvalidBaseModelException::class);
-    expect($exception->getMessage())->toBe('Testing');
+    expect($caught)->toBe('error');
 });
