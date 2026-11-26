@@ -17,11 +17,11 @@ use stdClass;
 use TypeError;
 use ValueError;
 
+use function Attributes\Strictify\validate;
+
 use const Attributes\Strictify\T_FLOAT;
 use const Attributes\Strictify\T_INT;
 use const Attributes\Strictify\T_NULL;
-
-use function Attributes\Strictify\validate;
 
 describe('Dict constructor argument validation', function () {
     it('accepts every supported $key type', function ($key) {
@@ -85,7 +85,8 @@ describe('Dict constructor argument validation', function () {
 describe('Dict $uniqueValues', function () {
     it('defaults to false and accepts the flag', function () {
         expect((new Dict(key: T_INT, of: T_INT))->uniqueValues)->toBeFalse()
-            ->and((new Dict(key: T_INT, of: T_INT, uniqueValues: true))->uniqueValues)->toBeTrue();
+            ->and((new Dict(key: T_INT, of: T_INT, uniqueValues: true))->uniqueValues)
+            ->toBeTrue();
     });
 
     it('accepts unique values', function () {

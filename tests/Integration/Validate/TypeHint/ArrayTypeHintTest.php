@@ -118,7 +118,7 @@ describe('type-hint array validation via attributes (loose mode)', function () {
 
         // The engine has no dict mask: dict carries a private bit the
         // validator folds into the array type
-        expect(Type::dict->value)->toBe(268435456);
+        expect(Type::dict->value)->toBe(268_435_456);
     });
 
     it('accepts a bitmask union of types', function () {

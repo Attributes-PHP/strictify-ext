@@ -482,7 +482,7 @@ describe('constraint error messages', function () {
             ConstraintMessageKeys::KEYS,
         ))
             ->and(array_filter($errors, fn (array $messages): bool => count($messages) !== 1))
-            ->toBe([]);
+            ->toBeEmpty();
     });
 
     it('overrides every constraint message with #[ErrorMessage]', function () {
@@ -496,7 +496,7 @@ describe('constraint error messages', function () {
             }
         }
 
-        expect($unexpected)->toBe([]);
+        expect($unexpected)->toBeEmpty();
     });
 
     it('translates every constraint message by its key through ErrorTranslator', function () {
@@ -512,7 +512,7 @@ describe('constraint error messages', function () {
             }
         }
 
-        expect($unexpected)->toBe([]);
+        expect($unexpected)->toBeEmpty();
     });
 
     it('passes a null key and the ErrorMessage value to the translator', function () {

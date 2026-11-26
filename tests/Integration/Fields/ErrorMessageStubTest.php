@@ -22,7 +22,7 @@ use function Attributes\Strictify\validate;
 it('documents every ErrorMessage key with the runtime default', function () {
     $stubPath = dirname(__DIR__, 3).'/stubs/fields/error_message.stub.php';
     $stub = file_get_contents($stubPath);
-    expect($stub)->not->toBeFalse();
+    expect($stub)->toBeString();
 
     preg_match_all("/public string \\\$([A-Za-z_0-9]+) = '([^']*)';/", $stub, $matches, PREG_SET_ORDER);
 

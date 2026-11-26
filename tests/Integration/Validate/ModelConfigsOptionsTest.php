@@ -71,7 +71,7 @@ describe('ModelConfigs extra option', function () {
 
         $result = validate(['name' => 'John', 'junk' => 1], $model);
         expect($result->name)->toBe('John')
-            ->and(isset($result->junk))
+            ->and(property_exists($result, 'junk'))
             ->toBeFalse();
     });
 
@@ -100,7 +100,7 @@ describe('ModelConfigs extra option', function () {
 
         $result = validate(['name' => 'John', 'junk' => 1], $model);
         expect($result->name)->toBe('John')
-            ->and(isset($result->junk))
+            ->and(property_exists($result, 'junk'))
             ->toBeFalse();
     });
 
@@ -130,7 +130,7 @@ describe('ModelConfigs extra option', function () {
         expect($result->firstName)->toBe('John')
             ->and($result->junk)
             ->toBe(1)
-            ->and(isset($result->{'5'}))
+            ->and(property_exists($result, '5'))
             ->toBeFalse();
     });
 
@@ -196,7 +196,7 @@ describe('ModelConfigs extra option', function () {
 
             $result = validate(['name' => 'J', 'junk' => 1, 'addr' => ['street' => 's', 'zip' => '1']], $model);
             expect($result->junk)->toBe(1)
-                ->and(isset($result->addr->zip))
+                ->and(property_exists($result->addr, 'zip'))
                 ->toBeFalse();
         },
     );

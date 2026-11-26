@@ -194,9 +194,7 @@ describe('call function model hydration', function () {
     });
 
     it('accepts a closure as the callable', function () {
-        $result = call(function (CallFunctionUser $user): string {
-            return $user->name;
-        }, ['name' => 'Andre', 'age' => 30]);
+        $result = call(fn (CallFunctionUser $user): string => $user->name, ['name' => 'Andre', 'age' => 30]);
         expect($result)->toBe('Andre');
     });
 

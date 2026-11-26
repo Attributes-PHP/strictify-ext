@@ -223,7 +223,7 @@ describe('constraint attribute argument rules', function () {
 describe('constraint messages', function () {
     it('renders float bounds at full precision', function () {
         $model = new class extends BaseModel {
-            #[Between(0.1, 0.30000000000000004)]
+            #[Between(0.1, 0.300_000_000_000_000_04)]
             public float $value;
         };
 

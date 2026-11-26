@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Attributes\Strictify\Tests\Integration\Fields;
 
 use Attributes\Strictify\BaseModel;
+use Attributes\Strictify\ErrorTranslator;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Dict;
 use Attributes\Strictify\Fields\Intersection;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\Fields\Union;
-use Attributes\Strictify\ErrorTranslator;
 use Attributes\Strictify\ModelConfigs;
 use Attributes\Strictify\Tests\Models\Enums\EnumStrTwoValues;
 use Attributes\Strictify\Type;
@@ -56,18 +56,15 @@ describe('Sequence constructor flags', function () {
     it('defaults sequential to true and uniqueValues to false', function () {
         $sequence = new Sequence(Type::int);
 
-        expect($sequence->sequential)->toBeTrue()
-            ->and($sequence->uniqueValues)->toBeFalse();
+        expect($sequence->sequential)->toBeTrue()->and($sequence->uniqueValues)->toBeFalse();
     });
 
     it('accepts the flags as named and positional arguments', function () {
         $named = new Sequence(Type::int, uniqueValues: true, sequential: false);
-        expect($named->sequential)->toBeFalse()
-            ->and($named->uniqueValues)->toBeTrue();
+        expect($named->sequential)->toBeFalse()->and($named->uniqueValues)->toBeTrue();
 
         $positional = new Sequence(Type::int, true, false);
-        expect($positional->sequential)->toBeFalse()
-            ->and($positional->uniqueValues)->toBeTrue();
+        expect($positional->sequential)->toBeFalse()->and($positional->uniqueValues)->toBeTrue();
     });
 });
 
@@ -176,7 +173,7 @@ describe('Sequence sequential key validation', function () {
             public array $values;
         };
 
-        expect(validate(['values' => []], $model)->values)->toBe([]);
+        expect(validate(['values' => []], $model)->values)->toBeEmpty();
     });
 
     it('rejects string keys by default', function () {
@@ -247,7 +244,9 @@ describe('Sequence sequential key validation', function () {
     });
 
     it('translates the sequenceKeys error key', function () {
-        ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequenceKeys' ? 'Deve ser uma lista sequencial' : null);
+        ErrorTranslator::set(fn (?string $key, string $message): ?string => $key === 'sequenceKeys'
+            ? 'Deve ser uma lista sequencial'
+            : null);
 
         $model = new class extends BaseModel {
             #[Sequence(Type::int)]
@@ -301,10 +300,12 @@ describe('Sequence $uniqueValues', function () {
 
     it('compares strictly, like the other membership rules', function () {
         // loose-mode coercion runs before the check, so '1' and 1 collide
-        $loose = new #[ModelConfigs(strict: false)] class extends BaseModel {
-            #[Sequence(Type::int, uniqueValues: true)]
-            public array $values;
-        };
+        $loose = new
+            #[ModelConfigs(strict: false)]
+            class extends BaseModel {
+                #[Sequence(Type::int, uniqueValues: true)]
+                public array $values;
+            };
 
         try {
             validate(['values' => [1, '1']], $loose);

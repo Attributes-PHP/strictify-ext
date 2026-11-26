@@ -69,7 +69,7 @@ it('omits aliased sensitive fields from toDict() unless includeSensitive is set'
 
     validate(['public_id' => $secret], $model);
 
-    expect($model->toDict())->toBe([]);
+    expect($model->toDict())->toBeEmpty();
     expect($model->toDict(includeSensitive: true))->toBe(['apiKey' => $secret]);
     expect($model->toDict(includeSensitive: true, useAlias: true))->toBe(['public_id' => $secret]);
 });
@@ -256,6 +256,8 @@ describe('sensitive properties in debug output', function () {
         validate(['name' => 'andre', 'password' => $secret], $model);
 
         ob_start();
+        // The dump is the output under test: the model redacts #[Sensitive] values in it.
+        // @mago-ignore lint:no-debug-symbols
         var_dump($model);
         $dump = ob_get_clean();
 

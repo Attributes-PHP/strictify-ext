@@ -7,7 +7,6 @@ namespace Attributes\Strictify\Tests\Integration;
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\Fields\Sequence;
 use Attributes\Strictify\ModelConfigs;
-use Attributes\Strictify\Type;
 
 use function Attributes\Strictify\validate;
 

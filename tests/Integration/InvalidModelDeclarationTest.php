@@ -116,6 +116,6 @@ describe('constructing an attribute outside a model', function () {
     it('does not run the constraint argument rules until the field is compiled', function () {
         $constraint = new In;
 
-        expect($constraint->values)->toBe([]);
+        expect($constraint->values)->toBeEmpty();
     });
 });
