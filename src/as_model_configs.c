@@ -1,4 +1,5 @@
 #include "as_model_configs.h"
+#include "as_exception.h"
 #include "as_globals.h"
 #include "Zend/zend_API.h"
 #include "Zend/zend_attributes.h"
@@ -306,7 +307,9 @@ static as_model_configs_cache_entry *get_configs_entry(zend_class_entry *model_c
 static bool parse_bool_option(zval *arg_val, int argument_number, const char *name, bool *target)
 {
     if (Z_TYPE_P(arg_val) != IS_TRUE && Z_TYPE_P(arg_val) != IS_FALSE) {
-        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type bool, %s given", argument_number, name, zend_zval_type_name(arg_val));
+        zend_throw_exception_ex(
+            class_AS_Exceptions_InvalidBaseModelException, 0, "Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type bool, %s given", argument_number, name, zend_zval_type_name(arg_val)
+        );
         return false;
     }
 
@@ -327,12 +330,17 @@ static bool parse_string_option(zval *arg_val, int argument_number, const char *
     }
 
     if (Z_TYPE_P(arg_val) != IS_STRING) {
-        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type ?string, %s given", argument_number, name, zend_zval_type_name(arg_val));
+        zend_throw_exception_ex(
+            class_AS_Exceptions_InvalidBaseModelException, 0, "Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must be of type ?string, %s given", argument_number, name,
+            zend_zval_type_name(arg_val)
+        );
         return false;
     }
 
     if (Z_STRLEN_P(arg_val) >= pretty_name_size) {
-        zend_value_error("Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must not be longer than %zu characters", argument_number, name, pretty_name_size - 1);
+        zend_throw_exception_ex(
+            class_AS_Exceptions_InvalidBaseModelException, 0, "Attributes\\Strictify\\ModelConfigs::__construct(): Argument #%d ($%s) must not be longer than %zu characters", argument_number, name, pretty_name_size - 1
+        );
         return false;
     }
 

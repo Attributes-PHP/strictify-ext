@@ -6,11 +6,11 @@ namespace Attributes\Strictify\Tests\Integration\Validate;
 
 use Attributes\Strictify\BaseModel;
 use Attributes\Strictify\ErrorTranslator;
+use Attributes\Strictify\Exceptions\InvalidBaseModelException;
 use Attributes\Strictify\Exceptions\ValidationException;
 use Attributes\Strictify\Fields\Constraints\Regex;
 use Attributes\Strictify\ModelConfigs;
 use DateTime;
-use ValueError;
 
 use function Attributes\Strictify\validate;
 
@@ -347,7 +347,7 @@ describe('ModelConfigs extra option', function () {
         }
     });
 
-    it('throws ValueError for an invalid extra value', function () {
+    it('throws InvalidBaseModelException for an invalid extra value', function () {
         $model = new
             #[ModelConfigs(extra: 'invalid')]
             class extends BaseModel {
@@ -355,7 +355,7 @@ describe('ModelConfigs extra option', function () {
             };
 
         validate(['name' => 'John'], $model);
-    })->throws(ValueError::class, 'ignore, forbid, allow');
+    })->throws(InvalidBaseModelException::class, 'ignore, forbid, allow');
 
     it('translates the extra error with the "extra" key', function () {
         ErrorTranslator::set(
@@ -568,7 +568,7 @@ describe('ModelConfigs option types', function () {
             };
 
         expect(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class, 'Argument #6 ($strict) must be of type bool, int given');
+            ->toThrow(InvalidBaseModelException::class, 'Argument #6 ($strict) must be of type bool, int given');
     });
 
     it('rejects a truthy string for strToLower', function () {
@@ -579,7 +579,7 @@ describe('ModelConfigs option types', function () {
             };
 
         expect(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class, 'Argument #2 ($strToLower) must be of type bool, string given');
+            ->toThrow(InvalidBaseModelException::class, 'Argument #2 ($strToLower) must be of type bool, string given');
     });
 
     it('rejects a falsy integer for stopAtFirstError', function () {
@@ -590,7 +590,10 @@ describe('ModelConfigs option types', function () {
             };
 
         expect(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class, 'Argument #7 ($stopAtFirstError) must be of type bool, int given');
+            ->toThrow(
+                InvalidBaseModelException::class,
+                'Argument #7 ($stopAtFirstError) must be of type bool, int given',
+            );
     });
 
     it('rejects a non-string value for aliasGenerator', function () {
@@ -601,7 +604,10 @@ describe('ModelConfigs option types', function () {
             };
 
         expect(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class, 'Argument #1 ($aliasGenerator) must be of type ?string, int given');
+            ->toThrow(
+                InvalidBaseModelException::class,
+                'Argument #1 ($aliasGenerator) must be of type ?string, int given',
+            );
     });
 
     it('rejects a boolean for extra', function () {
@@ -612,7 +618,7 @@ describe('ModelConfigs option types', function () {
             };
 
         expect(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class, 'Argument #5 ($extra) must be of type ?string, bool given');
+            ->toThrow(InvalidBaseModelException::class, 'Argument #5 ($extra) must be of type ?string, bool given');
     });
 
     it('keeps failing on a bad option instead of caching a partial parse', function () {
@@ -622,9 +628,9 @@ describe('ModelConfigs option types', function () {
                 public string $value = '';
             };
 
-        expect(fn () => validate(['value' => 'x'], $model))->toThrow(ValueError::class)
+        expect(fn () => validate(['value' => 'x'], $model))->toThrow(InvalidBaseModelException::class)
             ->and(fn () => validate(['value' => 'x'], $model))
-            ->toThrow(ValueError::class);
+            ->toThrow(InvalidBaseModelException::class);
     });
 });
 

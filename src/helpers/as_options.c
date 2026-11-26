@@ -5,6 +5,7 @@
 #include "Zend/zend_smart_str.h"
 #include "ext/spl/spl_exceptions.h"
 #include "as_wrappers.h"
+#include "../as_exception.h"
 
 bool as_validate_method_parameter(char *option, char **all_valid_options, size_t length, as_invalid_method_parameter *invalid_parameter_error)
 {
@@ -30,8 +31,9 @@ STATIC_INLINE void throw_invalid_parameter_exception(char *option, char **all_op
     }
 
     smart_str_0(&options_list);
-    zend_value_error(
-        "%s::%s: Argument #%d must be of one of the following options: %s", invalid_option_error->class_name, invalid_option_error->method_name, invalid_option_error->parameter_number, ZSTR_VAL(options_list.s)
+    zend_throw_exception_ex(
+        class_AS_Exceptions_InvalidBaseModelException, 0, "%s::%s: Argument #%d must be of one of the following options: %s", invalid_option_error->class_name, invalid_option_error->method_name,
+        invalid_option_error->parameter_number, ZSTR_VAL(options_list.s)
     );
     smart_str_free(&options_list);
 }
