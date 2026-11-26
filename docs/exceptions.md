@@ -14,11 +14,11 @@ description: "Reference for the exceptions Strictify throws: ValidationException
 | `MaxDepthException` | `BaseException` | the payload nests models deeper than the limit (512 by default, or `$maxDepth`) |
 | `CallException` | `BaseException` | `call()` cannot build the argument list: a required parameter has no dependency (`No value provided for parameter $x of f().`) |
 | `BaseException` | `\Exception` | nothing directly — catch it for every extension error of the four above |
-| `ValueError` | `\ValueError` | a call argument is unusable (`$maxDepth` below 1), or an `ErrorTranslator` callable returns something other than `?string` |
+| `ValueError` | `\ValueError` | a call argument is unusable (`$maxDepth` below 1), an `ErrorTranslator` callable returns something other than `?string`, or an `#[ErrorMessage]` argument holds a non-string value |
 | `TypeError` | `\TypeError` | `call()` receives a `$dependencies` value that is neither `array` nor `ArrayAccess`, registering a non-callable translator, or an attribute object is constructed directly in userland with a wrong argument type |
-| `Error` | `\Error` | nothing raised by the extension itself — an `Error` thrown inside the callable or inside a dependency container propagates as-is |
+| `Error` | `\Error` | an unknown named argument in `#[ModelConfigs]` (`#[ModelConfigs(bogus: 1)]` → `Unknown named parameter $bogus`), or an `Error` thrown inside the callable or a dependency container, which propagates as-is. Neither is a `BaseException`, so `catch (BaseException $e)` misses them |
 
-`catch (BaseException $e)` covers every error the extension raises on purpose: malformed models (`InvalidBaseModelException`, including the argument errors the attribute constructors raise, rewritten when the attribute is read from a declaration), failed validation, an exceeded nesting limit and an unbuildable `call()` argument list. `ValueError` and `TypeError` remain for bad call arguments and plain `new Email(...)` construction in userland; `Error` only appears when user code throws one.
+`catch (BaseException $e)` covers every error the extension raises on purpose: malformed models (`InvalidBaseModelException`, including the argument errors the attribute constructors raise, rewritten when the attribute is read from a declaration), failed validation, an exceeded nesting limit and an unbuildable `call()` argument list. `ValueError` and `TypeError` remain for bad call arguments, a non-string `#[ErrorMessage]` value and plain `new Email(...)` construction in userland; `Error` covers an unknown named argument in `#[ModelConfigs]` and anything user code throws.
 
 ## ValidationException
 
@@ -79,13 +79,14 @@ validate(['name' => 'John'], new User());
 
 ## ValueError
 
-Attribute arguments declared on a model now raise `InvalidBaseModelException`; a `ValueError` is left for the calls that are not model declarations:
+Attribute arguments declared on a model now raise `InvalidBaseModelException`; a `ValueError` is left for the calls that are not model declarations, and for one declaration argument:
 
 - a `$maxDepth` argument below 1,
 - an `ErrorTranslator` callable that returns something other than `?string`,
+- a non-string `#[ErrorMessage]` argument (`#[ErrorMessage(min: 5)]`), reported when the template is first resolved during validation instead of when the model is compiled,
 - constructing a constraint object directly in userland with an argument the constructor rejects as a value — `new Union('NoSuchClass')`, `new DateTime(timezone: 'Nope/Nope')`.
 
-The same arguments in a declaration (`#[Union('NoSuchClass')]`, `#[DateTime(timezone: 'Nope/Nope')]`) raise `InvalidBaseModelException` instead.
+The same constraint arguments in a declaration (`#[Union('NoSuchClass')]`, `#[DateTime(timezone: 'Nope/Nope')]`) raise `InvalidBaseModelException` instead. A non-string `#[ErrorMessage]` value is the exception: it stays a `ValueError`.
 
 ## MaxDepthException
 
