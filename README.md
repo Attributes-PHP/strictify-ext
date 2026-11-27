@@ -5,9 +5,9 @@
 </p>
 <p align="center">
     <a href="https://github.com/Attributes-PHP/strictify-ext/actions"><img alt="GitHub Actions Workflow Status (main)" src="https://img.shields.io/github/actions/workflow/status/Attributes-PHP/strictify-ext/tests.yml"></a>
-    <a href="https://codecov.io/gh/Attributes-PHP/strictify" ><img alt="Code Coverage" src="https://codecov.io/gh/Attributes-PHP/strictify/graph/badge.svg?token=8N7N9NMGLG"/></a>
-    <a href="https://packagist.org/packages/Attributes-PHP/strictify"><img alt="Latest Version" src="https://img.shields.io/packagist/v/Attributes-PHP/strictify"></a>
-    <a href="https://packagist.org/packages/Attributes-PHP/strictify"><img alt="Supported PHP Versions" src="https://img.shields.io/badge/8.2%2B?label=versions"></a>
+    <a href="https://codecov.io/gh/Attributes-PHP/strictify-ext" ><img alt="Code Coverage" src="https://codecov.io/gh/Attributes-PHP/strictify/graph/badge.svg?token=8N7N9NMGLG"/></a>
+    <a href="https://packagist.org/packages/Attributes-PHP/strictify-ext"><img alt="Latest Version" src="https://img.shields.io/packagist/v/Attributes-PHP/strictify-ext"></a>
+    <a href="https://packagist.org/packages/Attributes-PHP/strictify-ext"><img alt="Static Badge" src="https://img.shields.io/badge/PHP-8.2%2B-blue?logo=php"></a>
     <a href="https://opensource.org/licenses/MIT"><img alt="Software License" src="https://img.shields.io/badge/Licence-MIT-brightgreen"></a>
 </p>
 
