@@ -52,7 +52,7 @@ $rawData ──▶ validate($rawData, new User())
 
 ## Requirements
 
-- PHP 8.2 or later
+- PHP 8.3 or later
 
 ## Installation
 

@@ -4,9 +4,9 @@ PHP_ARG_ENABLE(attributes-strictify, whether to enable attributes-strictify supp
 if test "$PHP_ATTRIBUTES_STRICTIFY" != "no"; then
   PHP_REQUIRE_CC()
   
-  # Require PHP 8.2 or later (ZEND_MODULE_API_NO 20220829)
-  if test "$PHP_API_VERSION" -lt 20220829; then
-    AC_MSG_ERROR([PHP 8.2 or later is required])
+  # Require PHP 8.3 or later (ZEND_MODULE_API_NO 20230831)
+  if test "$PHP_API_VERSION" -lt 20230831; then
+    AC_MSG_ERROR([PHP 8.3 or later is required])
   fi
 
   dnl The Regex constraint compiles patterns through ext/pcre, whose

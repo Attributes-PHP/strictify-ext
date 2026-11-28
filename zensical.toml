@@ -66,7 +66,7 @@ toggle.name = "Switch to light mode"
 [project.plugins.llmstxt]
 full_output = "llms-full.txt"
 markdown_description = """
-Strictify is a Pydantic-inspired data-validation system for PHP 8.2+ that validates raw data against
+Strictify is a Pydantic-inspired data-validation system for PHP 8.3+ that validates raw data against
 class type hints: a model's public property types are the schema, with no YAML and no config files.
 It ships as two interchangeable packages sharing one `Attributes\\Strictify` API: the pure-PHP
 Composer library `attributes-php/strictify` (`composer require attributes-php/strictify`) for the
