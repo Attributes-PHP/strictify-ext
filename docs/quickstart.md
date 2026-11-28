@@ -19,7 +19,7 @@ pie install attributes-php/strictify-ext
 
 The library is the widest-compatibility option: it runs anywhere Composer runs, including shared hosting and managed platforms where PHP extensions cannot be installed. The extension targets those who control the host and can install a PHP extension — same API and behavior, roughly an order of magnitude faster (see Benchmarks).
 
-Requires PHP 8.2 or later.
+Requires PHP 8.3 or later.
 
 ## Your first model
 

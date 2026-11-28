@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-- PHP 8.2+
+- PHP 8.3+
 - [Composer](https://getcomposer.org)
 - [Task](https://taskfile.dev)
 - [Reflex](https://github.com/cespare/reflex)

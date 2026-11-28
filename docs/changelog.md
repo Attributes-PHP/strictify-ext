@@ -102,6 +102,14 @@ All notable changes to Strictify are documented here, newest first. Install the 
 
 ### Changed
 
+- **BC note:** the minimum PHP version is now 8.3. PHP 8.2 reached end of life on December 31, 2026, so `composer.json` requires `"php": "^8.3"` and the build checks in `config.m4` and `config.w32` reject older versions. Development dependencies were upgraded to the latest releases supporting PHP 8.3, including `illuminate/validation` and `illuminate/translation` 13.x.
+
+  ```json
+  "require": {
+      "php": "^8.3"
+  }
+  ```
+
 - **BC note:** the exception hierarchy now follows PHP's split between data and programming errors. `ValidationException` extends `\Exception`. `InvalidBaseModelException` and `MaxDepthException` extend `\Error`. `CallException` extends `\ArgumentCountError`. `BaseException` is removed. `Attributes\Strictify\Exceptions\StrictifyThrowable` is the new marker interface all four implement, so `catch (StrictifyThrowable $e)` replaces `catch (BaseException $e)`. A `catch (\Exception $e)` no longer swallows a malformed model.
 
   ```php

@@ -10,11 +10,11 @@
 ARG_ENABLE("attributes-strictify", "Enable attributes-strictify support", "no");
 
 if (PHP_ATTRIBUTES_STRICTIFY != "no") {
-	// PHP_VERSION and PHP_MINOR_VERSION are numeric tokens (8 and 2), not a
-	// version string: comparing against "8.2" coerces to 8 < 8.2 and always
+	// PHP_VERSION and PHP_MINOR_VERSION are numeric tokens (8 and 3), not a
+	// version string: comparing against "8.3" coerces to 8 < 8.3 and always
 	// fires.
-	if (PHP_VERSION < 8 || (PHP_VERSION == 8 && PHP_MINOR_VERSION < 2)) {
-		ERROR("attributes-strictify requires PHP 8.2 or later");
+	if (PHP_VERSION < 8 || (PHP_VERSION == 8 && PHP_MINOR_VERSION < 3)) {
+		ERROR("attributes-strictify requires PHP 8.3 or later");
 	}
 
 	// phpize-driven builds (PIE, PECL, php-windows-builder) pass a plain

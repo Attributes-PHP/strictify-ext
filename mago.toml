@@ -2,13 +2,13 @@
 # Welcome to Mago!
 # For full documentation, see https://mago.carthage.software/1.50.0/en/tools/overview/
 version = "1"
-php-version = "8.2.0"
+php-version = "8.3.0"
 
 [source]
 workspace = "."
 paths = ["tests/Integration/"]
 includes = ["vendor"]
-# Uses PHP 8.4 property-hook syntax while the project targets 8.2+
+# Uses PHP 8.4 property-hook syntax while the project targets 8.3+
 excludes = ["tests/Integration/PropertyHooks/hooks.php"]
 
 [source.glob]
